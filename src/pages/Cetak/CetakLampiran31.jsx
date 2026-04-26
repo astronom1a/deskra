@@ -191,14 +191,14 @@ function SingleWorkerBody({ data, item, grand, cfg, itemKey }) {
           <th rowSpan={2} className="border border-black px-1 py-1 w-[3%]">No</th>
           <th colSpan={3} className="border border-black px-1 py-1">Pekerja</th>
           <th colSpan={2} className="border border-black px-1 py-1">Pekerjaan</th>
-          <th rowSpan={2} className="border border-black px-1 py-1 w-[7%]">Tarip<br/>( Rp)</th>
-          <th rowSpan={2} className="border border-black px-1 py-1 w-[10%]">Pembayaran<br/>Kotor(Rp)</th>
+          <th rowSpan={2} className="border border-black px-1 py-1 w-[8%]">Tarif<br/>( Rp)</th>
+          <th rowSpan={2} className="border border-black px-1 py-1 w-[8%]">Pembayaran<br/>Kotor(Rp)</th>
           <th rowSpan={2} className="border border-black px-1 py-1 w-[6%]">PPh<br/>(Rp)</th>
-          <th rowSpan={2} className="border border-black px-1 py-1 w-[10%]">Pembayaran<br/>Bersih(Rp)</th>
+          <th rowSpan={2} className="border border-black px-1 py-1 w-[8%]">Pembayaran<br/>Bersih(Rp)</th>
           <th rowSpan={2} className="border border-black px-1 py-1 w-[12%]">Tanda tangan /<br/>Cap Jempol</th>
         </tr>
         <tr className="text-center">
-          <th className="border border-black px-1 py-1">Nama</th>
+          <th className="border border-black px-1 py-1 w-[14%]">Nama</th>
           <th className="border border-black px-1 py-1">NIK</th>
           <th className="border border-black px-1 py-1">Alamat</th>
           <th className="border border-black px-1 py-1">Perincian</th>
@@ -300,10 +300,10 @@ function TumpukBody({ data, grand }) {
           <th rowSpan={2} className="border border-black px-1 py-1 w-[3%]">No</th>
           <th colSpan={3} className="border border-black px-1 py-1">Pekerja</th>
           <th colSpan={2} className="border border-black px-1 py-1">Pekerjaan</th>
-          <th rowSpan={2} className="border border-black px-1 py-1 w-[7%]">Tarip<br/>( Rp)</th>
-          <th rowSpan={2} className="border border-black px-1 py-1 w-[10%]">Pembayaran<br/>Kotor(Rp)</th>
+          <th rowSpan={2} className="border border-black px-1 py-1 w-[7%]">Tarif<br/>( Rp)</th>
+          <th rowSpan={2} className="border border-black px-1 py-1 w-[8%]">Pembayaran<br/>Kotor(Rp)</th>
           <th rowSpan={2} className="border border-black px-1 py-1 w-[6%]">PPh<br/>(Rp)</th>
-          <th rowSpan={2} className="border border-black px-1 py-1 w-[10%]">Pembayaran<br/>Bersih(Rp)</th>
+          <th rowSpan={2} className="border border-black px-1 py-1 w-[8%]">Pembayaran<br/>Bersih(Rp)</th>
           <th rowSpan={2} className="border border-black px-1 py-1 w-[10%]">Tanda tangan /<br/>Cap Jempol</th>
         </tr>
         <tr className="text-center">
@@ -384,10 +384,10 @@ function TenagaBody({ data, item, grand }) {
           <th rowSpan={2} className="border border-black px-1 py-1 w-[3%]">No</th>
           <th colSpan={3} className="border border-black px-1 py-1">Pekerja</th>
           <th colSpan={2} className="border border-black px-1 py-1">Pekerjaan</th>
-          <th rowSpan={2} className="border border-black px-1 py-1 w-[7%]">Tarip<br/>( Rp)</th>
-          <th rowSpan={2} className="border border-black px-1 py-1 w-[10%]">Pembayaran<br/>Kotor(Rp)</th>
+          <th rowSpan={2} className="border border-black px-1 py-1 w-[7%]">Tarif<br/>( Rp)</th>
+          <th rowSpan={2} className="border border-black px-1 py-1 w-[8%]">Pembayaran<br/>Kotor(Rp)</th>
           <th rowSpan={2} className="border border-black px-1 py-1 w-[6%]">PPh<br/>(Rp)</th>
-          <th rowSpan={2} className="border border-black px-1 py-1 w-[10%]">Pembayaran<br/>Bersih(Rp)</th>
+          <th rowSpan={2} className="border border-black px-1 py-1 w-[8%]">Pembayaran<br/>Bersih(Rp)</th>
           <th rowSpan={2} className="border border-black px-1 py-1 w-[10%]">Tanda tangan /<br/>Cap Jempol</th>
         </tr>
         <tr className="text-center">
