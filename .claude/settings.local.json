@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(python -c ' *)",
+      "Bash(cd /tmp)",
+      "Bash(unzip -l gab.xlsm)",
+      "Bash(pip install *)",
+      "Bash(python -c \"from oletools.olevba import VBA_Parser; vp = VBA_Parser\\('/tmp/gab.xlsm'\\); [print\\('---',n,'---\\\\n',code\\) for \\(f,s,n,code\\) in vp.extract_all_macros\\(\\) if code]\")",
+      "Bash(python -c \"import win32com.client; xl = win32com.client.Dispatch\\('Excel.Application'\\); print\\(xl.Version\\); xl.Quit\\(\\)\")",
+      "Bash(tasklist)",
+      "Bash(reg query *)",
+      "Bash(reg add *)",
+      "PowerShell($p='HKCU:\\\\Software\\\\Microsoft\\\\Office\\\\16.0\\\\Excel\\\\Security'; if\\(!\\(Test-Path $p\\)\\){New-Item -Path $p -Force | Out-Null}; $orig = \\(Get-ItemProperty -Path $p -Name AccessVBOM -ErrorAction SilentlyContinue\\).AccessVBOM; Set-ItemProperty -Path $p -Name AccessVBOM -Value 1 -Type DWord; \"original=$orig; now=$\\(\\(Get-ItemProperty -Path $p -Name AccessVBOM\\).AccessVBOM\\)\")",
+      "Bash(python3)",
+      "Bash(node migrate.js)"
+    ]
+  }
+}
