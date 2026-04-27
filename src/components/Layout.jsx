@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Link2, Users, Users2, Layers, Package,
-  ChevronDown, ChevronRight, TreePine
+  ChevronDown, ChevronRight, TreePine, ClipboardList, Wallet
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -12,19 +12,18 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
-    label: 'Main Link',
-    path: '/main-link',
-    icon: Link2,
+    label: 'Register Kapling',
+    path: '/register-kapling',
+    icon: ClipboardList,
   },
   {
-    label: 'Tumpuk Kapling',
-    path: '/tumpuk-kapling',
-    icon: Layers,
-  },
-  {
-    label: 'Detail Pekerjaan',
-    path: '/detail-pekerjaan',
-    icon: Package,
+    label: 'Uang Kerja',
+    icon: Wallet,
+    children: [
+      { label: 'Main Link', path: '/main-link', icon: Link2 },
+      { label: 'Tumpuk Kapling', path: '/tumpuk-kapling', icon: Layers },
+      { label: 'Detail Pekerjaan', path: '/detail-pekerjaan', icon: Package },
+    ],
   },
   {
     label: 'Database',
@@ -49,7 +48,10 @@ function SidebarItem({ item }) {
           onClick={() => setOpen(o => !o)}
           className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-primary-100 hover:bg-primary-700 rounded-lg transition-colors"
         >
-          <span className="font-medium">{item.label}</span>
+          <span className="flex items-center gap-3 font-medium">
+            {item.icon && <item.icon size={16} />}
+            {item.label}
+          </span>
           {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
         </button>
         {open && (

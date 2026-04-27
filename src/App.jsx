@@ -7,6 +7,7 @@ import DatabaseTarif from './pages/DatabaseTarif'
 import DatabaseTenaga from './pages/DatabaseTenaga'
 import TumpukKapling from './pages/TumpukKapling'
 import DetailPekerjaan from './pages/DetailPekerjaan'
+import RegisterKapling from './pages/RegisterKapling'
 import CetakBiayaTPK from './pages/Cetak/CetakBiayaTPK'
 import CetakGabunganPembayaran from './pages/Cetak/CetakGabunganPembayaran'
 import CetakPjUk from './pages/Cetak/CetakPjUk'
@@ -21,6 +22,7 @@ export default function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="register-kapling" element={<RegisterKapling />} />
         <Route path="main-link" element={<MainLink />} />
         <Route path="tumpuk-kapling" element={<TumpukKapling />} />
         <Route path="detail-pekerjaan" element={<DetailPekerjaan />} />
