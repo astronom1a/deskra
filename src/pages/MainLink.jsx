@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { buildRows, DEFAULT_TARIF_PERIODE } from '../lib/rekapPekerjaan'
-import { Plus, Save, AlertCircle, CheckCircle2, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, Printer, FileText, ClipboardCheck } from 'lucide-react'
+import { Plus, Save, AlertCircle, CheckCircle2, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, Printer, FileText, ClipboardCheck, Receipt, Wallet, ClipboardList, FileSpreadsheet } from 'lucide-react'
 
 // ─── helpers ────────────────────────────────────────────────
 const BULAN = ['Januari','Februari','Maret','April','Mei','Juni',
@@ -53,35 +53,21 @@ export default function MainLink() {
   const [savingTarif, setSavingTarif]   = useState(false)
   const currentYear = new Date().getFullYear()
   const [newPeriode, setNewPeriode] = useState({ periodeOption: PERIODE_OPTIONS[0], tahun: currentYear })
-  const [cetakOpen, setCetakOpen]       = useState(false)
-  const cetakRef = useRef(null)
-
-  useEffect(() => {
-    function onClick(e) {
-      if (cetakRef.current && !cetakRef.current.contains(e.target)) setCetakOpen(false)
-    }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
-  }, [])
 
   function openCetak(jenis) {
     if (!selectedPeriode) return showToast('Pilih periode dulu', 'error')
-    setCetakOpen(false)
     window.open(`/cetak/${jenis}/${selectedPeriode.id}`, '_blank')
   }
   function openKwitansi(itemKey) {
     if (!selectedPeriode) return showToast('Pilih periode dulu', 'error')
-    setCetakOpen(false)
     window.open(`/cetak/kwitansi/${selectedPeriode.id}/${itemKey}`, '_blank')
   }
   function openLampiran31(itemKey) {
     if (!selectedPeriode) return showToast('Pilih periode dulu', 'error')
-    setCetakOpen(false)
     window.open(`/cetak/lampiran-31/${selectedPeriode.id}/${itemKey}`, '_blank')
   }
   function openAbsen(itemKey) {
     if (!selectedPeriode) return showToast('Pilih periode dulu', 'error')
-    setCetakOpen(false)
     window.open(`/cetak/absen/${selectedPeriode.id}/${itemKey}`, '_blank')
   }
   // Item yang punya template kwitansi (TUMPUK & TENAGA BANTU ditunda).
@@ -499,104 +485,35 @@ export default function MainLink() {
                   <RefreshCw size={12} className={loading?'animate-spin':''}/> Refresh
                 </button>
 
-                {/* Cetak dropdown */}
-                <div className="relative" ref={cetakRef}>
-                  <button
-                    onClick={()=>setCetakOpen(v=>!v)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-primary-600 rounded-lg hover:bg-primary-700"
-                  >
-                    <Printer size={12}/> Cetak <ChevronDown size={12}/>
-                  </button>
-                  {cetakOpen && (
-                    <div className="absolute right-0 mt-1.5 w-72 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 text-sm max-h-[70vh] overflow-y-auto">
-                      <button onClick={()=>openCetak('biaya-tpk')}           className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700">Biaya TPK</button>
-                      <button onClick={()=>openCetak('gabungan-pembayaran')} className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700">Gabungan Pembayaran</button>
-                      <button onClick={()=>openCetak('pj-uk')}               className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700">PJ UK</button>
-                      <button onClick={()=>openCetak('permintaan-uk')}       className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700">Permintaan UK</button>
-
-                      {/* ── Kwitansi per item ── */}
-                      <div className="border-t border-gray-100 my-1"/>
-                      <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Kwitansi per Item</p>
-                      {(() => {
-                        // Dedup: 3 barcode rows → 1 entry "PEMASANGAN BARCODE"
-                        const items = []
-                        const seenKwitansi = new Set()
-                        rows.filter(isKwitansiAvailable).forEach(r => {
-                          const key = kwitansiKeyFor(r)
-                          if (seenKwitansi.has(key)) {
-                            // Tambahkan nominal ke entry yang sama
-                            const ex = items.find(i => i.key === key)
-                            if (ex) ex.nilai += (r.fisik||0)*(r.tarif||0)
-                            return
-                          }
-                          seenKwitansi.add(key)
-                          items.push({
-                            key,
-                            label: key === 'barcode' ? 'PEMASANGAN BARCODE'
-                              : key === 'tumpuk' ? 'TUMPUK KAPLING'
-                              : r.uraian,
-                            nilai: (r.fisik||0)*(r.tarif||0),
-                          })
-                        })
-                        if (items.length === 0) {
-                          return <p className="px-3 py-2 text-xs text-gray-400 italic">Tidak ada item kwitansi.</p>
-                        }
-                        return items.map(it => (
-                          <button
-                            key={it.key}
-                            onClick={()=>openKwitansi(it.key)}
-                            className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center justify-between gap-2"
-                          >
-                            <span className="truncate">{it.label}</span>
-                            <span className={`text-[10px] tabular-nums ${it.nilai>0?'text-primary-600':'text-gray-300'}`}>
-                              {it.nilai>0 ? formatRupiah(it.nilai) : '—'}
-                            </span>
-                          </button>
-                        ))
-                      })()}
-
-                      {/* ── Lampiran 3.1 per item ── */}
-                      <div className="border-t border-gray-100 my-1"/>
-                      <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Lampiran 3.1 per Item</p>
-                      {(() => {
-                        const items = []
-                        const seen = new Set()
-                        rows.filter(isKwitansiAvailable).forEach(r => {
-                          // Lampiran 3.1: skip custom items
-                          if (r._key.startsWith('custom_')) return
-                          const key = kwitansiKeyFor(r)
-                          if (seen.has(key)) {
-                            const ex = items.find(i => i.key === key)
-                            if (ex) ex.nilai += (r.fisik||0)*(r.tarif||0)
-                            return
-                          }
-                          seen.add(key)
-                          items.push({
-                            key,
-                            label: key === 'barcode' ? 'PEMASANGAN BARCODE'
-                              : key === 'tumpuk'  ? 'TUMPUK KAPLING'
-                              : r.uraian,
-                            nilai: (r.fisik||0)*(r.tarif||0),
-                          })
-                        })
-                        // Lampiran 3.1 hanya untuk item dengan value > 0
-                        return items.filter(it => it.nilai > 0).map(it => (
-                          <button
-                            key={it.key}
-                            onClick={()=>openLampiran31(it.key)}
-                            className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center justify-between gap-2"
-                          >
-                            <span className="truncate">{it.label}</span>
-                            <span className="text-[10px] tabular-nums text-primary-600">{formatRupiah(it.nilai)}</span>
-                          </button>
-                        ))
-                      })()}
-
-                      <div className="border-t border-gray-100 my-1"/>
-                      <button onClick={()=>openCetak('absen')} className="w-full text-left px-3 py-2 hover:bg-gray-50 text-gray-700">Absen</button>
-                    </div>
-                  )}
-                </div>
+                {/* Cetak buttons */}
+                <button
+                  onClick={()=>openCetak('biaya-tpk')}
+                  title="Cetak Biaya TPK"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+                >
+                  <Receipt size={13}/> Biaya TPK
+                </button>
+                <button
+                  onClick={()=>openCetak('gabungan-pembayaran')}
+                  title="Cetak Gabungan Pembayaran"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+                >
+                  <Wallet size={13}/> Gabungan Pembayaran
+                </button>
+                <button
+                  onClick={()=>openCetak('pj-uk')}
+                  title="Cetak PJ UK"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+                >
+                  <ClipboardList size={13}/> PJ UK
+                </button>
+                <button
+                  onClick={()=>openCetak('permintaan-uk')}
+                  title="Cetak Permintaan UK"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+                >
+                  <FileSpreadsheet size={13}/> Permintaan UK
+                </button>
                 <p className="text-xs text-gray-400 flex items-center gap-1">
                   <CalendarDays size={12}/>
                   {formatTanggal(selectedPeriode.tgl_awal)} – {formatTanggal(selectedPeriode.tgl_akhir)}
