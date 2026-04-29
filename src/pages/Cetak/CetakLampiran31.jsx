@@ -13,9 +13,9 @@ const ITEM_CONFIG = {
   penomoran:  { perincian: 'Biaya penomoran kapling pada bontos dan badan kayu jati, rimba dengan cat', volSatuan: 'M3' },
   sabuk:      { perincian: 'Biaya sabuk kapling',     volSatuan: 'M3' },
   tanda_laku: { perincian: 'BIAYA MEMBERI TANDA LAKU', volSatuan: 'M3' },
-  slaghammer: { perincian: 'PENANDAAN SLAGHAMMER',    volSatuan: 'M3', workerName: 'PAIMAN' },
-  barcode:    { perincian: 'PASANG BARCODE',          volSatuan: 'BTG' },
-  kebersihan: { perincian: 'BERSIH - BERSIH KANTOR DAN HALAMAN TPK WONGSOREJO', volSatuan: 'BLN', workerName: 'PAIMAN' },
+  slaghammer: { perincian: 'PENANDAAN SLAGHAMMER',    volSatuan: 'M3', workerPosisi: 'SLAGHAMMER' },
+  barcode:    { perincian: 'PASANG BARCODE',          volSatuan: 'BTG', workerPosisi: 'BARCODE' },
+  kebersihan: { perincian: 'BERSIH - BERSIH KANTOR DAN HALAMAN TPK WONGSOREJO', volSatuan: 'BLN', workerPosisi: 'KEBERSIHAN' },
   listrik:    { perincian: 'LISTRIK TPK',             volSatuan: 'BLN' },
   tumpuk:     { perincian: 'Bea tumpuk kapling',      volSatuan: 'M3', mode: 'tumpuk' },
   tenaga:     { perincian: 'TENAGA BANTU',            volSatuan: 'BULAN', mode: 'tenaga' },
@@ -24,6 +24,10 @@ const ITEM_CONFIG = {
 // Extract nama desa dari alamat lengkap.
 // Mis. "DUSUN X, RT/RW 01/02, DESA BAJULMATI, KECAMATAN ..." → "BAJULMATI"
 // Fallback: alamat asli (untuk input yang sudah singkat seperti "Wongsorejo").
+function hasPos(worker, posValue) {
+  return (worker.posisi || '').split(',').map(s => s.trim()).includes(posValue)
+}
+
 function extractDesa(alamat) {
   if (!alamat) return ''
   const m = alamat.match(/DESA\s+([^,]+)/i)
@@ -104,7 +108,7 @@ function Lampiran31Doc({ periode }) {
     item = { fisik: 0, tarif: 0, nilai: tNilai + bNilai }
   } else if (itemKey === 'tenaga') {
     const tarif = data.tenagaBantu?.tarif_per_orang || 750000
-    const list = data.tenagaKerja.filter(t => t.posisi === 'TENAGA_BANTU')
+    const list = data.tenagaKerja.filter(t => hasPos(t, 'TENAGA_BANTU'))
     item = { fisik: list.length, tarif, nilai: list.length * tarif }
   } else {
     const r = data.rows.find(x => x._key === itemKey)
@@ -126,7 +130,7 @@ function Lampiran31Doc({ periode }) {
     <div className="text-[10px] leading-tight text-black" style={ARIAL}>
       {/* ── Header ─────────────────────────────────────── */}
       <div className="grid grid-cols-12 items-start mb-2">
-        <div className="col-span-9 text-center">
+        <div className="col-span-9 text-[12px] text-center">
           <p>( PERUSAHAAN UMUM KEHUTANAN NEGARA )</p>
           <p>PERUM PERHUTANI</p>
         </div>
@@ -174,12 +178,11 @@ function SingleWorkerBody({ data, item, grand, cfg, itemKey }) {
   // Pekerja: jika cfg.workerName di-set → cari by nama (case-insensitive),
   // selain itu pakai pekerja pertama posisi=TENAGA_KAPLING aktif.
   const worker = (() => {
-    if (cfg.workerName) {
-      const target = cfg.workerName.toUpperCase()
-      const found = data.tenagaKerja.find(t => (t.nama||'').toUpperCase() === target)
+    if (cfg.workerPosisi) {
+      const found = data.tenagaKerja.find(t => hasPos(t, cfg.workerPosisi))
       if (found) return found
     }
-    return data.tenagaKerja.find(t => t.posisi === 'TENAGA_KAPLING') || {}
+    return data.tenagaKerja.find(t => hasPos(t, 'TENAGA_KAPLING')) || {}
   })()
 
   const ROWS_MIN = 12
@@ -244,7 +247,7 @@ const SORTIMEN_ORDER = ['AI', 'AII', 'AIII']
 
 function TumpukBody({ data, grand }) {
   // ── Workers (TENAGA_KAPLING aktif) ──
-  const workers = data.tenagaKerja.filter(t => t.posisi === 'TENAGA_KAPLING')
+  const workers = data.tenagaKerja.filter(t => hasPos(t, 'TENAGA_KAPLING'))
   const N = workers.length
 
   // Bagi rata: per pekerja = floor(grand/N), pekerja terakhir = sisa
@@ -374,7 +377,7 @@ function TumpukBody({ data, grand }) {
 
 // ── TABLE: Tenaga Bantu (multi-worker)
 function TenagaBody({ data, item, grand }) {
-  const workers = data.tenagaKerja.filter(t => t.posisi === 'TENAGA_BANTU')
+  const workers = data.tenagaKerja.filter(t => hasPos(t, 'TENAGA_BANTU'))
   const tarif = item.tarif
 
   return (

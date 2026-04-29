@@ -5,18 +5,28 @@ import { Plus, Pencil, Trash2, X, CheckCircle2, AlertCircle } from 'lucide-react
 const POSISI_OPTIONS = [
   { value: 'TENAGA_BANTU', label: 'Tenaga Bantu' },
   { value: 'TENAGA_KAPLING', label: 'Tenaga Kapling' },
+  { value: 'KEBERSIHAN', label: 'Kebersihan' },
+  { value: 'SLAGHAMMER', label: 'Slaghammer' },
+  { value: 'BARCODE', label: 'Barcode' },
 ]
+
+// Posisi disimpan sebagai comma-separated string di DB, dipakai sebagai array di UI.
+function parsePosisi(v) {
+  return (v || '').split(',').map(s => s.trim()).filter(Boolean)
+}
 
 const emptyForm = {
   nama: '',
   nik: '',
   alamat: '',
-  posisi: 'TENAGA_BANTU',
+  posisi: [],
   aktif: true,
 }
 
 function posisiLabel(v) {
-  return POSISI_OPTIONS.find(x => x.value === v)?.label || v || '-'
+  return parsePosisi(v)
+    .map(p => POSISI_OPTIONS.find(x => x.value === p)?.label || p)
+    .join(', ') || '-'
 }
 
 export default function DatabaseTenaga() {
@@ -56,7 +66,7 @@ export default function DatabaseTenaga() {
       nama: row.nama || '',
       nik: row.nik || '',
       alamat: row.alamat || '',
-      posisi: row.posisi || 'TENAGA_BANTU',
+      posisi: parsePosisi(row.posisi),
       aktif: row.aktif ?? true,
     })
     setEditId(row.id)
@@ -72,13 +82,13 @@ export default function DatabaseTenaga() {
 
   async function handleSubmit() {
     if (!form.nama.trim()) return showToast('Nama wajib diisi', 'error')
-    if (!form.posisi) return showToast('Posisi wajib dipilih', 'error')
+    if (!form.posisi.length) return showToast('Posisi wajib dipilih minimal satu', 'error')
 
     const payload = {
       nama: toUpperTrim(form.nama),
       nik: toUpperTrim(normalizeNik(form.nik)),
       alamat: toUpperTrim(form.alamat),
-      posisi: form.posisi,
+      posisi: form.posisi.join(','),
       aktif: !!form.aktif,
     }
 
@@ -158,17 +168,26 @@ export default function DatabaseTenaga() {
                 placeholder="Contoh: Dusun Sumbermulyo, Wongsorejo, Banyuwangi"
               />
             </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">Posisi</label>
-              <select
-                value={form.posisi}
-                onChange={e => setForm(f => ({ ...f, posisi: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 bg-white"
-              >
+            <div className="sm:col-span-2">
+              <label className="text-xs font-medium text-gray-500 mb-2 block">Posisi <span className="text-gray-400">(boleh pilih lebih dari satu)</span></label>
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
                 {POSISI_OPTIONS.map(op => (
-                  <option key={op.value} value={op.value}>{op.label}</option>
+                  <label key={op.value} className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={form.posisi.includes(op.value)}
+                      onChange={e => setForm(f => ({
+                        ...f,
+                        posisi: e.target.checked
+                          ? [...f.posisi, op.value]
+                          : f.posisi.filter(p => p !== op.value),
+                      }))}
+                      className="accent-primary-600 w-4 h-4"
+                    />
+                    <span className="text-sm text-gray-700">{op.label}</span>
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2 mt-3">
@@ -208,9 +227,13 @@ export default function DatabaseTenaga() {
                   <td className="px-5 py-3.5 font-mono text-xs text-gray-500">{row.nik || '-'}</td>
                   <td className="px-5 py-3.5 text-gray-600">{row.alamat || '-'}</td>
                   <td className="px-5 py-3.5">
-                    <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                      {posisiLabel(row.posisi)}
-                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {parsePosisi(row.posisi).map(p => (
+                        <span key={p} className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                          {POSISI_OPTIONS.find(x => x.value === p)?.label || p}
+                        </span>
+                      ))}
+                    </div>
                   </td>
                   <td className="px-5 py-3.5">
                     <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${row.aktif ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>

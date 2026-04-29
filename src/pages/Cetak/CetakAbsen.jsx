@@ -24,34 +24,46 @@ function findPejabat(pejabatList) {
   }
 }
 
+function hasPos(worker, posValue) {
+  return (worker.posisi || '').split(',').map(s => s.trim()).includes(posValue)
+}
+
 function normalizeItemKey(itemKey) {
   if (['barcode_jati', 'barcode_mahoni', 'barcode_kedawung'].includes(itemKey)) return 'barcode'
   if (['tumpuk_jati', 'tumpuk_mahoni', 'tumpuk_kedawung', 'brongkol'].includes(itemKey)) return 'tumpuk'
   return itemKey
 }
 
+// Posisi khusus per item — fallback ke TENAGA_KAPLING jika belum ada pekerja dengan posisi tsb.
+const ITEM_POSISI = {
+  slaghammer: 'SLAGHAMMER',
+  kebersihan:  'KEBERSIHAN',
+  barcode:     'BARCODE',
+}
+
 function resolveWorkersForAbsen(allWorkers, itemKey) {
   const normalizedKey = normalizeItemKey(itemKey)
-  const kaplingWorkers = allWorkers.filter(w => w.posisi === 'TENAGA_KAPLING')
+  const kaplingWorkers = allWorkers.filter(w => hasPos(w, 'TENAGA_KAPLING'))
 
-  // Ikuti mapping Lampiran 3.1: slaghammer & kebersihan pakai pekerja khusus "PAIMAN".
-  if (normalizedKey === 'slaghammer' || normalizedKey === 'kebersihan') {
-    const target = 'PAIMAN'
-    const exact = allWorkers.find(w => (w.nama || '').toUpperCase() === target)
-    if (exact) return [exact]
-    const fallbackKapling = kaplingWorkers[0]
-    return fallbackKapling ? [fallbackKapling] : []
-  }
-
-  // Ikuti Lampiran 3.1 pasang barcode (SingleWorkerBody): gunakan 1 pekerja kapling.
-  if (normalizedKey === 'barcode') {
+  // Item dengan posisi khusus (slaghammer / kebersihan / barcode)
+  if (ITEM_POSISI[normalizedKey]) {
+    const specific = allWorkers.filter(w => hasPos(w, ITEM_POSISI[normalizedKey]))
+    if (specific.length) return specific
     return kaplingWorkers.length ? [kaplingWorkers[0]] : []
   }
 
-  const workerPosisi = !normalizedKey || normalizedKey === 'tenaga' ? 'TENAGA_BANTU' : 'TENAGA_KAPLING'
-  return workerPosisi === 'TENAGA_KAPLING'
-    ? kaplingWorkers
-    : allWorkers.filter(w => w.posisi === 'TENAGA_BANTU')
+  // Item satu pekerja kapling (penomoran / sabuk / tanda_laku / listrik)
+  if (['penomoran', 'sabuk', 'tanda_laku', 'listrik'].includes(normalizedKey)) {
+    return kaplingWorkers.length ? [kaplingWorkers[0]] : []
+  }
+
+  // Tumpuk → semua pekerja kapling
+  if (normalizedKey === 'tumpuk') return kaplingWorkers
+
+  // Tenaga bantu
+  if (normalizedKey === 'tenaga') return allWorkers.filter(w => hasPos(w, 'TENAGA_BANTU'))
+
+  return kaplingWorkers
 }
 
 export default function CetakAbsen() {
@@ -91,13 +103,13 @@ function AbsenDoc({ periode }) {
 
   return (
     <div className="text-[10px] leading-tight text-black" style={CALIBRI}>
-      <div className="text-center mb-2">
+      <div className="text-center text-[12px] font-semibold mb-2">
         <p>( PERUSAHAAN UMUM KEHUTANAN NEGARA )</p>
         <p className="font-semibold">PERUM PERHUTANI</p>
       </div>
 
       <div className="mb-1">
-        <p className="text-center font-bold">DAFTAR HADIR PEKERJA</p>
+        <p className="text-center text-[11px] font-bold">DAFTAR HADIR PEKERJA</p>
         <p>Bulan / Tahun : {monthName(month)} {year}</p>
       </div>
 
@@ -105,8 +117,8 @@ function AbsenDoc({ periode }) {
         <thead>
           <tr className="text-center">
             <th rowSpan={2} className="border border-black px-1 py-1 w-[3%]">NO.</th>
-            <th rowSpan={2} className="border border-black px-1 py-1 w-[15%]">NAMA</th>
-            <th rowSpan={2} className="border border-black px-1 py-1 w-[16%]">NIK</th>
+            <th rowSpan={2} className="border border-black px-1 py-1 w-[18%]">NAMA</th>
+            <th rowSpan={2} className="border border-black px-1 py-1 w-[10%]">NIK</th>
             <th colSpan={dayCols.length} className="border border-black px-1 py-1">Tanggal / Paraf Pekerja</th>
             <th rowSpan={2} className="border border-black px-1 py-1 w-[5%]">Hari Kerja</th>
           </tr>

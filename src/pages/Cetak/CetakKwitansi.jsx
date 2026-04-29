@@ -49,7 +49,7 @@ function KwitansiDoc({ periode }) {
         supabase.from('tabel_pemasangan_barcode').select('*').eq('periode_id', periode.id),
         supabase.from('tabel_tumpuk_brongkol').select('*').eq('periode_id', periode.id),
         supabase.from('tabel_tenaga_bantu').select('*').eq('periode_id', periode.id).maybeSingle(),
-        supabase.from('tabel_tenaga_kerja').select('*').eq('aktif', true).eq('posisi', 'TENAGA_BANTU').order('nama'),
+        supabase.from('tabel_tenaga_kerja').select('*').eq('aktif', true).order('nama'),
       ])
       const has = (p, n) => (p.jabatan||'').toLowerCase().includes(n)
       const find = (pred) => (pejabatRes.data||[]).find(pred) || {}
@@ -66,7 +66,7 @@ function KwitansiDoc({ periode }) {
         barcode: barcode.data||[],
         brongkol: brongkol.data||[],
         tenagaBantu: tenagaBantu.data || null,
-        tenagaKerja: tenagaKerja.data || [],
+        tenagaKerja: (tenagaKerja.data || []).filter(w => (w.posisi || '').split(',').map(s => s.trim()).includes('TENAGA_BANTU')),
       })
     })()
   }, [periode.id])

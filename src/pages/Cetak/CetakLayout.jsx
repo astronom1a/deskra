@@ -49,8 +49,8 @@ export default function CetakLayout({ title, landscape = false, children: render
       {/* Toolbar – hanya tampil di layar */}
       <div className="print:hidden bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/main-link')} className="text-gray-500 hover:text-gray-700 flex items-center gap-1 text-sm">
-            <ArrowLeft size={15}/> Kembali ke Main Link
+          <button onClick={() => window.close()} className="text-gray-500 hover:text-gray-700 flex items-center gap-1 text-sm">
+            <ArrowLeft size={15}/> Tutup Tab
           </button>
           <span className="text-gray-300">|</span>
           <p className="text-sm font-semibold text-gray-700">{title}</p>
@@ -62,12 +62,11 @@ export default function CetakLayout({ title, landscape = false, children: render
         ><Printer size={14}/> Cetak</button>
       </div>
 
-      {landscape && (
-        <style>{`@media print { @page { size: A4 landscape; margin: 10mm; } }`}</style>
-      )}
+      {/* Continuous paper 9.5"×11" = 240mm×280mm (portrait) / 280mm×240mm (landscape) */}
+      <style>{`@media print { @page { size: ${landscape ? '280mm 240mm' : '240mm 280mm'}; margin: 0; } .print-area { padding: 10mm !important; } }`}</style>
 
       {/* Konten cetak */}
-      <div className={`print-area mx-auto bg-white shadow-sm my-6 p-10 print:shadow-none print:my-0 print:p-0 ${landscape ? 'max-w-[297mm]' : 'max-w-[210mm]'}`}>
+      <div className={`print-area mx-auto bg-white shadow-sm my-6 p-10 print:shadow-none print:my-0 ${landscape ? 'max-w-[280mm]' : 'max-w-[240mm]'}`}>
         {loading ? (
           <CetakPageSkeleton landscape={landscape} />
         ) : !periode ? (

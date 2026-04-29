@@ -100,7 +100,8 @@ function BiayaTPKDoc({ periode }) {
   // Reusable: pasangan baris Kwit + Pmby untuk item sederhana
   const SimpleItem = ({ row, label, hidePmby = false }) => {
     const nilai = Math.round((row.fisik || 0) * (row.tarif || 0))
-    const txt = nilai ? formatAngka(nilai) : '-'
+    if (!nilai) return null
+    const txt = formatAngka(nilai)
     return (
       <Frag>
         <tr>
@@ -266,33 +267,40 @@ function BiayaTPKDoc({ periode }) {
           <SimpleItem row={r.tanda_laku} label="TANDA LAKU" />
           <SimpleItem row={r.slaghammer} label="SLAGHAMMER" />
 
-          <TumpukBlock title="TUMPUK KAPLING JATI"
-            no={r.jati.no} sortimens={sortimenJati}
-            totalVol={totalJatiVol} totalNilai={totalJati}/>
-          <TumpukBlock title="TUMPUK KAPLING RIMBA"
-            no={'-'} sortimens={sortimenRimba}
-            totalVol={totalRimbaVol} totalNilai={totalRimba}/>
+          {totalJati > 0 && (
+            <TumpukBlock title="TUMPUK KAPLING JATI"
+              no={r.jati.no} sortimens={sortimenJati}
+              totalVol={totalJatiVol} totalNilai={totalJati}/>
+          )}
+          {totalRimba > 0 && (
+            <TumpukBlock title="TUMPUK KAPLING RIMBA"
+              no={'-'} sortimens={sortimenRimba}
+              totalVol={totalRimbaVol} totalNilai={totalRimba}/>
+          )}
 
-          {/* Brongkol */}
-          <tr>
-            <td className="border border-black px-1 text-center">Kwit</td>
-            <td className="border border-black px-1 text-center">-</td>
-            <td className="border border-black px-2 font-semibold" colSpan={7}>BY TUMPUK BRONGKOL/KA</td>
-          </tr>
-          <tr>
-            <td className="border border-black px-1 text-center">Pmby</td>
-            <td className="border border-black"></td>
-            <td className="border border-black px-2">
-              <span className="inline-block w-20 text-right pr-2">{formatAngkaFisik(brongkolFisik)} SM</span>
-              <span className="inline-block w-16 text-right">{formatAngka(brongkolTarif)}</span>
-            </td>
-            <td className="border border-black px-1 text-center">51.69.44</td>
-            <td className="border border-black px-1 text-right">{brongkolNilai ? formatAngka(brongkolNilai) : '-'}</td>
-            <td className="border border-black"></td>
-            <td className="border border-black px-1 text-right">{brongkolNilai ? formatAngka(brongkolNilai) : '-'}</td>
-            <td className="border border-black"></td>
-            <td className="border border-black px-1 text-right">{brongkolNilai ? formatAngka(brongkolNilai) : '-'}</td>
-          </tr>
+          {brongkolNilai > 0 && (
+            <Frag>
+              <tr>
+                <td className="border border-black px-1 text-center">Kwit</td>
+                <td className="border border-black px-1 text-center">-</td>
+                <td className="border border-black px-2 font-semibold" colSpan={7}>BY TUMPUK BRONGKOL/KA</td>
+              </tr>
+              <tr>
+                <td className="border border-black px-1 text-center">Pmby</td>
+                <td className="border border-black"></td>
+                <td className="border border-black px-2">
+                  <span className="inline-block w-20 text-right pr-2">{formatAngkaFisik(brongkolFisik)} SM</span>
+                  <span className="inline-block w-16 text-right">{formatAngka(brongkolTarif)}</span>
+                </td>
+                <td className="border border-black px-1 text-center">51.69.44</td>
+                <td className="border border-black px-1 text-right">{formatAngka(brongkolNilai)}</td>
+                <td className="border border-black"></td>
+                <td className="border border-black px-1 text-right">{formatAngka(brongkolNilai)}</td>
+                <td className="border border-black"></td>
+                <td className="border border-black px-1 text-right">{formatAngka(brongkolNilai)}</td>
+              </tr>
+            </Frag>
+          )}
 
           <SimpleItem row={barcodeGabung} label="PEMASANGAN BARCODE" />
           <SimpleItem row={r.tenaga}     label={r.tenaga.uraian || 'TENAGA BANTU'} hidePmby />

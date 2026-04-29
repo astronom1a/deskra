@@ -13,7 +13,25 @@
       "Bash(reg add *)",
       "PowerShell($p='HKCU:\\\\Software\\\\Microsoft\\\\Office\\\\16.0\\\\Excel\\\\Security'; if\\(!\\(Test-Path $p\\)\\){New-Item -Path $p -Force | Out-Null}; $orig = \\(Get-ItemProperty -Path $p -Name AccessVBOM -ErrorAction SilentlyContinue\\).AccessVBOM; Set-ItemProperty -Path $p -Name AccessVBOM -Value 1 -Type DWord; \"original=$orig; now=$\\(\\(Get-ItemProperty -Path $p -Name AccessVBOM\\).AccessVBOM\\)\")",
       "Bash(python3)",
-      "Bash(node migrate.js)"
+      "Bash(node migrate.js)",
+      "Bash(claude mcp *)",
+      "PowerShell(claude mcp add --scope project --transport http supabase \"https://mcp.supabase.com/mcp?project_ref=illdzeigtuuleddocxgc\")",
+      "mcp__c38127be-9853-48f3-bd8f-c4d8ea4eaefe__list_projects",
+      "mcp__c38127be-9853-48f3-bd8f-c4d8ea4eaefe__execute_sql",
+      "mcp__c38127be-9853-48f3-bd8f-c4d8ea4eaefe__apply_migration",
+      "Read(//c/Users/User/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/2136a150-ff84-4b27-81ce-a56c91453502/33e46a55-2cc1-47e1-b1ea-973ce26667bf/skills/xlsx/**)",
+      "Bash(python -)",
+      "mcp__c38127be-9853-48f3-bd8f-c4d8ea4eaefe__list_tables",
+      "Bash(npm install *)",
+      "Bash(node -e \"const p = require\\('D:/New/CODING/deskra/node_modules/pdfjs-dist/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(npx vite *)",
+      "Bash(git remote *)",
+      "Bash(git config *)",
+      "Bash(gh repo *)",
+      "Bash(git fetch *)",
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

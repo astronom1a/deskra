@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { computeTotalUK } from '../lib/rekapPekerjaan'
-import { Link2, Users, Layers, Package, Clock, TrendingUp, AlertCircle } from 'lucide-react'
+import { Link2, Users, Layers, Package, Clock, TrendingUp, AlertCircle, Eye, EyeOff } from 'lucide-react'
 
 const shortcuts = [
   {
@@ -44,11 +44,35 @@ function formatRupiah(value) {
   }).format(Math.round(value || 0))
 }
 
+function useDateTime() {
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  return now
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
+  const now = useDateTime()
   const [periodes, setPeriodes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [hideAmount, setHideAmount] = useState(() => {
+    try { return localStorage.getItem('deskra_dashboard_hide_amount') === '1' }
+    catch { return false }
+  })
+
+  function toggleHideAmount() {
+    setHideAmount(prev => {
+      const next = !prev
+      try { localStorage.setItem('deskra_dashboard_hide_amount', next ? '1' : '0') } catch {}
+      return next
+    })
+  }
+
+  const maskRupiah = v => hideAmount ? 'Rp ••••••••' : formatRupiah(v)
 
   useEffect(() => {
     async function fetchPeriodes() {
@@ -79,11 +103,27 @@ export default function Dashboard() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Selamat datang di Deskra — sistem administrasi uang kerja TPK Wongsorejo
-        </p>
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Selamat datang di Deskra — Sistem Administrasi Kantor TPK Wongsorejo
+          </p>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl px-5 py-3.5 text-right shrink-0">
+          <p className="text-2xl font-bold text-gray-800 tabular-nums">
+            {(() => {
+              const h = now.getHours() % 12 || 12
+              const m = String(now.getMinutes()).padStart(2, '0')
+              const s = String(now.getSeconds()).padStart(2, '0')
+              const ampm = now.getHours() >= 12 ? 'PM' : 'AM'
+              return `${h}:${m}:${s} ${ampm}`
+            })()}
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        </div>
       </div>
 
       {/* Shortcuts */}
@@ -113,13 +153,22 @@ export default function Dashboard() {
       {/* Recent Periodes */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-            Riwayat Total Uang Kerja
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+              Riwayat Total Uang Kerja
+            </h2>
+            <button
+              onClick={toggleHideAmount}
+              title={hideAmount ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
+              className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              {hideAmount ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
+          </div>
           {periodes.length > 0 && (
             <span className="text-xs text-gray-400 flex items-center gap-1">
               <TrendingUp size={12} />
-              Total kumulatif: {formatRupiah(totalAll)}
+              Total kumulatif: {maskRupiah(totalAll)}
             </span>
           )}
         </div>
@@ -162,7 +211,7 @@ export default function Dashboard() {
                         : '—'}
                     </td>
                     <td className="px-5 py-3.5 text-right font-semibold text-primary-700">
-                      {formatRupiah(p.total_uk)}
+                      {maskRupiah(p.total_uk)}
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${

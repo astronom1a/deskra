@@ -1,7 +1,7 @@
 {
   "name": "deskra",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,11 +13,13 @@
     "@supabase/supabase-js": "^2.39.0",
     "dotenv": "^16.4.0",
     "lucide-react": "^0.303.0",
+    "pdfjs-dist": "^5.7.284",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.0",
     "react-to-print": "^2.15.1",
-    "supabase": "^2.87.1"
+    "supabase": "^2.87.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",

@@ -201,13 +201,12 @@ export default function DetailPekerjaan() {
   }
 
   async function fetchJumlahTenagaBantuAktif() {
-    const { count, error } = await supabase
+    const { data, error } = await supabase
       .from('tabel_tenaga_kerja')
-      .select('id', { count: 'exact', head: true })
+      .select('id,posisi')
       .eq('aktif', true)
-      .eq('posisi', 'TENAGA_BANTU')
     if (error) return null
-    return Number.isFinite(count) ? count : 0
+    return (data || []).filter(w => (w.posisi || '').split(',').map(s => s.trim()).includes('TENAGA_BANTU')).length
   }
 
   function normalizeBarcodeJenis(jenis) {

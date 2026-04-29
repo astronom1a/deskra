@@ -1,9 +1,11 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Link2, Users, Users2, Layers, Package,
-  ChevronDown, ChevronRight, TreePine, ClipboardList, Wallet
+  ChevronDown, ChevronRight, TreePine, ClipboardList, Wallet, ScrollText
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
+import { version as appVersion } from '../../package.json'
 
 const navItems = [
   {
@@ -15,6 +17,11 @@ const navItems = [
     label: 'Register Kapling',
     path: '/register-kapling',
     icon: ClipboardList,
+  },
+  {
+    label: 'DKHP SKSHHK',
+    path: '/dkhp-skshhk',
+    icon: ScrollText,
   },
   {
     label: 'Uang Kerja',
@@ -83,6 +90,19 @@ function SidebarItem({ item }) {
 }
 
 export default function Layout() {
+  const [realtimeStatus, setRealtimeStatus] = useState('connecting')
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('sidebar_rt')
+      .subscribe(status => {
+        if (status === 'SUBSCRIBED') setRealtimeStatus('connected')
+        else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') setRealtimeStatus('disconnected')
+        else setRealtimeStatus('connecting')
+      })
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
@@ -93,7 +113,23 @@ export default function Layout() {
             <TreePine size={20} className="text-white" />
           </div>
           <div>
-            <p className="text-white font-bold text-base leading-tight">Deskra</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-white font-bold text-base leading-tight">Deskra</p>
+              <span className="px-1.5 py-0.5 rounded-md bg-white/10 text-primary-100 text-[9px] font-mono leading-none">
+                v{appVersion}
+              </span>
+              <span
+                title={
+                  realtimeStatus === 'connected' ? 'Live' :
+                  realtimeStatus === 'disconnected' ? 'Offline' : 'Connecting'
+                }
+                className={`w-1.5 h-1.5 rounded-full ${
+                  realtimeStatus === 'connected'    ? 'bg-green-400 animate-pulse' :
+                  realtimeStatus === 'disconnected' ? 'bg-red-400' :
+                                                      'bg-yellow-400 animate-pulse'
+                }`}
+              />
+            </div>
             <p className="text-primary-300 text-xs">TPK Wongsorejo</p>
           </div>
         </div>
