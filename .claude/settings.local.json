@@ -31,7 +31,13 @@
       "Bash(git fetch *)",
       "Bash(git add *)",
       "Bash(git rm *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(git push *)",
+      "Bash(git checkout *)",
+      "Bash(git worktree *)",
+      "Bash(git branch *)"
     ]
   }
 }
