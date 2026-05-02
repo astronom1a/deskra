@@ -125,8 +125,8 @@ export default function DatabaseTenaga() {
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Database Tenaga Kerja</h1>
-          <p className="text-gray-500 text-sm mt-1">Kelola data tenaga bantu dan tenaga kapling</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Database Tenaga Kerja</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Kelola data tenaga bantu dan tenaga kapling</p>
         </div>
         <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors">
           <Plus size={15} /> Tambah Tenaga
@@ -134,42 +134,42 @@ export default function DatabaseTenaga() {
       </div>
 
       {showForm && (
-        <div className="bg-white border border-primary-200 rounded-xl p-5 mb-5 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-primary-200 rounded-xl p-5 mb-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <p className="font-semibold text-gray-700">{editId ? 'Edit Tenaga Kerja' : 'Tambah Tenaga Kerja Baru'}</p>
-            <button onClick={() => setShowForm(false)}><X size={16} className="text-gray-400 hover:text-gray-600" /></button>
+            <p className="font-semibold text-gray-700 dark:text-gray-200">{editId ? 'Edit Tenaga Kerja' : 'Tambah Tenaga Kerja Baru'}</p>
+            <button onClick={() => setShowForm(false)}><X size={16} className="text-gray-400 dark:text-gray-500 hover:text-gray-600" /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">Nama</label>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Nama</label>
               <input
                 value={form.nama}
                 onChange={e => setForm(f => ({ ...f, nama: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
                 placeholder="Contoh: MISNOTO"
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">NIK / Nomor Induk Kependudukan</label>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">NIK / Nomor Induk Kependudukan</label>
               <input
                 value={form.nik}
                 onChange={e => setForm(f => ({ ...f, nik: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
                 placeholder="Contoh: 3510180508720007"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-gray-500 mb-1 block">Alamat</label>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Alamat</label>
               <textarea
                 value={form.alamat}
                 onChange={e => setForm(f => ({ ...f, alamat: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
                 rows={2}
                 placeholder="Contoh: Dusun Sumbermulyo, Wongsorejo, Banyuwangi"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-gray-500 mb-2 block">Posisi <span className="text-gray-400">(boleh pilih lebih dari satu)</span></label>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 block">Posisi <span className="text-gray-400 dark:text-gray-500">(boleh pilih lebih dari satu)</span></label>
               <div className="flex flex-wrap gap-x-5 gap-y-2">
                 {POSISI_OPTIONS.map(op => (
                   <label key={op.value} className="flex items-center gap-2 cursor-pointer select-none">
@@ -184,7 +184,7 @@ export default function DatabaseTenaga() {
                       }))}
                       className="accent-primary-600 w-4 h-4"
                     />
-                    <span className="text-sm text-gray-700">{op.label}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-200">{op.label}</span>
                   </label>
                 ))}
               </div>
@@ -194,38 +194,38 @@ export default function DatabaseTenaga() {
             <input type="checkbox" id="aktif-tenaga" checked={form.aktif}
               onChange={e => setForm(f => ({ ...f, aktif: e.target.checked }))}
               className="accent-primary-600" />
-            <label htmlFor="aktif-tenaga" className="text-sm text-gray-600">Aktif</label>
+            <label htmlFor="aktif-tenaga" className="text-sm text-gray-600 dark:text-gray-300">Aktif</label>
           </div>
           <div className="flex gap-2 mt-4">
             <button onClick={handleSubmit} className="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700">
               {editId ? 'Perbarui' : 'Simpan'}
             </button>
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-100 text-gray-600 text-sm rounded-lg hover:bg-gray-200">Batal</button>
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Batal</button>
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-400 text-sm">Memuat...</div>
+          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Memuat...</div>
         ) : data.length === 0 ? (
-          <div className="p-8 text-center text-gray-400 text-sm">Belum ada data tenaga kerja.</div>
+          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Belum ada data tenaga kerja.</div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
               <tr>
                 {['No', 'Nama', 'NIK', 'Alamat', 'Posisi', 'Status', ''].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500">{h}</th>
+                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {data.map((row, i) => (
-                <tr key={row.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-3.5 text-gray-400 text-xs">{i + 1}</td>
-                  <td className="px-5 py-3.5 font-medium text-gray-800">{row.nama}</td>
-                  <td className="px-5 py-3.5 font-mono text-xs text-gray-500">{row.nik || '-'}</td>
-                  <td className="px-5 py-3.5 text-gray-600">{row.alamat || '-'}</td>
+                <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <td className="px-5 py-3.5 text-gray-400 dark:text-gray-500 text-xs">{i + 1}</td>
+                  <td className="px-5 py-3.5 font-medium text-gray-800 dark:text-gray-100">{row.nama}</td>
+                  <td className="px-5 py-3.5 font-mono text-xs text-gray-500 dark:text-gray-400">{row.nik || '-'}</td>
+                  <td className="px-5 py-3.5 text-gray-600 dark:text-gray-300">{row.alamat || '-'}</td>
                   <td className="px-5 py-3.5">
                     <div className="flex flex-wrap gap-1">
                       {parsePosisi(row.posisi).map(p => (
@@ -236,14 +236,14 @@ export default function DatabaseTenaga() {
                     </div>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${row.aktif ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${row.aktif ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
                       {row.aktif ? 'Aktif' : 'Nonaktif'}
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2 justify-end">
-                      <button onClick={() => openEdit(row)} className="text-gray-400 hover:text-primary-600 transition-colors"><Pencil size={14} /></button>
-                      <button onClick={() => handleDelete(row.id)} className="text-gray-400 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                      <button onClick={() => openEdit(row)} className="text-gray-400 dark:text-gray-500 hover:text-primary-600 transition-colors"><Pencil size={14} /></button>
+                      <button onClick={() => handleDelete(row.id)} className="text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
                     </div>
                   </td>
                 </tr>

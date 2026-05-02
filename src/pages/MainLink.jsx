@@ -360,14 +360,14 @@ export default function MainLink() {
       {/* Confirm delete modal */}
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
                 <Trash2 size={18} className="text-red-600"/>
               </div>
               <div>
-                <p className="font-semibold text-gray-800 text-sm">Hapus Periode?</p>
-                <p className="text-gray-500 text-xs mt-0.5">Semua data terkait periode ini akan terhapus permanen.</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Hapus Periode?</p>
+                <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">Semua data terkait periode ini akan terhapus permanen.</p>
               </div>
             </div>
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 mb-5 text-center">
@@ -376,7 +376,7 @@ export default function MainLink() {
             </div>
             <div className="flex gap-2">
               <button onClick={()=>setConfirmDel(null)}
-                className="flex-1 px-4 py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200">Batal</button>
+                className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Batal</button>
               <button onClick={handleDeletePeriode}
                 className="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">Ya, Hapus</button>
             </div>
@@ -386,13 +386,13 @@ export default function MainLink() {
 
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Main Link</h1>
-        <p className="text-gray-500 text-sm mt-1">Rekap uang kerja per periode — otomatis dari Tumpuk Kapling & Detail Pekerjaan</p>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Main Link</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Rekap uang kerja per periode — otomatis dari Tumpuk Kapling & Detail Pekerjaan</p>
       </div>
 
       {/* Periode selector */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-5 flex flex-wrap items-center gap-3">
-        <span className="text-sm font-medium text-gray-600 shrink-0">Periode:</span>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-5 flex flex-wrap items-center gap-3">
+        <span className="text-sm font-medium text-gray-600 dark:text-gray-300 shrink-0">Periode:</span>
         <div className="flex flex-wrap gap-2 flex-1">
           {periodes.map(p => (
             <div key={p.id} className="relative group flex items-center">
@@ -401,7 +401,7 @@ export default function MainLink() {
                 className={`pl-3 pr-7 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   selectedPeriode?.id===p.id
                     ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >{p.periode}</button>
               <button
@@ -411,17 +411,17 @@ export default function MainLink() {
                   opacity-0 group-hover:opacity-100 transition-opacity
                   ${selectedPeriode?.id===p.id
                     ?'text-white/70 hover:text-white hover:bg-white/20'
-                    :'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
+                    :'text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50'}`}
               ><X size={11}/></button>
             </div>
           ))}
           <button
             onClick={()=>setShowForm(true)}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-600 transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-dashed border-gray-300 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:border-primary-400 hover:text-primary-600 transition-colors flex items-center gap-1"
           ><Plus size={14}/> Periode Baru</button>
         </div>
         {selectedPeriode && (
-          <p className="text-xs text-gray-400 flex items-center gap-1">
+          <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
             <CalendarDays size={12}/>
             {formatTanggal(selectedPeriode.tgl_awal)} – {formatTanggal(selectedPeriode.tgl_akhir)}
           </p>
@@ -438,7 +438,7 @@ export default function MainLink() {
               <select
                 value={newPeriode.periodeOption.label}
                 onChange={e=>{const f=PERIODE_OPTIONS.find(o=>o.label===e.target.value);setNewPeriode(p=>({...p,periodeOption:f}))}}
-                className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800"
               >
                 {PERIODE_OPTIONS.map(o=>(
                   <option key={o.label} value={o.label}>{o.label} — {BULAN[o.bulan-1]}</option>
@@ -449,7 +449,7 @@ export default function MainLink() {
               <label className="text-xs font-medium text-blue-600 mb-1 block">Tahun</label>
               <input type="number" value={newPeriode.tahun}
                 onChange={e=>setNewPeriode(p=>({...p,tahun:e.target.value}))}
-                className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800"
                 min={2000} max={2100}/>
             </div>
           </div>
@@ -459,7 +459,7 @@ export default function MainLink() {
           </div>
           <div className="flex gap-2 mt-4">
             <button onClick={handleCreatePeriode} className="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700">Buat Periode</button>
-            <button onClick={()=>setShowForm(false)} className="px-4 py-2 bg-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-300">Batal</button>
+            <button onClick={()=>setShowForm(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-300">Batal</button>
           </div>
         </div>
       )}
@@ -467,20 +467,20 @@ export default function MainLink() {
       {/* Tabel */}
       {selectedPeriode && (
         <>
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-4">
             {/* Table header */}
-            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
+            <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-wrap gap-2">
               <div>
-                <p className="font-semibold text-gray-700 text-sm">
+                <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
                   Daftar Pekerjaan — <span className="text-primary-600">{selectedPeriode.periode}</span>
                 </p>
-                <p className="text-[11px] text-gray-400 mt-0.5">Data otomatis dari Tumpuk Kapling & Detail Pekerjaan</p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">Data otomatis dari Tumpuk Kapling & Detail Pekerjaan</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={()=>loadRows(selectedPeriode)}
                   disabled={loading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
                 >
                   <RefreshCw size={12} className={loading?'animate-spin':''}/> Refresh
                 </button>
@@ -514,7 +514,7 @@ export default function MainLink() {
                 >
                   <FileSpreadsheet size={13}/> Permintaan UK
                 </button>
-                <p className="text-xs text-gray-400 flex items-center gap-1">
+                <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
                   <CalendarDays size={12}/>
                   {formatTanggal(selectedPeriode.tgl_awal)} – {formatTanggal(selectedPeriode.tgl_akhir)}
                 </p>
@@ -523,20 +523,20 @@ export default function MainLink() {
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-100">
+                <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                   <tr>
                     {['No','Kode Rek','Uraian','Sat','Fisik','Tarif','Nilai','Cetak'].map(h=>(
-                      <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">{h}</th>
+                      <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {loading ? (
-                    <tr><td colSpan={8} className="px-5 py-8 text-center text-gray-400 text-sm">
+                    <tr><td colSpan={8} className="px-5 py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
                       <RefreshCw size={16} className="animate-spin inline mr-2"/>Menghitung data...
                     </td></tr>
                   ) : rows.length === 0 ? (
-                    <tr><td colSpan={8} className="px-5 py-8 text-center text-gray-400 text-sm italic">
+                    <tr><td colSpan={8} className="px-5 py-8 text-center text-gray-400 dark:text-gray-500 text-sm italic">
                       Belum ada data. Isi data di Tumpuk Kapling & Detail Pekerjaan.
                     </td></tr>
                   ) : displayRows.map(r => {
@@ -550,20 +550,20 @@ export default function MainLink() {
                           isEmpty ? 'opacity-35' : 'hover:bg-gray-50/50'
                         } ${isSubrow ? 'bg-gray-50/30' : ''}`}>
                         <td className={`px-3 py-2 text-xs w-10 font-medium ${
-                          typeof r.no==='number' ? 'text-primary-600' : 'text-gray-300'
+                          typeof r.no==='number' ? 'text-primary-600' : 'text-gray-300 dark:text-gray-600'
                         }`}>{r.no}</td>
-                        <td className="px-3 py-2 text-xs text-gray-400 w-24">{r.kode_rek}</td>
-                        <td className={`px-3 py-2 ${isSubrow ? 'pl-6 text-gray-500 italic text-xs' : 'font-medium text-gray-700'}`}>
+                        <td className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500 w-24">{r.kode_rek}</td>
+                        <td className={`px-3 py-2 ${isSubrow ? 'pl-6 text-gray-500 dark:text-gray-400 italic text-xs' : 'font-medium text-gray-700 dark:text-gray-200'}`}>
                           {r.uraian}
                         </td>
-                        <td className="px-3 py-2 text-xs text-gray-500 w-16">{r.satuan}</td>
-                        <td className="px-3 py-2 text-right text-sm text-gray-600 w-28">
-                          {r.fisik > 0 ? formatNum(r.fisik) : <span className={isPointrow ? 'text-gray-500' : 'text-gray-300'}>—</span>}
+                        <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 w-16">{r.satuan}</td>
+                        <td className="px-3 py-2 text-right text-sm text-gray-600 dark:text-gray-300 w-28">
+                          {r.fisik > 0 ? formatNum(r.fisik) : <span className={isPointrow ? 'text-gray-500 dark:text-gray-400' : 'text-gray-300 dark:text-gray-600'}>—</span>}
                         </td>
-                        <td className="px-3 py-2 text-right text-sm text-gray-600 w-32">
-                          {r.tarif > 0 ? formatRupiah(r.tarif) : <span className={isPointrow ? 'text-gray-500' : 'text-gray-300'}>—</span>}
+                        <td className="px-3 py-2 text-right text-sm text-gray-600 dark:text-gray-300 w-32">
+                          {r.tarif > 0 ? formatRupiah(r.tarif) : <span className={isPointrow ? 'text-gray-500 dark:text-gray-400' : 'text-gray-300 dark:text-gray-600'}>—</span>}
                         </td>
-                        <td className={`px-3 py-2 text-right font-medium w-36 ${nilai>0?'text-gray-800':(isPointrow?'text-gray-500':'text-gray-300')}`}>
+                        <td className={`px-3 py-2 text-right font-medium w-36 ${nilai>0?'text-gray-800 dark:text-gray-100':(isPointrow?'text-gray-500 dark:text-gray-400':'text-gray-300 dark:text-gray-600')}`}>
                           {nilai>0 ? formatRupiah(nilai) : '—'}
                         </td>
                         <td className="px-2 py-2 w-24 text-center">
@@ -572,7 +572,7 @@ export default function MainLink() {
                               <button
                                 onClick={()=>openKwitansi(r._printKey)}
                                 title="Cetak kwitansi item ini"
-                                className="text-gray-300 hover:text-primary-600 transition-colors"
+                                className="text-gray-300 dark:text-gray-600 hover:text-primary-600 transition-colors"
                               >
                                 <Printer size={14}/>
                               </button>
@@ -581,7 +581,7 @@ export default function MainLink() {
                               <button
                                 onClick={()=>openLampiran31(r._printKey)}
                                 title="Cetak Lampiran 3.1 item ini"
-                                className="text-gray-300 hover:text-indigo-600 transition-colors"
+                                className="text-gray-300 dark:text-gray-600 hover:text-indigo-600 transition-colors"
                               >
                                 <FileText size={14}/>
                               </button>
@@ -590,7 +590,7 @@ export default function MainLink() {
                               <button
                                 onClick={()=>openAbsen(r._printKey)}
                                 title="Cetak Absen item ini"
-                                className="text-gray-300 hover:text-emerald-600 transition-colors"
+                                className="text-gray-300 dark:text-gray-600 hover:text-emerald-600 transition-colors"
                               >
                                 <ClipboardCheck size={14}/>
                               </button>
@@ -601,9 +601,9 @@ export default function MainLink() {
                     )
                   })}
                 </tbody>
-                <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+                <tfoot className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-200 dark:border-gray-700">
                   <tr>
-                    <td colSpan={6} className="px-5 py-3 text-sm font-semibold text-gray-600 text-right">
+                    <td colSpan={6} className="px-5 py-3 text-sm font-semibold text-gray-600 dark:text-gray-300 text-right">
                       Total Uang Kerja
                     </td>
                     <td className="px-3 py-3 text-right font-bold text-primary-700 text-base">
@@ -628,44 +628,44 @@ export default function MainLink() {
           </div>
 
           {/* ── Tarif Periode ── */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <button
               onClick={() => setShowTarif(v => !v)}
-              className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <Settings2 size={15} className="text-gray-400"/>
-                <p className="font-semibold text-gray-700 text-sm">Tarif Periode</p>
-                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                <Settings2 size={15} className="text-gray-400 dark:text-gray-500"/>
+                <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">Tarif Periode</p>
+                <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
                   {selectedPeriode.periode}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-400 dark:text-gray-500">
                   {showTarif ? 'Sembunyikan' : 'Tampilkan & Edit'}
                 </span>
-                {showTarif ? <ChevronUp size={14} className="text-gray-400"/> : <ChevronDown size={14} className="text-gray-400"/>}
+                {showTarif ? <ChevronUp size={14} className="text-gray-400 dark:text-gray-500"/> : <ChevronDown size={14} className="text-gray-400 dark:text-gray-500"/>}
               </div>
             </button>
 
             {showTarif && (
               <>
-                <div className="border-t border-gray-100 overflow-x-auto">
+                <div className="border-t border-gray-100 dark:border-gray-800 overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500">Kode Rek</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500">Uraian</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 w-16">Sat</th>
-                        <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 w-40">Tarif (Rp)</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Kode Rek</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Uraian</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-16">Sat</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-40">Tarif (Rp)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {tarifRows.map((r, i) => (
                         <tr key={r.kode} className="hover:bg-gray-50/50">
-                          <td className="px-4 py-2 text-xs text-gray-400">{r.kode_rek}</td>
-                          <td className="px-4 py-2 text-gray-700 font-medium">{r.uraian}</td>
-                          <td className="px-4 py-2 text-xs text-gray-500">{r.satuan}</td>
+                          <td className="px-4 py-2 text-xs text-gray-400 dark:text-gray-500">{r.kode_rek}</td>
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-200 font-medium">{r.uraian}</td>
+                          <td className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400">{r.satuan}</td>
                           <td className="px-4 py-1.5">
                             <input
                               type="number"
@@ -673,7 +673,7 @@ export default function MainLink() {
                               onChange={e => setTarifRows(prev => prev.map((t,j) =>
                                 j === i ? { ...t, tarif: e.target.value } : t
                               ))}
-                              className="w-full border border-gray-200 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400"
+                              className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400"
                             />
                           </td>
                         </tr>
@@ -681,8 +681,8 @@ export default function MainLink() {
                     </tbody>
                   </table>
                 </div>
-                <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-                  <p className="text-xs text-gray-400">
+                <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
                     Perubahan tarif akan langsung tercermin di tabel di atas setelah disimpan.
                   </p>
                   <button

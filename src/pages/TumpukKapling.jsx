@@ -179,17 +179,17 @@ export default function TumpukKapling() {
       )}
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <Layers size={22} className="text-primary-600" /> Tumpuk Kapling
         </h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
           Input volume per jenis & sortimen. Penomoran, Sabuk, dan Slaghammer otomatis terhitung.
         </p>
       </div>
 
       {/* Periode selector */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-5 flex flex-wrap items-center gap-3">
-        <span className="text-sm font-medium text-gray-600 shrink-0">Periode:</span>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-5 flex flex-wrap items-center gap-3">
+        <span className="text-sm font-medium text-gray-600 dark:text-gray-300 shrink-0">Periode:</span>
         <div className="flex flex-wrap gap-2 flex-1">
           {periodes.map(p => (
             <button
@@ -198,18 +198,18 @@ export default function TumpukKapling() {
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 selectedPeriode?.id === p.id
                   ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               {p.periode}
             </button>
           ))}
           {periodes.length === 0 && (
-            <span className="text-xs text-gray-400 italic">Belum ada periode. Buat di Main Link.</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500 italic">Belum ada periode. Buat di Main Link.</span>
           )}
         </div>
         {selectedPeriode && (
-          <p className="text-xs text-gray-400 flex items-center gap-1">
+          <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
             <CalendarDays size={12} />
             {formatTanggal(selectedPeriode.tgl_awal)} – {formatTanggal(selectedPeriode.tgl_akhir)}
           </p>
@@ -237,21 +237,21 @@ export default function TumpukKapling() {
           {/* Grid input per jenis */}
           <div className="space-y-4 mb-5">
             {JENIS_LIST.map(j => (
-              <div key={j.key} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                  <p className="font-semibold text-gray-700 text-sm">{j.label}</p>
-                  <div className="text-xs text-gray-500 flex gap-4">
-                    <span>Total: <strong className="text-gray-700">{formatNum(totalPerJenis(j.key))} M³</strong></span>
+              <div key={j.key} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-900">
+                  <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">{j.label}</p>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 flex gap-4">
+                    <span>Total: <strong className="text-gray-700 dark:text-gray-200">{formatNum(totalPerJenis(j.key))} M³</strong></span>
                     <span className="text-primary-600 font-medium">{formatRupiah(nilaiPerJenis(j.key))}</span>
                   </div>
                 </div>
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-100">
+                  <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 w-24">Sortimen</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 w-32">Volume (M³)</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 w-32">Tarif</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500">Nilai</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-24">Sortimen</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-32">Volume (M³)</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-32">Tarif</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Nilai</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -261,13 +261,13 @@ export default function TumpukKapling() {
                       const trf = parseFloat(r?.tarif) || DEFAULT_TARIF[s]
                       return (
                         <tr key={s} className="hover:bg-gray-50/50">
-                          <td className="px-4 py-2 font-medium text-gray-600">{s}</td>
+                          <td className="px-4 py-2 font-medium text-gray-600 dark:text-gray-300">{s}</td>
                           <td className="px-4 py-1.5">
                             <input
                               type="number" step="0.001"
                               value={r?.volume ?? ''}
                               onChange={e => updateField(j.key, s, 'volume', e.target.value)}
-                              className="w-full border border-gray-200 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400"
+                              className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400"
                               placeholder="0"
                             />
                           </td>
@@ -276,10 +276,10 @@ export default function TumpukKapling() {
                               type="number"
                               value={r?.tarif ?? DEFAULT_TARIF[s]}
                               onChange={e => updateField(j.key, s, 'tarif', e.target.value)}
-                              className="w-full border border-gray-200 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400"
+                              className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400"
                             />
                           </td>
-                          <td className="px-4 py-2 text-right font-medium text-gray-700">
+                          <td className="px-4 py-2 text-right font-medium text-gray-700 dark:text-gray-200">
                             {formatRupiah(vol * trf)}
                           </td>
                         </tr>
@@ -301,8 +301,8 @@ export default function TumpukKapling() {
               <div key={c.label} className={`bg-${c.color}-50 border border-${c.color}-200 rounded-xl p-4`}>
                 <p className={`text-xs font-medium text-${c.color}-600 uppercase tracking-wide`}>{c.label}</p>
                 <p className={`text-xs text-${c.color}-500 mb-2`}>{c.note}</p>
-                <p className="text-lg font-bold text-gray-800">{formatNum(c.data.fisik)} M³</p>
-                <p className="text-xs text-gray-500">× {formatRupiah(c.data.tarif)}</p>
+                <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{formatNum(c.data.fisik)} M³</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">× {formatRupiah(c.data.tarif)}</p>
                 <p className={`text-sm font-semibold text-${c.color}-700 mt-1`}>{formatRupiah(c.data.nilai)}</p>
               </div>
             ))}

@@ -119,13 +119,13 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
             Selamat datang di Deskra — Sistem Administrasi Kantor TPK Wongsorejo
           </p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl px-5 py-3.5 text-right shrink-0">
-          <p className="text-2xl font-bold text-gray-800 tabular-nums">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-5 py-3.5 text-right shrink-0">
+          <p className="text-2xl font-bold text-gray-800 dark:text-gray-100 tabular-nums">
             {(() => {
               const h = now.getHours() % 12 || 12
               const m = String(now.getMinutes()).padStart(2, '0')
@@ -134,7 +134,7 @@ export default function Dashboard() {
               return `${h}:${m}:${s} ${ampm}`
             })()}
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
             {now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
@@ -142,7 +142,7 @@ export default function Dashboard() {
 
       {/* Shortcuts */}
       <section className="mb-8">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+        <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
           Quick Access
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -150,14 +150,14 @@ export default function Dashboard() {
             <button
               key={s.path}
               onClick={() => navigate(s.path)}
-              className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:shadow-md hover:border-primary-300 transition-all text-left group"
+              className="flex items-start gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-primary-300 transition-all text-left group"
             >
               <div className={`${s.color} p-2.5 rounded-lg shrink-0 group-hover:scale-105 transition-transform`}>
                 <s.icon size={18} className="text-white" />
               </div>
               <div>
-                <p className="font-semibold text-gray-800 text-sm">{s.label}</p>
-                <p className="text-gray-400 text-xs mt-0.5 leading-snug">{s.desc}</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{s.label}</p>
+                <p className="text-gray-400 dark:text-gray-500 text-xs mt-0.5 leading-snug">{s.desc}</p>
               </div>
             </button>
           ))}
@@ -168,28 +168,28 @@ export default function Dashboard() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               History Uang Kerja
             </h2>
             <button
               onClick={toggleHideAmount}
               title={hideAmount ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
-              className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              className="p-1 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               {hideAmount ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
           </div>
           {periodes.length > 0 && (
-            <span className="text-xs text-gray-400 flex items-center gap-1">
+            <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
               <TrendingUp size={12} />
               Total kumulatif: {maskRupiah(totalAll)}
             </span>
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center text-gray-400 text-sm">
+            <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">
               Memuat data...
             </div>
           ) : error ? (
@@ -199,27 +199,27 @@ export default function Dashboard() {
             </div>
           ) : periodes.length === 0 ? (
             <div className="p-8 text-center">
-              <Clock size={32} className="text-gray-300 mx-auto mb-2" />
-              <p className="text-gray-400 text-sm">Belum ada data periode tersimpan.</p>
-              <p className="text-gray-300 text-xs mt-1">
+              <Clock size={32} className="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+              <p className="text-gray-400 dark:text-gray-500 text-sm">Belum ada data periode tersimpan.</p>
+              <p className="text-gray-300 dark:text-gray-600 text-xs mt-1">
                 Tambahkan periode pertama di halaman Main Link.
               </p>
             </div>
           ) : (
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
+              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                 <tr>
-                  <th className="text-left px-5 py-3 text-gray-500 font-medium">Periode</th>
-                  <th className="text-left px-5 py-3 text-gray-500 font-medium">Tanggal</th>
-                  <th className="text-right px-5 py-3 text-gray-500 font-medium">Total UK</th>
-                  <th className="text-center px-5 py-3 text-gray-500 font-medium">Status</th>
+                  <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Periode</th>
+                  <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Tanggal</th>
+                  <th className="text-right px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Total UK</th>
+                  <th className="text-center px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {periodes.map(p => (
-                  <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3.5 font-medium text-gray-700">{p.periode}</td>
-                    <td className="px-5 py-3.5 text-gray-500">
+                  <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <td className="px-5 py-3.5 font-medium text-gray-700 dark:text-gray-200">{p.periode}</td>
+                    <td className="px-5 py-3.5 text-gray-500 dark:text-gray-400">
                       {p.tgl_awal && p.tgl_akhir
                         ? `${new Date(p.tgl_awal).toLocaleDateString('id-ID')} – ${new Date(p.tgl_akhir).toLocaleDateString('id-ID')}`
                         : '—'}
@@ -231,7 +231,7 @@ export default function Dashboard() {
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         p.status === 'aktif'
                           ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-500'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                       }`}>
                         {p.status}
                       </span>

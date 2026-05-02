@@ -177,7 +177,7 @@ async function parsePdfInvoice(file) {
 }
 
 function SertBadge({ val }) {
-  if (!val || val === '-') return <span className="text-gray-400">-</span>
+  if (!val || val === '-') return <span className="text-gray-400 dark:text-gray-500">-</span>
   const isFsc = val.toUpperCase() === 'FSC'
   return (
     <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${
@@ -463,7 +463,7 @@ export default function RegisterKapling() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold text-gray-800">Register Kapling</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Register Kapling</h1>
             <span className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
               realtimeStatus === 'connected'    ? 'bg-green-50 text-green-600' :
               realtimeStatus === 'disconnected' ? 'bg-red-50 text-red-500'    :
@@ -477,19 +477,19 @@ export default function RegisterKapling() {
               {realtimeStatus === 'connected' ? 'Live' : realtimeStatus === 'disconnected' ? 'Offline' : 'Connecting'}
             </span>
           </div>
-          <p className="text-gray-500 text-sm mt-1">Data register kapling dari file DP Kapling (.xlsx)</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Data register kapling dari file DP Kapling (.xlsx)</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => { setDraftMap({ ...colMap }); setShowSettings(true) }}
-            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-500 text-sm rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             title="Pengaturan header kolom"
           >
             <Settings size={15}/>
           </button>
           <button
             onClick={() => invoisRef.current?.click()}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <FileText size={15}/> Input Invois
           </button>
@@ -507,30 +507,30 @@ export default function RegisterKapling() {
       {/* Summary cards */}
       {rows.length > 0 && (
         <div className="grid grid-cols-3 gap-4 mb-5">
-          <div className="bg-white rounded-xl border border-gray-200 px-5 py-4">
-            <p className="text-xs text-gray-400 mb-1">Total Kapling</p>
-            <p className="text-xl font-bold text-gray-800">{rows.length.toLocaleString('id')}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-5 py-4">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Total Kapling</p>
+            <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{rows.length.toLocaleString('id')}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 px-5 py-4">
-            <p className="text-xs text-gray-400 mb-1">Total Batang</p>
-            <p className="text-xl font-bold text-gray-800">{totalBatang.toLocaleString('id')}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-5 py-4">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Total Batang</p>
+            <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{totalBatang.toLocaleString('id')}</p>
             <div className="flex gap-3 mt-2">
               {SORTIMENS.map(m => (
                 <div key={m} className="flex items-center gap-1">
-                  <span className="text-[10px] font-semibold text-gray-400">{m}</span>
-                  <span className="text-xs font-semibold text-gray-600">{sortBatang[m].toLocaleString('id')}</span>
+                  <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">{m}</span>
+                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{sortBatang[m].toLocaleString('id')}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 px-5 py-4">
-            <p className="text-xs text-gray-400 mb-1">Total Volume (M³)</p>
-            <p className="text-xl font-bold text-gray-800">{totalVolume.toFixed(3)}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-5 py-4">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Total Volume (M³)</p>
+            <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{totalVolume.toFixed(3)}</p>
             <div className="flex gap-3 mt-2">
               {SORTIMENS.map(m => (
                 <div key={m} className="flex items-center gap-1">
-                  <span className="text-[10px] font-semibold text-gray-400">{m}</span>
-                  <span className="text-xs font-semibold text-gray-600">{sortVolume[m].toFixed(3)}</span>
+                  <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">{m}</span>
+                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{sortVolume[m].toFixed(3)}</span>
                 </div>
               ))}
             </div>
@@ -541,13 +541,13 @@ export default function RegisterKapling() {
       {/* Settings modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between mb-5">
               <div>
-                <p className="font-semibold text-gray-800">Pengaturan Header Kolom</p>
-                <p className="text-xs text-gray-400 mt-0.5">Sesuaikan nama header kolom sesuai file Excel</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-100">Pengaturan Header Kolom</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Sesuaikan nama header kolom sesuai file Excel</p>
               </div>
-              <button onClick={() => setShowSettings(false)}><X size={16} className="text-gray-400 hover:text-gray-600"/></button>
+              <button onClick={() => setShowSettings(false)}><X size={16} className="text-gray-400 dark:text-gray-500 hover:text-gray-600"/></button>
             </div>
 
             {excelHeaders.length > 0 && (
@@ -559,7 +559,7 @@ export default function RegisterKapling() {
             <div className="space-y-2 mb-5">
               {FIELD_DEFS.map(f => (
                 <div key={f.key} className="grid grid-cols-2 gap-3 items-center">
-                  <label className="text-xs text-gray-600 font-medium">
+                  <label className="text-xs text-gray-600 dark:text-gray-300 font-medium">
                     {f.label}
                     {f.required && <span className="text-red-400 ml-0.5">*</span>}
                   </label>
@@ -568,28 +568,28 @@ export default function RegisterKapling() {
                     value={draftMap[f.key] || ''}
                     onChange={e => setDraftMap(prev => ({ ...prev, [f.key]: e.target.value }))}
                     placeholder="Nama header di Excel..."
-                    className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
               ))}
             </div>
 
             {excelHeaders.length > 0 && (
-              <div className="bg-gray-50 rounded-lg px-3 py-2 mb-4">
-                <p className="text-xs text-gray-400 mb-1">Header terdeteksi dari file terakhir:</p>
-                <p className="text-xs text-gray-600 font-mono leading-relaxed">{excelHeaders.join(', ')}</p>
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2 mb-4">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Header terdeteksi dari file terakhir:</p>
+                <p className="text-xs text-gray-600 dark:text-gray-300 font-mono leading-relaxed">{excelHeaders.join(', ')}</p>
               </div>
             )}
 
             <div className="flex gap-2 justify-between">
               <button
                 onClick={() => setDraftMap({ ...DEFAULT_COL_MAP })}
-                className="px-3 py-2 text-xs bg-gray-100 text-gray-500 rounded-lg hover:bg-gray-200"
+                className="px-3 py-2 text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
               >
                 Reset ke default
               </button>
               <div className="flex gap-2">
-                <button onClick={() => setShowSettings(false)} className="px-4 py-2 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">Batal</button>
+                <button onClick={() => setShowSettings(false)} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Batal</button>
                 <button
                   onClick={() => { saveColMap(draftMap); setShowSettings(false); showToast('Pengaturan disimpan') }}
                   className="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700"
@@ -605,18 +605,18 @@ export default function RegisterKapling() {
       {/* Excel import preview modal */}
       {preview && (
         <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="bg-primary-50 p-2 rounded-lg">
                   <FileSpreadsheet size={20} className="text-primary-600"/>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-800 text-sm">{preview.fileName}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{preview.rows.length} baris ditemukan</p>
+                  <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{preview.fileName}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{preview.rows.length} baris ditemukan</p>
                 </div>
               </div>
-              <button onClick={() => setPreview(null)}><X size={16} className="text-gray-400 hover:text-gray-600"/></button>
+              <button onClick={() => setPreview(null)}><X size={16} className="text-gray-400 dark:text-gray-500 hover:text-gray-600"/></button>
             </div>
 
             <div className="flex gap-3 mb-4">
@@ -625,9 +625,9 @@ export default function RegisterKapling() {
                 <p className="text-xl font-bold text-green-700">{preview.newCount}</p>
               </div>
               {preview.skipCount > 0 && (
-                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-                  <p className="text-xs text-gray-500 mb-0.5">Sudah ada (dilewati)</p>
-                  <p className="text-xl font-bold text-gray-500">{preview.skipCount}</p>
+                <div className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Sudah ada (dilewati)</p>
+                  <p className="text-xl font-bold text-gray-500 dark:text-gray-400">{preview.skipCount}</p>
                 </div>
               )}
             </div>
@@ -643,7 +643,7 @@ export default function RegisterKapling() {
             )}
 
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setPreview(null)} className="px-4 py-2 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">Batal</button>
+              <button onClick={() => setPreview(null)} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Batal</button>
               <button
                 onClick={handleImport}
                 disabled={importing || preview.newCount === 0}
@@ -660,29 +660,29 @@ export default function RegisterKapling() {
       {/* Invoice PDF preview modal */}
       {invoisPreview && (
         <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col p-6">
             <div className="flex items-start justify-between mb-5 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="bg-blue-50 p-2 rounded-lg">
                   <FileText size={20} className="text-blue-600"/>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-800 text-sm">{invoisPreview.fileName}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Data invois berhasil dibaca</p>
+                  <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{invoisPreview.fileName}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Data invois berhasil dibaca</p>
                 </div>
               </div>
-              <button onClick={() => setInvoisPreview(null)}><X size={16} className="text-gray-400 hover:text-gray-600"/></button>
+              <button onClick={() => setInvoisPreview(null)}><X size={16} className="text-gray-400 dark:text-gray-500 hover:text-gray-600"/></button>
             </div>
 
             <div className="space-y-3 mb-5 overflow-y-auto flex-1 min-h-0">
-              <div className="bg-gray-50 rounded-xl px-4 py-3 grid grid-cols-2 gap-3">
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-xl px-4 py-3 grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-xs text-gray-400 mb-0.5">No. Invois</p>
-                  <p className="text-sm font-bold text-gray-800 font-mono">{invoisPreview.noInvois}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">No. Invois</p>
+                  <p className="text-sm font-bold text-gray-800 dark:text-gray-100 font-mono">{invoisPreview.noInvois}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-0.5">Pembeli</p>
-                  <p className="text-sm font-semibold text-gray-800">{invoisPreview.pembeli || '-'}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">Pembeli</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{invoisPreview.pembeli || '-'}</p>
                 </div>
               </div>
 
@@ -700,13 +700,13 @@ export default function RegisterKapling() {
               </div>
 
               {invoisPreview.matched.length > 0 && (
-                <div className="border border-gray-100 rounded-xl overflow-hidden">
-                  <div className="bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-500">Kapling yang akan diperbarui</div>
+                <div className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
+                  <div className="bg-gray-50 dark:bg-gray-900 px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Kapling yang akan diperbarui</div>
                   <div className="divide-y divide-gray-50">
                     {invoisPreview.matched.map(r => (
                       <div key={r.no_kapling} className="px-3 py-1.5 flex items-center justify-between text-xs">
-                        <span className="font-mono text-gray-700">{r.no_kapling}</span>
-                        <span className="text-gray-400">{r.jenis} · {r.sortimen}</span>
+                        <span className="font-mono text-gray-700 dark:text-gray-200">{r.no_kapling}</span>
+                        <span className="text-gray-400 dark:text-gray-500">{r.jenis} · {r.sortimen}</span>
                       </div>
                     ))}
                   </div>
@@ -721,7 +721,7 @@ export default function RegisterKapling() {
             </div>
 
             <div className="flex gap-2 justify-end flex-shrink-0 pt-2">
-              <button onClick={() => setInvoisPreview(null)} className="px-4 py-2 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">Batal</button>
+              <button onClick={() => setInvoisPreview(null)} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Batal</button>
               {invoisPreview.matched.length > 0 && (
                 <button onClick={handleInvoisSave} disabled={invoisSaving} className="flex items-center gap-2 px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-60">
                   {invoisSaving && <Loader2 size={13} className="animate-spin"/>}
@@ -736,13 +736,13 @@ export default function RegisterKapling() {
       {/* Edit modal */}
       {editRow && (
         <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between mb-5">
               <div>
-                <p className="font-semibold text-gray-800">Edit Kapling</p>
-                <p className="text-xs text-gray-400 mt-0.5 font-mono">{editRow.no_kapling}</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-100">Edit Kapling</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">{editRow.no_kapling}</p>
               </div>
-              <button onClick={() => setEditRow(null)}><X size={16} className="text-gray-400 hover:text-gray-600"/></button>
+              <button onClick={() => setEditRow(null)}><X size={16} className="text-gray-400 dark:text-gray-500 hover:text-gray-600"/></button>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-5">
@@ -764,12 +764,12 @@ export default function RegisterKapling() {
                 { label: 'Pembeli',        key: 'pembeli' },
               ].map(f => (
                 <div key={f.key}>
-                  <label className="block text-xs text-gray-500 mb-1">{f.label}</label>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{f.label}</label>
                   <input
                     type={f.type || 'text'}
                     value={editRow[f.key] ?? ''}
                     onChange={e => setEditRow(prev => ({ ...prev, [f.key]: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     step={f.type === 'number' ? 'any' : undefined}
                   />
                 </div>
@@ -777,7 +777,7 @@ export default function RegisterKapling() {
             </div>
 
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setEditRow(null)} className="px-4 py-2 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">Batal</button>
+              <button onClick={() => setEditRow(null)} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Batal</button>
               <button onClick={handleEditSave} disabled={editSaving} className="flex items-center gap-2 px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-60">
                 {editSaving && <Loader2 size={13} className="animate-spin"/>}
                 {editSaving ? 'Menyimpan...' : 'Simpan'}
@@ -790,21 +790,21 @@ export default function RegisterKapling() {
       {/* Delete confirm modal */}
       {deleteRow && (
         <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-red-50 p-2 rounded-lg">
                 <Trash2 size={18} className="text-red-500"/>
               </div>
               <div>
-                <p className="font-semibold text-gray-800 text-sm">Hapus Kapling</p>
-                <p className="text-xs text-gray-400 mt-0.5 font-mono">{deleteRow.no_kapling}</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Hapus Kapling</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">{deleteRow.no_kapling}</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600 mb-5">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
               Data kapling ini akan dihapus permanen dan tidak dapat dikembalikan.
             </p>
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setDeleteRow(null)} className="px-4 py-2 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">Batal</button>
+              <button onClick={() => setDeleteRow(null)} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Batal</button>
               <button onClick={handleDelete} disabled={deleting} className="flex items-center gap-2 px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-60">
                 {deleting && <Loader2 size={13} className="animate-spin"/>}
                 {deleting ? 'Menghapus...' : 'Hapus'}
@@ -817,11 +817,11 @@ export default function RegisterKapling() {
       {/* Table toolbar */}
       {rows.length > 0 && (
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-gray-400">
-            Menampilkan <span className="font-semibold text-gray-600">{displayedRows.length.toLocaleString('id')}</span> dari <span className="font-semibold text-gray-600">{rows.length.toLocaleString('id')}</span> kapling
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Menampilkan <span className="font-semibold text-gray-600 dark:text-gray-300">{displayedRows.length.toLocaleString('id')}</span> dari <span className="font-semibold text-gray-600 dark:text-gray-300">{rows.length.toLocaleString('id')}</span> kapling
           </p>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400">Tampilkan:</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">Tampilkan:</span>
             <div className="flex gap-1">
               {PAGE_SIZES.map(p => (
                 <button
@@ -830,7 +830,7 @@ export default function RegisterKapling() {
                   className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${
                     pageSize === p.value
                       ? 'bg-primary-600 text-white'
-                      : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
+                      : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
                   }`}
                 >
                   {p.label}
@@ -842,26 +842,26 @@ export default function RegisterKapling() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-400 text-sm">Memuat...</div>
+          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Memuat...</div>
         ) : rows.length === 0 ? (
           <div className="p-14 flex flex-col items-center justify-center text-center">
             <FileSpreadsheet size={38} className="text-gray-200 mb-3"/>
-            <p className="font-medium text-gray-500">Belum ada data</p>
-            <p className="text-gray-400 text-sm mt-1">Klik <span className="font-medium text-primary-600">Import Excel</span> untuk mengimpor file DP Kapling</p>
+            <p className="font-medium text-gray-500 dark:text-gray-400">Belum ada data</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Klik <span className="font-medium text-primary-600">Import Excel</span> untuk mengimpor file DP Kapling</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="text-xs">
-              <thead className="bg-gray-50 border-b border-gray-100">
+              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                 <tr>
-                  <th className="px-2 py-2.5 text-left font-semibold text-gray-500 sticky left-0 bg-gray-50 z-10 w-8">No</th>
+                  <th className="px-2 py-2.5 text-left font-semibold text-gray-500 dark:text-gray-400 sticky left-0 bg-gray-50 dark:bg-gray-900 z-10 w-8">No</th>
                   {COLS.map(c => (
                     <th
                       key={c.key}
                       onClick={() => toggleSort(c.key)}
-                      className={`px-2 py-2.5 font-semibold text-gray-500 whitespace-nowrap cursor-pointer select-none hover:bg-gray-100 transition-colors ${c.num ? 'text-right' : 'text-left'} ${c.w}`}
+                      className={`px-2 py-2.5 font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${c.num ? 'text-right' : 'text-left'} ${c.w}`}
                     >
                       <span className="inline-flex items-center gap-1">
                         {c.label}
@@ -869,7 +869,7 @@ export default function RegisterKapling() {
                           ? sort.dir === 'asc'
                             ? <ChevronUp size={11} className="text-primary-500"/>
                             : <ChevronDown size={11} className="text-primary-500"/>
-                          : <ChevronsUpDown size={11} className="text-gray-300"/>
+                          : <ChevronsUpDown size={11} className="text-gray-300 dark:text-gray-600"/>
                         }
                       </span>
                     </th>
@@ -879,10 +879,10 @@ export default function RegisterKapling() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {displayedRows.map((row, i) => (
-                  <tr key={row.id} className="hover:bg-gray-50 transition-colors group">
-                    <td className="px-2 py-2 text-gray-400 sticky left-0 bg-white z-10">{i + 1}</td>
+                  <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
+                    <td className="px-2 py-2 text-gray-400 dark:text-gray-500 sticky left-0 bg-white dark:bg-gray-800 z-10">{i + 1}</td>
                     {COLS.map(c => (
-                      <td key={c.key} className={`px-2 py-2 whitespace-nowrap ${c.num ? 'text-right font-mono' : 'text-gray-700'}`}>
+                      <td key={c.key} className={`px-2 py-2 whitespace-nowrap ${c.num ? 'text-right font-mono' : 'text-gray-700 dark:text-gray-200'}`}>
                         {c.key === 'sertifikasi'
                           ? <SertBadge val={row.sertifikasi}/>
                           : c.key === 'volume'
@@ -890,10 +890,10 @@ export default function RegisterKapling() {
                             : c.key === 'mutu_label'
                               ? getMutuLabel(row)
                               : c.key === 'tgl_kapling'
-                                ? (displayDate(row.tgl_kapling) ?? <span className="text-gray-300">—</span>)
+                                ? (displayDate(row.tgl_kapling) ?? <span className="text-gray-300 dark:text-gray-600">—</span>)
                                 : c.key === 'pembeli'
-                                  ? (getPembeliName(row.pembeli) ?? <span className="text-gray-300">—</span>)
-                                  : (row[c.key] ?? <span className="text-gray-300">—</span>)
+                                  ? (getPembeliName(row.pembeli) ?? <span className="text-gray-300 dark:text-gray-600">—</span>)
+                                  : (row[c.key] ?? <span className="text-gray-300 dark:text-gray-600">—</span>)
                         }
                       </td>
                     ))}
@@ -901,13 +901,13 @@ export default function RegisterKapling() {
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => setEditRow({ ...row })}
-                          className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                          className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600"
                         >
                           <Pencil size={13}/>
                         </button>
                         <button
                           onClick={() => setDeleteRow(row)}
-                          className="p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-500"
+                          className="p-1 rounded hover:bg-red-100 text-gray-400 dark:text-gray-500 hover:text-red-500"
                         >
                           <Trash2 size={13}/>
                         </button>
@@ -916,9 +916,9 @@ export default function RegisterKapling() {
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="border-t-2 border-gray-200 bg-gray-50">
-                <tr className="font-semibold text-gray-700">
-                  <td className="px-2 py-2 sticky left-0 bg-gray-50 z-10" colSpan={11}>TOTAL</td>
+              <tfoot className="border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                <tr className="font-semibold text-gray-700 dark:text-gray-200">
+                  <td className="px-2 py-2 sticky left-0 bg-gray-50 dark:bg-gray-900 z-10" colSpan={11}>TOTAL</td>
                   <td className="px-2 py-2 text-right font-mono">{totalBatang.toLocaleString('id')}</td>
                   <td className="px-2 py-2 text-right font-mono">{totalVolume.toFixed(3)}</td>
                   <td className="px-2 py-2"></td>

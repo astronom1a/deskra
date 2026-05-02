@@ -44,6 +44,14 @@ export default function CetakLayout({ title, landscape = false, children: render
     })()
   }, [periodeId])
 
+  // Print pages always render in light mode regardless of app theme.
+  useEffect(() => {
+    const root = document.documentElement
+    const wasDark = root.classList.contains('dark')
+    if (wasDark) root.classList.remove('dark')
+    return () => { if (wasDark) root.classList.add('dark') }
+  }, [])
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Toolbar – hanya tampil di layar */}

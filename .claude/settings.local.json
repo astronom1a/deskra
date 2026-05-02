@@ -37,7 +37,19 @@
       "Bash(git push *)",
       "Bash(git checkout *)",
       "Bash(git worktree *)",
-      "Bash(git branch *)"
+      "Bash(git branch *)",
+      "Bash(git filter-branch -f --env-filter ' *)",
+      "Bash(node scripts/add-dark-variants.mjs)",
+      "Bash(node -e \"import\\('./tailwind.config.js'\\).then\\(m=>console.log\\(JSON.stringify\\(m.default,null,2\\)\\)\\)\")",
+      "Bash(npx tailwindcss *)",
+      "Read(//tmp/**)",
+      "Bash(grep -o '\\\\.dark\\\\\\\\\\\\\\\\:bg-gray-800' F:/Project/CODING/Deskra/dist/assets/index-*.css)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /F /PID 15204 /PID 9076 /PID 27452)",
+      "PowerShell(Stop-Process -Id 15204,9076,27452 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process -Name node -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process -Name node -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue }; Start-Sleep -Milliseconds 800; Get-Process -Name node -ErrorAction SilentlyContinue | Select-Object Id)",
+      "Bash(cmd.exe /c \"taskkill /F /IM node.exe\")"
     ]
   }
 }

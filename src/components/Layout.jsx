@@ -1,10 +1,12 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Link2, Users, Users2, Layers, Package,
-  ChevronDown, ChevronRight, TreePine, ClipboardList, Wallet, ScrollText
+  ChevronDown, ChevronRight, TreePine, ClipboardList, Wallet, ScrollText,
+  Settings as SettingsIcon, Sun, Moon
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useTheme } from '../lib/useTheme'
 import { version as appVersion } from '../../package.json'
 
 const navItems = [
@@ -91,6 +93,8 @@ function SidebarItem({ item }) {
 
 export default function Layout() {
   const [realtimeStatus, setRealtimeStatus] = useState('connecting')
+  const { theme, toggle } = useTheme()
+  const isDark = theme === 'dark'
 
   useEffect(() => {
     const channel = supabase
@@ -106,9 +110,9 @@ export default function Layout() {
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-60 bg-primary-800 flex flex-col shrink-0">
+      <aside className="w-60 bg-primary-800 dark:bg-gray-900 flex flex-col shrink-0 border-r border-transparent dark:border-gray-800">
         {/* Brand */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-primary-700">
+        <div className="flex items-center gap-3 px-5 py-5 border-b border-primary-700 dark:border-gray-800">
           <div className="bg-white/10 p-2 rounded-lg">
             <TreePine size={20} className="text-white" />
           </div>
@@ -130,7 +134,7 @@ export default function Layout() {
                 }`}
               />
             </div>
-            <p className="text-primary-300 text-xs">TPK Wongsorejo</p>
+            <p className="text-primary-300 dark:text-gray-400 text-xs">TPK Wongsorejo</p>
           </div>
         </div>
 
@@ -141,15 +145,53 @@ export default function Layout() {
           ))}
         </nav>
 
+        {/* Settings + Theme toggle */}
+        <div className="px-3 py-3 border-t border-primary-700 dark:border-gray-800 space-y-1">
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-colors ${
+                isActive
+                  ? 'bg-white text-primary-700 font-semibold shadow-sm'
+                  : 'text-primary-100 hover:bg-primary-700 dark:hover:bg-gray-800'
+              }`
+            }
+          >
+            <SettingsIcon size={16} />
+            Settings
+          </NavLink>
+          <button
+            onClick={toggle}
+            title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
+            className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-primary-100 hover:bg-primary-700 dark:hover:bg-gray-800 rounded-lg transition-colors"
+          >
+            <span className="flex items-center gap-3 font-medium">
+              {isDark ? <Moon size={16} /> : <Sun size={16} />}
+              {isDark ? 'Dark Mode' : 'Light Mode'}
+            </span>
+            <span
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                isDark ? 'bg-primary-500' : 'bg-primary-900'
+              }`}
+            >
+              <span
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                  isDark ? 'translate-x-5' : 'translate-x-1'
+                }`}
+              />
+            </span>
+          </button>
+        </div>
+
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-primary-700">
-          <p className="text-primary-400 text-xs">Perum Perhutani</p>
-          <p className="text-primary-400 text-xs">KPH Banyuwangi Utara</p>
+        <div className="px-5 py-4 border-t border-primary-700 dark:border-gray-800">
+          <p className="text-primary-400 dark:text-gray-500 text-xs">Perum Perhutani</p>
+          <p className="text-primary-400 dark:text-gray-500 text-xs">KPH Banyuwangi Utara</p>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-gray-50">
+      <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
         <Outlet />
       </main>
     </div>

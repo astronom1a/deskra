@@ -9,6 +9,7 @@ import TumpukKapling from './pages/TumpukKapling'
 import DetailPekerjaan from './pages/DetailPekerjaan'
 import RegisterKapling from './pages/RegisterKapling'
 import DkhpSkshhk from './pages/DkhpSkshhk'
+import Settings from './pages/Settings'
 import CetakBiayaTPK from './pages/Cetak/CetakBiayaTPK'
 import CetakGabunganPembayaran from './pages/Cetak/CetakGabunganPembayaran'
 import CetakPjUk from './pages/Cetak/CetakPjUk'
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="database/pejabat" element={<DatabasePejabat />} />
         <Route path="database/tenaga" element={<DatabaseTenaga />} />
         <Route path="database/tarif" element={<DatabaseTarif />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
       {/* Halaman cetak — standalone tanpa sidebar */}
       <Route path="cetak/biaya-tpk/:periodeId" element={<CetakBiayaTPK />} />
