@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { computeTotalUK } from '../lib/rekapPekerjaan'
-import { Link2, Users, Layers, Package, Clock, TrendingUp, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { Link2, Users, Layers, Package, Clock, TrendingUp, AlertCircle, Eye, EyeOff, FileText, BookOpen } from 'lucide-react'
 
 const shortcuts = [
   {
@@ -25,6 +25,20 @@ const shortcuts = [
     icon: Package,
     path: '/detail-pekerjaan',
     color: 'bg-blue-600',
+  },
+  {
+    label: 'DKHP SKSHHK',
+    desc: 'Arsip dokumen DKHP SKSHHK',
+    icon: FileText,
+    path: '/dkhp-skshhk',
+    color: 'bg-rose-600',
+  },
+  {
+    label: 'Register Kapling',
+    desc: 'Kelola register kapling',
+    icon: BookOpen,
+    path: '/register-kapling',
+    color: 'bg-indigo-600',
   },
   {
     label: 'Database Pejabat',
@@ -129,7 +143,7 @@ export default function Dashboard() {
       {/* Shortcuts */}
       <section className="mb-8">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-          Akses Cepat
+          Quick Access
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {shortcuts.map(s => (
@@ -155,7 +169,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-              Riwayat Total Uang Kerja
+              History Uang Kerja
             </h2>
             <button
               onClick={toggleHideAmount}
