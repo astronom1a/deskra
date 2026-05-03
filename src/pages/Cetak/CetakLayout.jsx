@@ -44,25 +44,17 @@ export default function CetakLayout({ title, landscape = false, children: render
     })()
   }, [periodeId])
 
-  // Print pages always render in light mode regardless of app theme.
-  useEffect(() => {
-    const root = document.documentElement
-    const wasDark = root.classList.contains('dark')
-    if (wasDark) root.classList.remove('dark')
-    return () => { if (wasDark) root.classList.add('dark') }
-  }, [])
-
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 print:bg-white print:dark:bg-white">
       {/* Toolbar – hanya tampil di layar */}
-      <div className="print:hidden bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+      <div className="print:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
-          <button onClick={() => window.close()} className="text-gray-500 hover:text-gray-700 flex items-center gap-1 text-sm">
+          <button onClick={() => window.close()} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1 text-sm">
             <ArrowLeft size={15}/> Tutup Tab
           </button>
-          <span className="text-gray-300">|</span>
-          <p className="text-sm font-semibold text-gray-700">{title}</p>
-          {periode && <span className="text-xs text-gray-400">— {periode.periode}</span>}
+          <span className="text-gray-300 dark:text-gray-600">|</span>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{title}</p>
+          {periode && <span className="text-xs text-gray-400 dark:text-gray-500">— {periode.periode}</span>}
         </div>
         <button
           onClick={() => window.print()}
@@ -71,10 +63,10 @@ export default function CetakLayout({ title, landscape = false, children: render
       </div>
 
       {/* Continuous paper 9.5"×11" = 240mm×280mm (portrait) / 280mm×240mm (landscape) */}
-      <style>{`@media print { @page { size: ${landscape ? '280mm 240mm' : '240mm 280mm'}; margin: 0; } .print-area { padding: 10mm !important; } }`}</style>
+      <style>{`@media print { @page { size: ${landscape ? '280mm 240mm' : '240mm 280mm'}; margin: 0; } .print-area { padding: 10mm !important; color: #000 !important; background: #fff !important; } }`}</style>
 
-      {/* Konten cetak */}
-      <div className={`print-area mx-auto bg-white shadow-sm my-6 p-10 print:shadow-none print:my-0 ${landscape ? 'max-w-[280mm]' : 'max-w-[240mm]'}`}>
+      {/* Konten cetak — kanvas selalu putih, walau app dark mode */}
+      <div className={`print-area cetak-canvas mx-auto bg-white text-gray-900 shadow-sm my-6 p-10 print:shadow-none print:my-0 ${landscape ? 'max-w-[280mm]' : 'max-w-[240mm]'}`}>
         {loading ? (
           <CetakPageSkeleton landscape={landscape} />
         ) : !periode ? (
