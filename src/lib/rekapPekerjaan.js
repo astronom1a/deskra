@@ -2,7 +2,11 @@ import { supabase } from './supabase'
 
 export const DEFAULT_TARIF_PERIODE = {
   penomoran: 900, sabuk: 400, tanda_laku: 750, slaghammer: 3000, barcode: 350, brongkol: 7000,
+  tumpuk_ai: 19000, tumpuk_aii: 21500, tumpuk_aiii: 24800,
 }
+
+// Mapping sortimen → kode tarif periode untuk Tumpuk Kapling.
+export const TUMPUK_TARIF_KODE = { AI: 'tumpuk_ai', AII: 'tumpuk_aii', AIII: 'tumpuk_aiii' }
 
 export function parseHalf(p) { return p?.startsWith('II/') ? 'II' : 'I' }
 
@@ -56,7 +60,11 @@ export async function buildRows(periodeId, periodeLabel) {
   const byJenis = (jenis) => {
     const rows = t.filter(r=>r.jenis===jenis)
     const fisik = rows.reduce((s,r)=>s+(r.volume||0),0)
-    const nilai = rows.reduce((s,r)=>s+(r.volume||0)*(r.tarif||0),0)
+    // Tarif diambil dari tarifMap per sortimen (single source of truth: Tarif Periode di Main Link)
+    const nilai = rows.reduce((s,r)=>{
+      const tarif = tarifMap[TUMPUK_TARIF_KODE[r.sortimen]] ?? (r.tarif||0)
+      return s + (r.volume||0) * tarif
+    }, 0)
     return { fisik, nilai, tarif: fisik>0 ? nilai/fisik : 0 }
   }
 

@@ -14,6 +14,20 @@ const PERIODE_OPTIONS = Array.from({ length: 12 }, (_, i) => [
 
 function parseHalf(p) { return p?.startsWith('II/') ? 'II' : 'I' }
 
+// Metadata baris Tarif Periode (urutan & label).
+// Tarif Tumpuk Kapling (AI/AII/AIII) dikelola di sini sebagai sumber tunggal.
+const TARIF_META = [
+  { kode: 'penomoran',   kode_rek: '51.69.43', uraian: 'PENOMORAN KAPLING',                satuan: 'M3'  },
+  { kode: 'sabuk',       kode_rek: '51.69.43', uraian: 'SABUK KAPLING',                    satuan: 'M3'  },
+  { kode: 'tanda_laku',  kode_rek: '51.69.43', uraian: 'TANDA LAKU',                       satuan: 'M3'  },
+  { kode: 'slaghammer',  kode_rek: '51.69.43', uraian: 'SLAGHAMMER',                       satuan: 'M3'  },
+  { kode: 'tumpuk_ai',   kode_rek: '51.69.44', uraian: 'TUMPUK KAPLING — Sortimen AI',     satuan: 'M3'  },
+  { kode: 'tumpuk_aii',  kode_rek: '51.69.44', uraian: 'TUMPUK KAPLING — Sortimen AII',    satuan: 'M3'  },
+  { kode: 'tumpuk_aiii', kode_rek: '51.69.44', uraian: 'TUMPUK KAPLING — Sortimen AIII',   satuan: 'M3'  },
+  { kode: 'brongkol',    kode_rek: '51.69.44', uraian: 'TUMPUK BRONGKOL',                  satuan: 'SM'  },
+  { kode: 'barcode',     kode_rek: '51.69.44', uraian: 'PEMASANGAN BARCODE',               satuan: 'BTG' },
+]
+
 function isLeapYear(y) { return (y%4===0 && y%100!==0) || y%400===0 }
 function lastDay(m,y) {
   if (m===2) return isLeapYear(y)?29:28
@@ -233,19 +247,14 @@ export default function MainLink() {
     const { data } = await supabase
       .from('tabel_tarif_periode').select('*')
       .eq('periode_id', periodeId).order('created_at')
-    if (data?.length) {
-      setTarifRows(data)
-    } else {
-      // fallback defaults jika belum di-seed
-      setTarifRows(Object.entries(DEFAULT_TARIF_PERIODE).map(([kode, tarif]) => ({
-        _unsaved: true, kode, tarif,
-        uraian: { penomoran:'PENOMORAN KAPLING', sabuk:'SABUK KAPLING',
-          tanda_laku:'TANDA LAKU', slaghammer:'SLAGHAMMER',
-          barcode:'PEMASANGAN BARCODE', brongkol:'TUMPUK BRONGKOL' }[kode] || kode,
-        kode_rek: ['penomoran','sabuk','tanda_laku','slaghammer'].includes(kode) ? '51.69.43' : '51.69.44',
-        satuan: { penomoran:'M3', sabuk:'M3', tanda_laku:'M3', slaghammer:'M3', barcode:'BTG', brongkol:'SM' }[kode],
-      })))
-    }
+    const dbByKode = Object.fromEntries((data || []).map(r => [r.kode, r]))
+    // Gabung metadata + DB: tampilkan SEMUA baris (termasuk yang belum di-seed di DB)
+    setTarifRows(TARIF_META.map(meta => {
+      const db = dbByKode[meta.kode]
+      return db
+        ? { ...meta, ...db }
+        : { ...meta, _unsaved: true, tarif: DEFAULT_TARIF_PERIODE[meta.kode] ?? 0 }
+    }))
   }
 
   // ── build rows whenever periode changes ──
@@ -650,9 +659,9 @@ export default function MainLink() {
 
             {showTarif && (
               <>
-                <div className="border-t border-gray-100 dark:border-gray-800 overflow-x-auto">
+                <div className="border-t border-gray-100 dark:border-gray-700 overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+                    <thead className="bg-gray-50 dark:bg-gray-900/40 border-b border-gray-100 dark:border-gray-700">
                       <tr>
                         <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Kode Rek</th>
                         <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Uraian</th>
@@ -660,11 +669,11 @@ export default function MainLink() {
                         <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-40">Tarif (Rp)</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                       {tarifRows.map((r, i) => (
-                        <tr key={r.kode} className="hover:bg-gray-50/50">
+                        <tr key={r.kode} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
                           <td className="px-4 py-2 text-xs text-gray-400 dark:text-gray-500">{r.kode_rek}</td>
-                          <td className="px-4 py-2 text-gray-700 dark:text-gray-200 font-medium">{r.uraian}</td>
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-100 font-medium">{r.uraian}</td>
                           <td className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400">{r.satuan}</td>
                           <td className="px-4 py-1.5">
                             <input
@@ -673,7 +682,7 @@ export default function MainLink() {
                               onChange={e => setTarifRows(prev => prev.map((t,j) =>
                                 j === i ? { ...t, tarif: e.target.value } : t
                               ))}
-                              className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400"
+                              className="w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right tabular-nums outline-none focus:border-primary-400 dark:focus:border-primary-500"
                             />
                           </td>
                         </tr>
@@ -681,7 +690,7 @@ export default function MainLink() {
                     </tbody>
                   </table>
                 </div>
-                <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
+                <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 flex items-center justify-between">
                   <p className="text-xs text-gray-400 dark:text-gray-500">
                     Perubahan tarif akan langsung tercermin di tabel di atas setelah disimpan.
                   </p>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { Save, AlertCircle, CheckCircle2, CalendarDays, Sparkles, Layers } from 'lucide-react'
+import { Save, AlertCircle, CheckCircle2, CalendarDays, Sparkles, Layers, Lock } from 'lucide-react'
+import { DEFAULT_TARIF_PERIODE, TUMPUK_TARIF_KODE } from '../lib/rekapPekerjaan'
 
 const JENIS_LIST = [
   { key: 'JATI', label: 'Tumpuk Kapling JATI' },
@@ -8,7 +9,12 @@ const JENIS_LIST = [
   { key: 'RIMBA_KEDAWUNG', label: 'Tumpuk Kapling RIMBA (Kedawung)' },
 ]
 const SORTIMEN_LIST = ['AI', 'AII', 'AIII']
-const DEFAULT_TARIF = { AI: 19000, AII: 21500, AIII: 24800 }
+// Tarif default fallback — dipakai bila Tarif Periode di Main Link belum di-set.
+const DEFAULT_TARIF = {
+  AI:   DEFAULT_TARIF_PERIODE.tumpuk_ai,
+  AII:  DEFAULT_TARIF_PERIODE.tumpuk_aii,
+  AIII: DEFAULT_TARIF_PERIODE.tumpuk_aiii,
+}
 
 function formatRupiah(val) {
   return new Intl.NumberFormat('id-ID', {
@@ -30,6 +36,8 @@ export default function TumpukKapling() {
   const [selectedPeriode, setSelectedPeriode] = useState(null)
   const [rows, setRows] = useState([])
   const [summary, setSummary] = useState({ penomoran: 0, sabuk: 0, slaghammer: 0 })
+  // Tarif per sortimen — sumber: tabel_tarif_periode (dikelola di Main Link)
+  const [tarifSortimen, setTarifSortimen] = useState(DEFAULT_TARIF)
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState(null)
 
@@ -48,10 +56,18 @@ export default function TumpukKapling() {
 
   async function fetchData(periodeId) {
     setLoading(true)
-    const { data } = await supabase
-      .from('tabel_tumpuk_kapling').select('*')
-      .eq('periode_id', periodeId)
-    setRows(data || [])
+    const [{ data: rowData }, { data: tarifData }] = await Promise.all([
+      supabase.from('tabel_tumpuk_kapling').select('*').eq('periode_id', periodeId),
+      supabase.from('tabel_tarif_periode').select('kode,tarif').eq('periode_id', periodeId),
+    ])
+    setRows(rowData || [])
+    // Build map sortimen → tarif (fallback: DEFAULT_TARIF_PERIODE)
+    const tarifByKode = Object.fromEntries((tarifData || []).map(t => [t.kode, t.tarif]))
+    setTarifSortimen({
+      AI:   tarifByKode[TUMPUK_TARIF_KODE.AI]   ?? DEFAULT_TARIF.AI,
+      AII:  tarifByKode[TUMPUK_TARIF_KODE.AII]  ?? DEFAULT_TARIF.AII,
+      AIII: tarifByKode[TUMPUK_TARIF_KODE.AIII] ?? DEFAULT_TARIF.AIII,
+    })
     await fetchSummary(periodeId)
     setLoading(false)
   }
@@ -88,7 +104,7 @@ export default function TumpukKapling() {
           jenis: j.key,
           sortimen: s,
           volume: 0,
-          tarif: DEFAULT_TARIF[s],
+          tarif: tarifSortimen[s] ?? DEFAULT_TARIF[s],
         })
       }
     }
@@ -103,21 +119,21 @@ export default function TumpukKapling() {
     fetchData(selectedPeriode.id)
   }
 
-  function updateField(jenis, sortimen, field, value) {
+  function updateVolume(jenis, sortimen, value) {
+    const val = value === '' ? '' : parseFloat(value)
     setRows(prev => {
       const idx = prev.findIndex(r => r.jenis === jenis && r.sortimen === sortimen)
-      const val = value === '' ? '' : parseFloat(value)
       if (idx >= 0) {
         const next = [...prev]
-        next[idx] = { ...next[idx], [field]: val }
+        next[idx] = { ...next[idx], volume: val }
         return next
       }
       return [...prev, {
         _key: `${jenis}-${sortimen}`,
         periode_id: selectedPeriode.id,
         jenis, sortimen,
-        volume: field === 'volume' ? val : 0,
-        tarif: field === 'tarif' ? val : DEFAULT_TARIF[sortimen],
+        volume: val,
+        tarif: tarifSortimen[sortimen] ?? DEFAULT_TARIF[sortimen],
       }]
     })
   }
@@ -135,7 +151,8 @@ export default function TumpukKapling() {
           jenis: j.key,
           sortimen: s,
           volume: parseFloat(row?.volume) || 0,
-          tarif: parseFloat(row?.tarif) || DEFAULT_TARIF[s],
+          // Tarif selalu diambil dari Tarif Periode (Main Link), bukan dari user.
+          tarif: tarifSortimen[s] ?? DEFAULT_TARIF[s],
         })
       }
     }
@@ -165,7 +182,8 @@ export default function TumpukKapling() {
   function nilaiPerJenis(jenis) {
     return SORTIMEN_LIST.reduce((sum, s) => {
       const r = grid.find(x => x.jenis === jenis && x.sortimen === s)
-      return sum + (parseFloat(r?.volume) || 0) * (parseFloat(r?.tarif) || 0)
+      const tarif = tarifSortimen[s] ?? DEFAULT_TARIF[s]
+      return sum + (parseFloat(r?.volume) || 0) * tarif
     }, 0)
   }
 
@@ -184,6 +202,9 @@ export default function TumpukKapling() {
         </h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
           Input volume per jenis & sortimen. Penomoran, Sabuk, dan Slaghammer otomatis terhitung.
+        </p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
+          <Lock size={11} /> Tarif sortimen dikelola di <span className="font-medium">Main Link → Tarif Periode</span>.
         </p>
       </div>
 
@@ -250,7 +271,11 @@ export default function TumpukKapling() {
                     <tr>
                       <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-24">Sortimen</th>
                       <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-32">Volume (M³)</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-32">Tarif</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-36">
+                        <span className="inline-flex items-center gap-1">
+                          Tarif <Lock size={11} className="text-gray-400 dark:text-gray-500" />
+                        </span>
+                      </th>
                       <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Nilai</th>
                     </tr>
                   </thead>
@@ -258,7 +283,7 @@ export default function TumpukKapling() {
                     {SORTIMEN_LIST.map(s => {
                       const r = grid.find(x => x.jenis === j.key && x.sortimen === s)
                       const vol = parseFloat(r?.volume) || 0
-                      const trf = parseFloat(r?.tarif) || DEFAULT_TARIF[s]
+                      const trf = tarifSortimen[s] ?? DEFAULT_TARIF[s]
                       return (
                         <tr key={s} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
                           <td className="px-4 py-2 font-medium text-gray-600 dark:text-gray-200">{s}</td>
@@ -266,20 +291,15 @@ export default function TumpukKapling() {
                             <input
                               type="number" step="0.001"
                               value={r?.volume ?? ''}
-                              onChange={e => updateField(j.key, s, 'volume', e.target.value)}
-                              className="w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400 dark:focus:border-primary-500"
+                              onChange={e => updateVolume(j.key, s, e.target.value)}
+                              className="w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right tabular-nums outline-none focus:border-primary-400 dark:focus:border-primary-500"
                               placeholder="0"
                             />
                           </td>
-                          <td className="px-4 py-1.5">
-                            <input
-                              type="number"
-                              value={r?.tarif ?? DEFAULT_TARIF[s]}
-                              onChange={e => updateField(j.key, s, 'tarif', e.target.value)}
-                              className="w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400 dark:focus:border-primary-500"
-                            />
+                          <td className="px-4 py-2 text-right text-gray-500 dark:text-gray-400 tabular-nums">
+                            {formatRupiah(trf)}
                           </td>
-                          <td className="px-4 py-2 text-right font-medium text-gray-700 dark:text-gray-100">
+                          <td className="px-4 py-2 text-right font-medium text-gray-700 dark:text-gray-100 tabular-nums">
                             {formatRupiah(vol * trf)}
                           </td>
                         </tr>
