@@ -198,7 +198,7 @@ export default function TumpukKapling() {
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 selectedPeriode?.id === p.id
                   ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               {p.periode}
@@ -220,8 +220,8 @@ export default function TumpukKapling() {
         <>
           {/* Info kalau belum ada data */}
           {!hasData && !loading && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-2 text-amber-700 text-sm">
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-5 flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 text-sm">
                 <Sparkles size={16} />
                 <span>Belum ada data untuk periode ini. Gunakan grid di bawah atau generate 9 baris default.</span>
               </div>
@@ -238,15 +238,15 @@ export default function TumpukKapling() {
           <div className="space-y-4 mb-5">
             {JENIS_LIST.map(j => (
               <div key={j.key} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-900">
-                  <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">{j.label}</p>
+                <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900/40">
+                  <p className="font-semibold text-gray-700 dark:text-gray-100 text-sm">{j.label}</p>
                   <div className="text-xs text-gray-500 dark:text-gray-400 flex gap-4">
-                    <span>Total: <strong className="text-gray-700 dark:text-gray-200">{formatNum(totalPerJenis(j.key))} M³</strong></span>
-                    <span className="text-primary-600 font-medium">{formatRupiah(nilaiPerJenis(j.key))}</span>
+                    <span>Total: <strong className="text-gray-700 dark:text-gray-100">{formatNum(totalPerJenis(j.key))} M³</strong></span>
+                    <span className="text-primary-600 dark:text-primary-300 font-medium">{formatRupiah(nilaiPerJenis(j.key))}</span>
                   </div>
                 </div>
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+                  <thead className="bg-gray-50 dark:bg-gray-900/40 border-b border-gray-100 dark:border-gray-700">
                     <tr>
                       <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-24">Sortimen</th>
                       <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-32">Volume (M³)</th>
@@ -254,20 +254,20 @@ export default function TumpukKapling() {
                       <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Nilai</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                     {SORTIMEN_LIST.map(s => {
                       const r = grid.find(x => x.jenis === j.key && x.sortimen === s)
                       const vol = parseFloat(r?.volume) || 0
                       const trf = parseFloat(r?.tarif) || DEFAULT_TARIF[s]
                       return (
-                        <tr key={s} className="hover:bg-gray-50/50">
-                          <td className="px-4 py-2 font-medium text-gray-600 dark:text-gray-300">{s}</td>
+                        <tr key={s} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
+                          <td className="px-4 py-2 font-medium text-gray-600 dark:text-gray-200">{s}</td>
                           <td className="px-4 py-1.5">
                             <input
                               type="number" step="0.001"
                               value={r?.volume ?? ''}
                               onChange={e => updateField(j.key, s, 'volume', e.target.value)}
-                              className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400"
+                              className="w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400 dark:focus:border-primary-500"
                               placeholder="0"
                             />
                           </td>
@@ -276,10 +276,10 @@ export default function TumpukKapling() {
                               type="number"
                               value={r?.tarif ?? DEFAULT_TARIF[s]}
                               onChange={e => updateField(j.key, s, 'tarif', e.target.value)}
-                              className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400"
+                              className="w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400 dark:focus:border-primary-500"
                             />
                           </td>
-                          <td className="px-4 py-2 text-right font-medium text-gray-700 dark:text-gray-200">
+                          <td className="px-4 py-2 text-right font-medium text-gray-700 dark:text-gray-100">
                             {formatRupiah(vol * trf)}
                           </td>
                         </tr>
@@ -294,16 +294,40 @@ export default function TumpukKapling() {
           {/* Summary turunan */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
             {[
-              { label: 'Penomoran Kapling', data: summary.penomoran, color: 'blue', note: 'Semua jenis' },
-              { label: 'Sabuk Kapling', data: summary.sabuk, color: 'emerald', note: '= Penomoran' },
-              { label: 'Slaghammer', data: summary.slaghammer, color: 'orange', note: 'JATI + Mahoni' },
+              {
+                label: 'Penomoran Kapling', data: summary.penomoran, note: 'Semua jenis',
+                cls: {
+                  card:  'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900',
+                  title: 'text-blue-600 dark:text-blue-300',
+                  note:  'text-blue-500 dark:text-blue-400',
+                  nilai: 'text-blue-700 dark:text-blue-200',
+                },
+              },
+              {
+                label: 'Sabuk Kapling', data: summary.sabuk, note: '= Penomoran',
+                cls: {
+                  card:  'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900',
+                  title: 'text-emerald-600 dark:text-emerald-300',
+                  note:  'text-emerald-500 dark:text-emerald-400',
+                  nilai: 'text-emerald-700 dark:text-emerald-200',
+                },
+              },
+              {
+                label: 'Slaghammer', data: summary.slaghammer, note: 'JATI + Mahoni',
+                cls: {
+                  card:  'bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-900',
+                  title: 'text-orange-600 dark:text-orange-300',
+                  note:  'text-orange-500 dark:text-orange-400',
+                  nilai: 'text-orange-700 dark:text-orange-200',
+                },
+              },
             ].map(c => (
-              <div key={c.label} className={`bg-${c.color}-50 border border-${c.color}-200 rounded-xl p-4`}>
-                <p className={`text-xs font-medium text-${c.color}-600 uppercase tracking-wide`}>{c.label}</p>
-                <p className={`text-xs text-${c.color}-500 mb-2`}>{c.note}</p>
+              <div key={c.label} className={`${c.cls.card} border rounded-xl p-4`}>
+                <p className={`text-xs font-medium uppercase tracking-wide ${c.cls.title}`}>{c.label}</p>
+                <p className={`text-xs mb-2 ${c.cls.note}`}>{c.note}</p>
                 <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{formatNum(c.data.fisik)} M³</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">× {formatRupiah(c.data.tarif)}</p>
-                <p className={`text-sm font-semibold text-${c.color}-700 mt-1`}>{formatRupiah(c.data.nilai)}</p>
+                <p className={`text-sm font-semibold mt-1 ${c.cls.nilai}`}>{formatRupiah(c.data.nilai)}</p>
               </div>
             ))}
           </div>

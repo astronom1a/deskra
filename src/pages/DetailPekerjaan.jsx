@@ -8,6 +8,17 @@ import {
 const DEFAULT_JENIS = ['JATI', 'RIMBA', 'MAHONI']
 const DEFAULT_JENIS_BARCODE = ['JATI', 'MAHONI', 'KEDAWUNG']
 
+// Header tints per section (literal classes so Tailwind picks up dark variants).
+const SECTION_TINT = {
+  emerald: { header: 'bg-emerald-50 dark:bg-emerald-950/40', icon: 'text-emerald-600 dark:text-emerald-300', total: 'text-emerald-700 dark:text-emerald-200' },
+  amber:   { header: 'bg-amber-50 dark:bg-amber-950/40',     icon: 'text-amber-600 dark:text-amber-300',     total: 'text-amber-700 dark:text-amber-200' },
+  violet:  { header: 'bg-violet-50 dark:bg-violet-950/40',   icon: 'text-violet-600 dark:text-violet-300',   total: 'text-violet-700 dark:text-violet-200' },
+}
+
+const INPUT_CLS = 'w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm outline-none focus:border-primary-400 dark:focus:border-primary-500'
+const INPUT_CLS_RIGHT = INPUT_CLS + ' text-right'
+const INPUT_CLS_LG = 'w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-700 rounded px-3 py-2 text-sm outline-none focus:border-primary-400 dark:focus:border-primary-500'
+
 function formatRupiah(val) {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0,
@@ -44,15 +55,15 @@ function SectionPerJenis({
 
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden`}>
-      <div className={`px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-${color}-50`}>
+      <div className={`px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between ${SECTION_TINT[color]?.header || ''}`}>
         <div className="flex items-center gap-2">
-          <Icon size={16} className={`text-${color}-600`} />
-          <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">{title}</p>
+          <Icon size={16} className={SECTION_TINT[color]?.icon || ''} />
+          <p className="font-semibold text-gray-700 dark:text-gray-100 text-sm">{title}</p>
         </div>
-        <p className={`text-sm font-semibold text-${color}-700`}>{formatRupiah(total)}</p>
+        <p className={`text-sm font-semibold ${SECTION_TINT[color]?.total || ''}`}>{formatRupiah(total)}</p>
       </div>
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+        <thead className="bg-gray-50 dark:bg-gray-900/40 border-b border-gray-100 dark:border-gray-700">
           <tr>
             {!lockedJenis && (
               <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Jenis</th>
@@ -65,7 +76,7 @@ function SectionPerJenis({
             <th className="w-10"></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-50">
+        <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
           {rows.length === 0 && (
             <tr><td colSpan={lockedJenis ? 4 : 5} className="px-4 py-4 text-center text-gray-400 dark:text-gray-500 text-xs italic">
               Belum ada baris. Tambah baris di bawah.
@@ -74,14 +85,14 @@ function SectionPerJenis({
           {rows.map(r => {
             const nilai = (parseFloat(r[volumeField]) || 0) * (parseFloat(r.tarif) || 0)
             return (
-              <tr key={r._key} className="hover:bg-gray-50/50">
+              <tr key={r._key} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
                 {!lockedJenis && (
                   <td className="px-4 py-1.5">
                     <input
                       value={r.jenis || ''}
                       onChange={e => updateRow(r._key, 'jenis', e.target.value)}
                       list={`jenis-${tableName}`}
-                      className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm outline-none focus:border-primary-400"
+                      className={INPUT_CLS}
                       placeholder="Jenis pohon..."
                     />
                     <datalist id={`jenis-${tableName}`}>
@@ -94,7 +105,7 @@ function SectionPerJenis({
                     type="number" step="0.001"
                     value={r[volumeField] ?? ''}
                     onChange={e => updateRow(r._key, volumeField, e.target.value)}
-                    className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400"
+                    className={INPUT_CLS_RIGHT}
                   />
                 </td>
                 <td className="px-4 py-1.5">
@@ -102,12 +113,12 @@ function SectionPerJenis({
                     type="number"
                     value={r.tarif ?? ''}
                     onChange={e => updateRow(r._key, 'tarif', e.target.value)}
-                    className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400"
+                    className={INPUT_CLS_RIGHT}
                   />
                 </td>
-                <td className="px-4 py-2 text-right font-medium text-gray-700 dark:text-gray-200">{formatRupiah(nilai)}</td>
+                <td className="px-4 py-2 text-right font-medium text-gray-700 dark:text-gray-100">{formatRupiah(nilai)}</td>
                 <td className="px-2">
-                  <button onClick={() => removeRow(r._key)} className="text-gray-300 dark:text-gray-600 hover:text-red-400">
+                  <button onClick={() => removeRow(r._key)} className="text-gray-300 dark:text-gray-500 hover:text-red-400">
                     <Trash2 size={14} />
                   </button>
                 </td>
@@ -116,10 +127,10 @@ function SectionPerJenis({
           })}
         </tbody>
       </table>
-      <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+      <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
         <button
           onClick={addRow}
-          className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-primary-600"
+          className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-300"
         >
           <Plus size={12} /> Tambah Baris
         </button>
@@ -350,11 +361,11 @@ export default function DetailPekerjaan() {
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   selectedPeriode?.id === p.id
                     ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
                 {p.periode}
-                <span className={`ml-1 text-[10px] px-1 rounded ${h === 'II' ? 'bg-orange-200 text-orange-700' : 'bg-blue-200 text-blue-700'}`}>
+                <span className={`ml-1 text-[10px] px-1 rounded ${h === 'II' ? 'bg-orange-200 dark:bg-orange-900/60 text-orange-700 dark:text-orange-200' : 'bg-blue-200 dark:bg-blue-900/60 text-blue-700 dark:text-blue-200'}`}>
                   {h}
                 </span>
               </button>
@@ -412,16 +423,16 @@ export default function DetailPekerjaan() {
           />
 
           {/* Tenaga Bantu - hanya periode II */}
-          <div className={`rounded-xl border overflow-hidden ${isPeriodeII ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 opacity-70'}`}>
-            <div className={`px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between ${isPeriodeII ? 'bg-sky-50' : 'bg-gray-100 dark:bg-gray-800'}`}>
+          <div className={`rounded-xl border overflow-hidden ${isPeriodeII ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-70'}`}>
+            <div className={`px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between ${isPeriodeII ? 'bg-sky-50 dark:bg-sky-950/40' : 'bg-gray-100 dark:bg-gray-800'}`}>
               <div className="flex items-center gap-2">
-                <Users size={16} className={isPeriodeII ? 'text-sky-600' : 'text-gray-400 dark:text-gray-500'} />
+                <Users size={16} className={isPeriodeII ? 'text-sky-600 dark:text-sky-300' : 'text-gray-400 dark:text-gray-500'} />
                 <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
                   Tenaga Bantu
                   {!isPeriodeII && <Lock size={12} className="inline ml-2 text-gray-400 dark:text-gray-500" />}
                 </p>
               </div>
-              <p className={`text-sm font-semibold ${isPeriodeII ? 'text-sky-700' : 'text-gray-400 dark:text-gray-500'}`}>
+              <p className={`text-sm font-semibold ${isPeriodeII ? 'text-sky-700 dark:text-sky-200' : 'text-gray-400 dark:text-gray-500'}`}>
                 {formatRupiah(isPeriodeII ? tenagaBantuNilai : 0)}
               </p>
             </div>
@@ -434,7 +445,7 @@ export default function DetailPekerjaan() {
                       type="number"
                       value={tenagaBantu.jumlah_orang}
                       readOnly
-                      className="w-full border border-gray-200 dark:border-gray-700 rounded px-3 py-2 text-sm outline-none bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200"
+                      className="w-full border border-gray-200 dark:border-gray-700 rounded px-3 py-2 text-sm outline-none bg-gray-50 dark:bg-gray-900/60 text-gray-700 dark:text-gray-200"
                     />
                   </div>
                   <div>
@@ -443,12 +454,12 @@ export default function DetailPekerjaan() {
                       type="number"
                       value={tenagaBantu.tarif_per_orang}
                       onChange={e => setTenagaBantu(p => ({ ...p, tarif_per_orang: e.target.value }))}
-                      className="w-full border border-gray-200 dark:border-gray-700 rounded px-3 py-2 text-sm outline-none focus:border-primary-400"
+                      className={INPUT_CLS_LG}
                     />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Total</label>
-                    <p className="px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+                    <p className="px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-100 bg-gray-50 dark:bg-gray-900/60 rounded border border-gray-200 dark:border-gray-700">
                       {formatRupiah(tenagaBantuNilai)}
                     </p>
                   </div>
@@ -462,16 +473,16 @@ export default function DetailPekerjaan() {
           </div>
 
           {/* Kebersihan — hanya periode II */}
-          <div className={`rounded-xl border overflow-hidden ${isPeriodeII ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 opacity-70'}`}>
-            <div className={`px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between ${isPeriodeII ? 'bg-orange-50' : 'bg-gray-100 dark:bg-gray-800'}`}>
+          <div className={`rounded-xl border overflow-hidden ${isPeriodeII ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-70'}`}>
+            <div className={`px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between ${isPeriodeII ? 'bg-orange-50 dark:bg-orange-950/40' : 'bg-gray-100 dark:bg-gray-800'}`}>
               <div className="flex items-center gap-2">
-                <Sparkles size={16} className={isPeriodeII ? 'text-orange-600' : 'text-gray-400 dark:text-gray-500'} />
+                <Sparkles size={16} className={isPeriodeII ? 'text-orange-600 dark:text-orange-300' : 'text-gray-400 dark:text-gray-500'} />
                 <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
                   Kebersihan
                   {!isPeriodeII && <Lock size={12} className="inline ml-2 text-gray-400 dark:text-gray-500" />}
                 </p>
               </div>
-              <p className={`text-sm font-semibold ${isPeriodeII ? 'text-orange-700' : 'text-gray-400 dark:text-gray-500'}`}>
+              <p className={`text-sm font-semibold ${isPeriodeII ? 'text-orange-700 dark:text-orange-200' : 'text-gray-400 dark:text-gray-500'}`}>
                 {formatRupiah(isPeriodeII ? kebersihan.nominal : 0)}
               </p>
             </div>
@@ -483,7 +494,7 @@ export default function DetailPekerjaan() {
                     type="number"
                     value={kebersihan.nominal}
                     onChange={e => setKebersihan(p => ({ ...p, nominal: e.target.value }))}
-                    className="w-full border border-gray-200 dark:border-gray-700 rounded px-3 py-2 text-sm outline-none focus:border-primary-400"
+                    className={INPUT_CLS_LG}
                   />
                 </div>
               ) : (
@@ -495,16 +506,16 @@ export default function DetailPekerjaan() {
           </div>
 
           {/* Listrik — hanya periode I */}
-          <div className={`rounded-xl border overflow-hidden ${isPeriodeI ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 opacity-70'}`}>
-            <div className={`px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between ${isPeriodeI ? 'bg-yellow-50' : 'bg-gray-100 dark:bg-gray-800'}`}>
+          <div className={`rounded-xl border overflow-hidden ${isPeriodeI ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-70'}`}>
+            <div className={`px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between ${isPeriodeI ? 'bg-yellow-50 dark:bg-yellow-950/40' : 'bg-gray-100 dark:bg-gray-800'}`}>
               <div className="flex items-center gap-2">
-                <Zap size={16} className={isPeriodeI ? 'text-yellow-600' : 'text-gray-400 dark:text-gray-500'} />
+                <Zap size={16} className={isPeriodeI ? 'text-yellow-600 dark:text-yellow-300' : 'text-gray-400 dark:text-gray-500'} />
                 <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
                   Listrik TPK
                   {!isPeriodeI && <Lock size={12} className="inline ml-2 text-gray-400 dark:text-gray-500" />}
                 </p>
               </div>
-              <p className={`text-sm font-semibold ${isPeriodeI ? 'text-yellow-700' : 'text-gray-400 dark:text-gray-500'}`}>
+              <p className={`text-sm font-semibold ${isPeriodeI ? 'text-yellow-700 dark:text-yellow-200' : 'text-gray-400 dark:text-gray-500'}`}>
                 {formatRupiah(isPeriodeI ? listrik.nominal : 0)}
               </p>
             </div>
@@ -517,7 +528,7 @@ export default function DetailPekerjaan() {
                       type="number"
                       value={listrik.nominal}
                       onChange={e => setListrik(p => ({ ...p, nominal: e.target.value }))}
-                      className="w-full border border-gray-200 dark:border-gray-700 rounded px-3 py-2 text-sm outline-none focus:border-primary-400"
+                      className={INPUT_CLS_LG}
                     />
                   </div>
                   <div>
@@ -525,7 +536,7 @@ export default function DetailPekerjaan() {
                     <input
                       value={listrik.no_meter || ''}
                       onChange={e => setListrik(p => ({ ...p, no_meter: e.target.value }))}
-                      className="w-full border border-gray-200 dark:border-gray-700 rounded px-3 py-2 text-sm outline-none focus:border-primary-400"
+                      className={INPUT_CLS_LG}
                       placeholder="516740016889"
                     />
                   </div>
@@ -540,15 +551,15 @@ export default function DetailPekerjaan() {
 
           {/* Custom Items */}
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-rose-50">
+            <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-rose-50 dark:bg-rose-950/40">
               <div className="flex items-center gap-2">
-                <Package size={16} className="text-rose-600" />
-                <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">Tabel Custom</p>
+                <Package size={16} className="text-rose-600 dark:text-rose-300" />
+                <p className="font-semibold text-gray-700 dark:text-gray-100 text-sm">Tabel Custom</p>
               </div>
-              <p className="text-sm font-semibold text-rose-700">{formatRupiah(customTotal)}</p>
+              <p className="text-sm font-semibold text-rose-700 dark:text-rose-200">{formatRupiah(customTotal)}</p>
             </div>
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+              <thead className="bg-gray-50 dark:bg-gray-900/40 border-b border-gray-100 dark:border-gray-700">
                 <tr>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Uraian</th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-24">Satuan</th>
@@ -558,7 +569,7 @@ export default function DetailPekerjaan() {
                   <th className="w-10"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {customItems.length === 0 && (
                   <tr><td colSpan={6} className="px-4 py-4 text-center text-gray-400 dark:text-gray-500 text-xs italic">
                     Belum ada item custom.
@@ -567,12 +578,12 @@ export default function DetailPekerjaan() {
                 {customItems.map(r => {
                   const nilai = (parseFloat(r.fisik) || 0) * (parseFloat(r.tarif) || 0)
                   return (
-                    <tr key={r._key} className="hover:bg-gray-50/50">
+                    <tr key={r._key} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
                       <td className="px-4 py-1.5">
                         <input
                           value={r.label || ''}
                           onChange={e => updateCustom(r._key, 'label', e.target.value)}
-                          className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm outline-none focus:border-primary-400"
+                          className={INPUT_CLS}
                           placeholder="Nama pekerjaan..."
                         />
                       </td>
@@ -580,7 +591,7 @@ export default function DetailPekerjaan() {
                         <input
                           value={r.satuan || ''}
                           onChange={e => updateCustom(r._key, 'satuan', e.target.value)}
-                          className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm outline-none focus:border-primary-400"
+                          className={INPUT_CLS}
                           placeholder="KALI"
                         />
                       </td>
@@ -589,7 +600,7 @@ export default function DetailPekerjaan() {
                           type="number" step="0.001"
                           value={r.fisik ?? ''}
                           onChange={e => updateCustom(r._key, 'fisik', e.target.value)}
-                          className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400"
+                          className={INPUT_CLS_RIGHT}
                         />
                       </td>
                       <td className="px-4 py-1.5">
@@ -597,12 +608,12 @@ export default function DetailPekerjaan() {
                           type="number"
                           value={r.tarif ?? ''}
                           onChange={e => updateCustom(r._key, 'tarif', e.target.value)}
-                          className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:border-primary-400"
+                          className={INPUT_CLS_RIGHT}
                         />
                       </td>
-                      <td className="px-4 py-2 text-right font-medium text-gray-700 dark:text-gray-200">{formatRupiah(nilai)}</td>
+                      <td className="px-4 py-2 text-right font-medium text-gray-700 dark:text-gray-100">{formatRupiah(nilai)}</td>
                       <td className="px-2">
-                        <button onClick={() => removeCustom(r._key)} className="text-gray-300 dark:text-gray-600 hover:text-red-400">
+                        <button onClick={() => removeCustom(r._key)} className="text-gray-300 dark:text-gray-500 hover:text-red-400">
                           <Trash2 size={14} />
                         </button>
                       </td>
@@ -611,10 +622,10 @@ export default function DetailPekerjaan() {
                 })}
               </tbody>
             </table>
-            <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+            <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
               <button
                 onClick={addCustom}
-                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-primary-600"
+                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-300"
               >
                 <Plus size={12} /> Tambah Item
               </button>
