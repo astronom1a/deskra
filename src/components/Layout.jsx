@@ -1,48 +1,41 @@
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Link2, Users, Users2, Layers, Package,
   ChevronDown, ChevronRight, TreePine, ClipboardList, Wallet, ScrollText,
-  Settings as SettingsIcon, Sun, Moon
+  Settings as SettingsIcon, Sun, Moon, Building2, ShieldCheck, LogOut,
+  ArrowLeft,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useTheme } from '../lib/useTheme'
 import { useAccount } from '../lib/useAccount'
+import { useAuth } from '../lib/AuthProvider'
 import { version as appVersion } from '../../package.json'
 
-const navItems = [
+const operatorNavItems = [
+  { label: 'Dashboard',       path: '/dashboard',       icon: LayoutDashboard },
+  { label: 'Register Kapling',path: '/register-kapling',icon: ClipboardList },
+  { label: 'DKHP SKSHHK',    path: '/dkhp-skshhk',     icon: ScrollText },
   {
-    label: 'Dashboard',
-    path: '/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    label: 'Register Kapling',
-    path: '/register-kapling',
-    icon: ClipboardList,
-  },
-  {
-    label: 'DKHP SKSHHK',
-    path: '/dkhp-skshhk',
-    icon: ScrollText,
-  },
-  {
-    label: 'Uang Kerja',
-    icon: Wallet,
+    label: 'Uang Kerja', icon: Wallet,
     children: [
-      { label: 'Main Link', path: '/main-link', icon: Link2 },
-      { label: 'Tumpuk Kapling', path: '/tumpuk-kapling', icon: Layers },
-      { label: 'Detail Pekerjaan', path: '/detail-pekerjaan', icon: Package },
+      { label: 'Main Link',       path: '/main-link',        icon: Link2 },
+      { label: 'Tumpuk Kapling',  path: '/tumpuk-kapling',   icon: Layers },
+      { label: 'Detail Pekerjaan',path: '/detail-pekerjaan', icon: Package },
     ],
   },
   {
-    label: 'Database',
-    icon: null,
+    label: 'Database', icon: null,
     children: [
-      { label: 'Pejabat', path: '/database/pejabat', icon: Users },
-      { label: 'Tenaga Kerja', path: '/database/tenaga', icon: Users2 },
+      { label: 'Pejabat',      path: '/database/pejabat', icon: Users },
+      { label: 'Tenaga Kerja', path: '/database/tenaga',  icon: Users2 },
     ],
   },
+]
+
+const adminNavItems = [
+  { label: 'Dashboard Admin', path: '/admin',     icon: LayoutDashboard },
+  { label: 'Manajemen TPK',   path: '/admin/tpk', icon: Building2 },
 ]
 
 function SidebarItem({ item }) {
@@ -78,6 +71,7 @@ function SidebarItem({ item }) {
   return (
     <NavLink
       to={item.path}
+      end={item.path === '/admin'}
       className={({ isActive }) =>
         `flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-colors ${
           isActive
@@ -93,11 +87,14 @@ function SidebarItem({ item }) {
 }
 
 export default function Layout() {
+  const navigate = useNavigate()
   const [realtimeStatus, setRealtimeStatus] = useState('connecting')
   const { theme, toggle } = useTheme()
   const { account } = useAccount()
-  const namaTpk = account.namaTpk || 'Wongsorejo'
+  const { tpk, isAdmin, activeTpkId, setActiveTpkId, signOut } = useAuth()
+  const namaTpk = tpk?.nama_tpk || account.namaTpk || 'Wongsorejo'
   const isDark = theme === 'dark'
+  const navItems = isAdmin ? adminNavItems : operatorNavItems
 
   useEffect(() => {
     const channel = supabase
@@ -110,10 +107,16 @@ export default function Layout() {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
       <aside className="w-60 bg-primary-800 dark:bg-gray-900 flex flex-col shrink-0 border-r border-transparent dark:border-gray-800">
+
         {/* Brand */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-primary-700 dark:border-gray-800">
           <div className="bg-white/10 p-2 rounded-lg">
@@ -137,9 +140,27 @@ export default function Layout() {
                 }`}
               />
             </div>
-            <p className="text-primary-300 dark:text-gray-400 text-xs">TPK {namaTpk}</p>
+            {isAdmin ? (
+              <div className="flex items-center gap-1 mt-0.5">
+                <ShieldCheck size={10} className="text-amber-300" />
+                <p className="text-amber-300 text-xs font-medium">Superadmin</p>
+              </div>
+            ) : (
+              <p className="text-primary-300 dark:text-gray-400 text-xs">TPK {namaTpk}</p>
+            )}
           </div>
         </div>
+
+        {/* Banner konteks TPK aktif (admin sedang browse data TPK tertentu) */}
+        {isAdmin && activeTpkId && (
+          <button
+            onClick={() => { setActiveTpkId(null); navigate('/admin') }}
+            className="mx-3 mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/20 border border-amber-400/30 text-amber-200 text-xs hover:bg-amber-500/30 transition-colors"
+          >
+            <ArrowLeft size={13} />
+            <span className="truncate">Kembali ke Admin Panel</span>
+          </button>
+        )}
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto scrollbar-hide px-3 py-4 space-y-1">
@@ -148,21 +169,23 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* Settings + Theme toggle */}
+        {/* Bottom actions */}
         <div className="px-3 py-3 border-t border-primary-700 dark:border-gray-800 space-y-1">
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-colors ${
-                isActive
-                  ? 'bg-white text-primary-700 font-semibold shadow-sm'
-                  : 'text-primary-100 hover:bg-primary-700 dark:hover:bg-gray-800'
-              }`
-            }
-          >
-            <SettingsIcon size={16} />
-            Settings
-          </NavLink>
+          {!isAdmin && (
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-white text-primary-700 font-semibold shadow-sm'
+                    : 'text-primary-100 hover:bg-primary-700 dark:hover:bg-gray-800'
+                }`
+              }
+            >
+              <SettingsIcon size={16} />
+              Settings
+            </NavLink>
+          )}
           <button
             onClick={toggle}
             title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
@@ -175,17 +198,16 @@ export default function Layout() {
               </span>
               {isDark ? 'Dark Mode' : 'Light Mode'}
             </span>
-            <span
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-300 ${
-                isDark ? 'bg-primary-500' : 'bg-primary-900'
-              }`}
-            >
-              <span
-                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-300 ease-out ${
-                  isDark ? 'translate-x-5' : 'translate-x-1'
-                }`}
-              />
+            <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-300 ${isDark ? 'bg-primary-500' : 'bg-primary-900'}`}>
+              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-300 ease-out ${isDark ? 'translate-x-5' : 'translate-x-1'}`} />
             </span>
+          </button>
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-primary-100 hover:bg-red-600/20 hover:text-red-300 rounded-lg transition-colors"
+          >
+            <LogOut size={16} />
+            Keluar
           </button>
         </div>
 

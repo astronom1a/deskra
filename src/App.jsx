@@ -1,5 +1,11 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AuthProvider, useAuth } from './lib/AuthProvider'
 import Layout from './components/Layout'
+import Login from './pages/Login'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminTpkList from './pages/admin/AdminTpkList'
+import AdminTpkBuat from './pages/admin/AdminTpkBuat'
+import AdminTpkDetail from './pages/admin/AdminTpkDetail'
 import Dashboard from './pages/Dashboard'
 import MainLink from './pages/MainLink'
 import DatabasePejabat from './pages/DatabasePejabat'
@@ -18,10 +24,90 @@ import CetakKwitansi from './pages/Cetak/CetakKwitansi'
 import CetakLampiran31 from './pages/Cetak/CetakLampiran31'
 import CetakAbsen from './pages/Cetak/CetakAbsen'
 
-export default function App() {
+function ProtectedRoute({ children }) {
+  const { session, loading } = useAuth()
+  const location = useLocation()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <span className="inline-block w-6 h-6 border-2 border-primary-300 border-t-primary-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!session) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  return children
+}
+
+function AdminRoute({ children }) {
+  const { session, isAdmin, loading } = useAuth()
+  const location = useLocation()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <span className="inline-block w-6 h-6 border-2 border-primary-300 border-t-primary-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!session) return <Navigate to="/login" state={{ from: location }} replace />
+  if (!isAdmin) return <Navigate to="/dashboard" replace />
+
+  return children
+}
+
+function PublicRoute({ children }) {
+  const { session, loading } = useAuth()
+
+  if (loading) return null
+
+  if (session) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  return children
+}
+
+function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+
+      {/* Admin routes */}
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <Layout />
+          </AdminRoute>
+        }
+      >
+        <Route index element={<AdminDashboard />} />
+        <Route path="tpk" element={<AdminTpkList />} />
+        <Route path="tpk/buat" element={<AdminTpkBuat />} />
+        <Route path="tpk/:id" element={<AdminTpkDetail />} />
+      </Route>
+
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="register-kapling" element={<RegisterKapling />} />
@@ -34,6 +120,7 @@ export default function App() {
         <Route path="database/tarif" element={<DatabaseTarif />} />
         <Route path="settings" element={<Settings />} />
       </Route>
+
       {/* Halaman cetak — standalone tanpa sidebar */}
       <Route path="cetak/biaya-tpk/:periodeId" element={<CetakBiayaTPK />} />
       <Route path="cetak/gabungan-pembayaran/:periodeId" element={<CetakGabunganPembayaran />} />
@@ -44,6 +131,16 @@ export default function App() {
       <Route path="cetak/lampiran-62/:periodeId/:itemKey" element={<CetakLampiran31 />} />
       <Route path="cetak/absen/:periodeId" element={<CetakAbsen />} />
       <Route path="cetak/absen/:periodeId/:itemKey" element={<CetakAbsen />} />
+
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   )
 }
