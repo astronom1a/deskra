@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { computeTotalUK } from '../lib/rekapPekerjaan'
 import { Link2, Users, Layers, Package, Clock, TrendingUp, AlertCircle, Eye, EyeOff, FileText, BookOpen } from 'lucide-react'
+import { useAccount } from '../lib/useAccount'
 
 const shortcuts = [
   {
@@ -70,6 +71,8 @@ function useDateTime() {
 export default function Dashboard() {
   const navigate = useNavigate()
   const now = useDateTime()
+  const { account } = useAccount()
+  const namaTpk = account.namaTpk || 'Wongsorejo'
   const [periodes, setPeriodes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -121,7 +124,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Selamat datang di Deskra — Sistem Administrasi Kantor TPK Wongsorejo
+            Selamat datang di Deskra — Sistem Administrasi Kantor TPK {namaTpk}
           </p>
         </div>
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-5 py-3.5 text-right shrink-0">

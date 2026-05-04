@@ -145,7 +145,7 @@ export default function DatabaseTenaga() {
               <input
                 value={form.nama}
                 onChange={e => setForm(f => ({ ...f, nama: e.target.value }))}
-                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+                className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
                 placeholder="Contoh: MISNOTO"
               />
             </div>
@@ -154,7 +154,7 @@ export default function DatabaseTenaga() {
               <input
                 value={form.nik}
                 onChange={e => setForm(f => ({ ...f, nik: e.target.value }))}
-                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+                className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
                 placeholder="Contoh: 3510180508720007"
               />
             </div>
@@ -163,7 +163,7 @@ export default function DatabaseTenaga() {
               <textarea
                 value={form.alamat}
                 onChange={e => setForm(f => ({ ...f, alamat: e.target.value }))}
-                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+                className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
                 rows={2}
                 placeholder="Contoh: Dusun Sumbermulyo, Wongsorejo, Banyuwangi"
               />

@@ -4,6 +4,7 @@ import CetakLayout, { CetakPageSkeleton } from './CetakLayout'
 import { supabase } from '../../lib/supabase'
 import { buildRows } from '../../lib/rekapPekerjaan'
 import { formatAngka, formatAngkaFisik, terbilangBungkus, formatTanggalTtd } from './cetakHelpers'
+import { getNamaTpk, getNamaTpkUpper } from '../../lib/useAccount'
 
 const TIMES = { fontFamily: '"Times New Roman", Times, serif' }
 
@@ -38,6 +39,8 @@ export default function CetakKwitansi() {
 function KwitansiDoc({ periode }) {
   const { itemKey } = useParams()
   const [data, setData] = useState(null)
+  const tpkName = getNamaTpk()
+  const tpkUpper = getNamaTpkUpper()
 
   useEffect(() => {
     (async () => {
@@ -152,7 +155,7 @@ function KwitansiDoc({ periode }) {
         <p className="font-bold text-[13px]">PERUSAHAAN UMUM KEHUTANAN NEGARA</p>
         <p className="font-bold text-[12px]">( PERUM PERHUTANI )</p>
         <p className="font-bold text-[12px]">DIVISI REGIONAL JAWA TIMUR</p>
-        <p className="font-bold text-[12px]">TPK WONGSOREJO</p>
+        <p className="font-bold text-[12px]">TPK {tpkUpper}</p>
       </div>
 
       {/* ── Kotak atas: Telah terima (kiri) + KUITANSI (kanan) ── */}
@@ -347,10 +350,10 @@ function KwitansiDoc({ periode }) {
               Kuasa pengguna Anggaran<br/>Wk.Adm / KSKPH
             </td>
             <td className="border border-black p-1 text-center">
-              Bendahara Pengeluaran/PPC<br/>Kepala TPK.Wongsorejo
+              Bendahara Pengeluaran/PPC<br/>Kepala TPK.{tpkName}
             </td>
             <td className="border border-black p-1 text-center">
-              Sp.TPK Wongsorejo
+              Sp.TPK {tpkName}
             </td>
           </tr>
           <tr>

@@ -7,6 +7,7 @@ import {
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useTheme } from '../lib/useTheme'
+import { useAccount } from '../lib/useAccount'
 import { version as appVersion } from '../../package.json'
 
 const navItems = [
@@ -94,6 +95,8 @@ function SidebarItem({ item }) {
 export default function Layout() {
   const [realtimeStatus, setRealtimeStatus] = useState('connecting')
   const { theme, toggle } = useTheme()
+  const { account } = useAccount()
+  const namaTpk = account.namaTpk || 'Wongsorejo'
   const isDark = theme === 'dark'
 
   useEffect(() => {
@@ -134,7 +137,7 @@ export default function Layout() {
                 }`}
               />
             </div>
-            <p className="text-primary-300 dark:text-gray-400 text-xs">TPK Wongsorejo</p>
+            <p className="text-primary-300 dark:text-gray-400 text-xs">TPK {namaTpk}</p>
           </div>
         </div>
 
@@ -166,16 +169,19 @@ export default function Layout() {
             className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-primary-100 hover:bg-primary-700 dark:hover:bg-gray-800 rounded-lg transition-colors"
           >
             <span className="flex items-center gap-3 font-medium">
-              {isDark ? <Moon size={16} /> : <Sun size={16} />}
+              <span className="relative inline-flex w-4 h-4 items-center justify-center">
+                <Sun size={16} className={`absolute transition-all duration-300 ${isDark ? 'opacity-0 rotate-90 scale-50' : 'opacity-100 rotate-0 scale-100'}`} />
+                <Moon size={16} className={`absolute transition-all duration-300 ${isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-50'}`} />
+              </span>
               {isDark ? 'Dark Mode' : 'Light Mode'}
             </span>
             <span
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-300 ${
                 isDark ? 'bg-primary-500' : 'bg-primary-900'
               }`}
             >
               <span
-                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-300 ease-out ${
                   isDark ? 'translate-x-5' : 'translate-x-1'
                 }`}
               />

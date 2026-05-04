@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import CetakLayout, { CetakPageSkeleton } from './CetakLayout'
 import { fetchCetakData, formatAngka, terbilangBungkus, formatTanggalLengkap, formatTanggalTtd } from './cetakHelpers'
+import { getNamaTpkUpper } from '../../lib/useAccount'
 
 const TIMES = { fontFamily: '"Times New Roman", Times, serif' }
 
@@ -14,6 +15,7 @@ export default function CetakPermintaanUk() {
 
 function PermintaanUkDoc({ periode }) {
   const [data, setData] = useState(null)
+  const tpkUpper = getNamaTpkUpper()
   useEffect(() => { fetchCetakData(periode.id).then(setData) }, [periode.id])
   if (!data) return <CetakPageSkeleton />
 
@@ -50,7 +52,7 @@ function PermintaanUkDoc({ periode }) {
 
       {/* ── Pembuka ─────────────────────────────────────── */}
       <p className="text-justify">
-        Bendahara pengeluaran : <span className="font-bold">TPK WONGSOREJO</span> berdasarkan kegiatan pekerjaan yang akan / telah
+        Bendahara pengeluaran : <span className="font-bold">TPK {tpkUpper}</span> berdasarkan kegiatan pekerjaan yang akan / telah
         dilaksanakan dalam periode <span className="font-bold">{periode.periode}</span>, masa pembayaran dari tanggal <span className="font-bold">{formatTanggalLengkap(periode.tgl_awal)}</span> sampai
         dengan <span className="font-bold">{formatTanggalLengkap(periode.tgl_akhir)}</span> diperlukan uang kerja dari satuan kantor KPH Banyuwangi Utara sebesar
       </p>

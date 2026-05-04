@@ -4,6 +4,7 @@ import CetakLayout, { CetakPageSkeleton } from './CetakLayout'
 import { supabase } from '../../lib/supabase'
 import { buildRows } from '../../lib/rekapPekerjaan'
 import { formatAngka, formatAngkaFisik, formatTanggalLengkap } from './cetakHelpers'
+import { getNamaTpkUpper } from '../../lib/useAccount'
 
 const ARIAL = { fontFamily: 'Arial, Helvetica, sans-serif' }
 
@@ -15,7 +16,7 @@ const ITEM_CONFIG = {
   tanda_laku: { perincian: 'BIAYA MEMBERI TANDA LAKU', volSatuan: 'M3' },
   slaghammer: { perincian: 'PENANDAAN SLAGHAMMER',    volSatuan: 'M3', workerPosisi: 'SLAGHAMMER' },
   barcode:    { perincian: 'PASANG BARCODE',          volSatuan: 'BTG', workerPosisi: 'BARCODE' },
-  kebersihan: { perincian: 'BERSIH - BERSIH KANTOR DAN HALAMAN TPK WONGSOREJO', volSatuan: 'BLN', workerPosisi: 'KEBERSIHAN' },
+  kebersihan: { perincian: 'BERSIH - BERSIH KANTOR DAN HALAMAN TPK %TPK%', volSatuan: 'BLN', workerPosisi: 'KEBERSIHAN' },
   listrik:    { perincian: 'LISTRIK TPK',             volSatuan: 'BLN' },
   tumpuk:     { perincian: 'Bea tumpuk kapling',      volSatuan: 'M3', mode: 'tumpuk' },
   tenaga:     { perincian: 'TENAGA BANTU',            volSatuan: 'BULAN', mode: 'tenaga' },
@@ -214,7 +215,7 @@ function SingleWorkerBody({ data, item, grand, cfg, itemKey }) {
           <td className="border border-black px-1 align-top">{worker.nama || ''}</td>
           <td className="border border-black px-1 align-top">{worker.nik || ''}</td>
           <td className="border border-black px-1 align-top">{extractDesa(worker.alamat)}</td>
-          <td className="border border-black px-1 align-top">{cfg.perincian}</td>
+          <td className="border border-black px-1 align-top">{cfg.perincian.replace(/%TPK%/g, getNamaTpkUpper())}</td>
           <td className="border border-black px-1 text-right align-top">{formatAngkaFisik(item.fisik)}</td>
           <td className="border border-black px-1 text-right align-top">{formatAngka(item.tarif)}</td>
           <td className="border border-black px-1 text-right align-top">{formatAngka(grand)}</td>

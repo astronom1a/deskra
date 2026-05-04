@@ -3,6 +3,7 @@ import CetakLayout, { CetakPageSkeleton } from './CetakLayout'
 import { supabase } from '../../lib/supabase'
 import { buildRows } from '../../lib/rekapPekerjaan'
 import { formatAngka, formatTanggalTtd } from './cetakHelpers'
+import { getNamaTpkUpper } from '../../lib/useAccount'
 
 const ARIAL   = { fontFamily: 'Arial, Helvetica, sans-serif' }
 const CALIBRI = { fontFamily: 'Calibri, "Segoe UI", Arial, sans-serif' }
@@ -24,6 +25,7 @@ export default function CetakPjUk() {
 
 function PjUkDoc({ periode }) {
   const [data, setData] = useState(null)
+  const tpkUpper = getNamaTpkUpper()
 
   useEffect(() => {
     (async () => {
@@ -78,7 +80,7 @@ function PjUkDoc({ periode }) {
         <div>
           <p className="font-bold text-[12px]">PERUM PERHUTANI</p>
           <p>KPH : <span className="font-bold">BANYUWANGI UTARA</span></p>
-          <p>TPK : <span className="font-bold">WONGSOREJO</span></p>
+          <p>TPK : <span className="font-bold">{tpkUpper}</span></p>
         </div>
       </div>
 

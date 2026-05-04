@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 
 const STORAGE_KEY = 'deskra-theme'
+const EVENT = 'deskra-theme-change'
 
 function getInitialTheme() {
   if (typeof window === 'undefined') return 'light'
@@ -16,16 +17,33 @@ function applyTheme(theme) {
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState(getInitialTheme)
+  const [theme, setThemeState] = useState(getInitialTheme)
 
   useEffect(() => {
-    applyTheme(theme)
-    localStorage.setItem(STORAGE_KEY, theme)
-  }, [theme])
+    const onChange = (e) => setThemeState(e.detail)
+    const onStorage = (e) => {
+      if (e.key === STORAGE_KEY && (e.newValue === 'light' || e.newValue === 'dark')) {
+        setThemeState(e.newValue)
+      }
+    }
+    window.addEventListener(EVENT, onChange)
+    window.addEventListener('storage', onStorage)
+    return () => {
+      window.removeEventListener(EVENT, onChange)
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [])
+
+  const setTheme = useCallback((next) => {
+    setThemeState(next)
+    applyTheme(next)
+    localStorage.setItem(STORAGE_KEY, next)
+    window.dispatchEvent(new CustomEvent(EVENT, { detail: next }))
+  }, [])
 
   const toggle = useCallback(() => {
-    setTheme(t => (t === 'dark' ? 'light' : 'dark'))
-  }, [])
+    setTheme(theme === 'dark' ? 'light' : 'dark')
+  }, [theme, setTheme])
 
   return { theme, toggle, setTheme }
 }

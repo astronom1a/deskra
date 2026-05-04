@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import CetakLayout, { CetakPageSkeleton } from './CetakLayout'
 import { buildRows } from '../../lib/rekapPekerjaan'
 import { formatAngka, terbilangBungkus, formatTanggalTtd } from './cetakHelpers'
+import { getNamaTpkUpper } from '../../lib/useAccount'
 
 const TIMES = { fontFamily: '"Times New Roman", Times, serif' }
 
@@ -16,6 +17,7 @@ export default function CetakGabunganPembayaran() {
 
 function GPDoc({ periode }) {
   const [data, setData] = useState(null)
+  const tpkUpper = getNamaTpkUpper()
 
   useEffect(() => {
     (async () => {
@@ -123,7 +125,7 @@ function GPDoc({ periode }) {
             <td className="border border-black px-2 align-top">
               Bayar Uang Kerja periode<br/>
               <span className="font-bold">{periode.periode}</span><br/>
-              <span className="font-bold">GABUNGAN TPK WONGSOREJO</span>
+              <span className="font-bold">GABUNGAN TPK {tpkUpper}</span>
             </td>
             <td className="border border-black text-center align-top">-</td>
             <td className="border border-black text-center align-top">-</td>

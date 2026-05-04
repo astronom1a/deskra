@@ -24,6 +24,8 @@ const FIELD_DEFS = [
   { key: 'sertifikasi',    label: 'Sertifikasi' },
   { key: 'batang',         label: 'Batang', num: true },
   { key: 'volume',         label: 'Volume (M³)', num: true },
+  { key: 'dkhp',           label: 'DKHP' },
+  { key: 'skshhk',         label: 'SKSHHK' },
 ]
 
 const DEFAULT_COL_MAP = {
@@ -41,6 +43,8 @@ const DEFAULT_COL_MAP = {
   sertifikasi:    'Sertifikasi',
   batang:         'Batang',
   volume:         'Volume',
+  dkhp:           'DKHP',
+  skshhk:         'SKSHHK',
 }
 
 const COLS = [
@@ -58,6 +62,8 @@ const COLS = [
   { key: 'volume',         label: 'M³',            w: 'w-[64px]',  num: true },
   { key: 'no_invois',      label: 'Invois',        w: 'w-[130px]' },
   { key: 'pembeli',        label: 'Pembeli',       w: 'w-[140px]' },
+  { key: 'dkhp',           label: 'DKHP',          w: 'w-[110px]' },
+  { key: 'skshhk',         label: 'SKSHHK',        w: 'w-[130px]' },
 ]
 
 const CACAT_SUFFIX  = { BUN: 'BC', DOR: 'DR' }
@@ -146,6 +152,8 @@ function parseRowsWithMap(rawRows, colMap) {
         sertifikasi:    String(get('sertifikasi') ?? '').trim(),
         batang:         Number(get('batang')) || 0,
         volume:         Number(get('volume')) || 0,
+        dkhp:           String(get('dkhp') ?? '').trim() || null,
+        skshhk:         String(get('skshhk') ?? '').trim() || null,
       }
     })
 
@@ -342,6 +350,8 @@ export default function RegisterKapling() {
         volume:         Number(editRow.volume) || 0,
         no_invois:      editRow.no_invois,
         pembeli:        editRow.pembeli,
+        dkhp:           editRow.dkhp || null,
+        skshhk:         editRow.skshhk || null,
       })
       .eq('no_kapling', editRow.no_kapling)
     setEditSaving(false)
@@ -760,6 +770,8 @@ export default function RegisterKapling() {
                 { label: 'Sertifikasi',    key: 'sertifikasi' },
                 { label: 'Batang',         key: 'batang',         type: 'number' },
                 { label: 'Volume (M³)',    key: 'volume',         type: 'number' },
+                { label: 'DKHP',           key: 'dkhp' },
+                { label: 'SKSHHK',         key: 'skshhk' },
                 { label: 'No. Invois',     key: 'no_invois' },
                 { label: 'Pembeli',        key: 'pembeli' },
               ].map(f => (
@@ -921,6 +933,8 @@ export default function RegisterKapling() {
                   <td className="px-2 py-2 sticky left-0 bg-gray-50 dark:bg-gray-900 z-10" colSpan={11}>TOTAL</td>
                   <td className="px-2 py-2 text-right font-mono">{totalBatang.toLocaleString('id')}</td>
                   <td className="px-2 py-2 text-right font-mono">{totalVolume.toFixed(3)}</td>
+                  <td className="px-2 py-2"></td>
+                  <td className="px-2 py-2"></td>
                   <td className="px-2 py-2"></td>
                   <td className="px-2 py-2"></td>
                   <td className="px-2 py-2"></td>
