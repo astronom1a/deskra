@@ -1,35 +1,31 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Sun, Moon, Monitor, UserCog, Save, Check } from 'lucide-react'
 import { useTheme } from '../lib/useTheme'
-import { useAccount } from '../lib/useAccount'
+import { useAuth } from '../lib/AuthProvider'
 
 export default function Settings() {
   const { theme, setTheme } = useTheme()
-  const { account, save } = useAccount()
+  const { profile, tpk, updateProfile } = useAuth()
 
-  const [draft, setDraft] = useState(account)
+  const [namaOperator, setNamaOperator] = useState(profile?.nama_operator || '')
+  const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
 
-  useEffect(() => { setDraft(account) }, [account])
+  const dirty = namaOperator.trim() !== (profile?.nama_operator || '')
+  const canSave = dirty && namaOperator.trim().length > 0 && !saving
 
-  const setField = (key, value) => {
-    setDraft(d => ({ ...d, [key]: value }))
-    setSaved(false)
-  }
-
-  const dirty = JSON.stringify(draft) !== JSON.stringify(account)
-  const kodeOk = draft.kodeTpk === '' || /^\d{7}$/.test(draft.kodeTpk)
-  const kodeErr = draft.kodeTpk !== '' && !kodeOk
-  const canSave = dirty && kodeOk
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!canSave) return
-    save({
-      namaOperator: draft.namaOperator.trim(),
-      namaTpk: draft.namaTpk.trim() || 'Wongsorejo',
-      kodeTpk: draft.kodeTpk,
-    })
-    setSaved(true)
+    setSaving(true)
+    setError('')
+    const { error } = await updateProfile({ nama_operator: namaOperator.trim() })
+    if (error) {
+      setError(typeof error === 'string' ? error : error.message || 'Gagal menyimpan.')
+    } else {
+      setSaved(true)
+    }
+    setSaving(false)
   }
 
   const options = [
@@ -49,15 +45,15 @@ export default function Settings() {
           <UserCog size={18} className="text-primary-600 dark:text-primary-300" />
           <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">Akun</h2>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Identitas operator dan TPK. Tersimpan di perangkat ini.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Identitas operator dan TPK.</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Nama Operator</label>
             <input
               type="text"
-              value={draft.namaOperator}
-              onChange={e => setField('namaOperator', e.target.value)}
+              value={namaOperator}
+              onChange={e => { setNamaOperator(e.target.value); setSaved(false) }}
               placeholder="cth. Budi Santoso"
               className={`${inputCls} border-gray-200 dark:border-gray-600`}
             />
@@ -66,27 +62,21 @@ export default function Settings() {
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Nama TPK</label>
             <input
               type="text"
-              value={draft.namaTpk}
-              onChange={e => setField('namaTpk', e.target.value)}
-              placeholder="cth. Wongsorejo"
-              className={`${inputCls} border-gray-200 dark:border-gray-600`}
+              value={tpk?.nama_tpk || '—'}
+              disabled
+              className={`${inputCls} border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed`}
             />
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Tampil sebagai "TPK {draft.namaTpk || '...'}" di seluruh aplikasi.</p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Dikelola oleh admin.</p>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Kode TPK</label>
             <input
               type="text"
-              inputMode="numeric"
-              maxLength={7}
-              value={draft.kodeTpk}
-              onChange={e => setField('kodeTpk', e.target.value.replace(/\D/g, '').slice(0, 7))}
-              placeholder="7 digit angka"
-              className={`${inputCls} ${kodeErr ? 'border-red-400 dark:border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-600'}`}
+              value={tpk?.kode_tpk || '—'}
+              disabled
+              className={`${inputCls} border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed`}
             />
-            <p className={`text-[11px] mt-1 ${kodeErr ? 'text-red-500' : 'text-gray-400 dark:text-gray-500'}`}>
-              {kodeErr ? 'Kode TPK harus 7 digit angka.' : 'Berisi 7 digit angka.'}
-            </p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Dikelola oleh admin.</p>
           </div>
         </div>
 
@@ -96,15 +86,21 @@ export default function Settings() {
             disabled={!canSave}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 disabled:bg-gray-300 disabled:dark:bg-gray-600 disabled:cursor-not-allowed transition-colors"
           >
-            <Save size={15} /> Simpan
+            {saving
+              ? <span className="inline-block w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              : <Save size={15} />}
+            Simpan
           </button>
           {saved && !dirty && (
             <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-              <Check size={14} /> Tersimpan
+              <Check size={14} /> Tersimpan di sistem
             </span>
           )}
-          {dirty && (
+          {dirty && !saving && (
             <span className="text-xs text-amber-600 dark:text-amber-400">Perubahan belum disimpan</span>
+          )}
+          {error && (
+            <span className="text-xs text-red-500">{error}</span>
           )}
         </div>
       </section>

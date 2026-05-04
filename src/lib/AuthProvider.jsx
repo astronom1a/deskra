@@ -44,6 +44,16 @@ export function AuthProvider({ children }) {
 
   const isAdmin = profile?.role === 'admin'
 
+  const updateProfile = async (fields) => {
+    if (!session) return { error: 'Tidak ada sesi aktif' }
+    const { error } = await supabase
+      .from('profiles')
+      .update(fields)
+      .eq('id', session.user.id)
+    if (!error) setProfile(p => ({ ...p, ...fields }))
+    return { error }
+  }
+
   return (
     <AuthContext.Provider value={{
       session,
@@ -53,6 +63,7 @@ export function AuthProvider({ children }) {
       activeTpkId,
       setActiveTpkId,
       signOut,
+      updateProfile,
       loading: session === undefined,
     }}>
       {children}

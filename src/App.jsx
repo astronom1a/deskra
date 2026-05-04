@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/AuthProvider'
 import Layout from './components/Layout'
@@ -25,10 +26,10 @@ import CetakLampiran31 from './pages/Cetak/CetakLampiran31'
 import CetakAbsen from './pages/Cetak/CetakAbsen'
 
 function ProtectedRoute({ children }) {
-  const { session, loading } = useAuth()
+  const { session, isAdmin, profile, loading } = useAuth()
   const location = useLocation()
 
-  if (loading) {
+  if (loading || (session && !profile)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <span className="inline-block w-6 h-6 border-2 border-primary-300 border-t-primary-600 rounded-full animate-spin" />
@@ -38,6 +39,10 @@ function ProtectedRoute({ children }) {
 
   if (!session) {
     return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />
   }
 
   return children
@@ -62,19 +67,47 @@ function AdminRoute({ children }) {
 }
 
 function PublicRoute({ children }) {
-  const { session, loading } = useAuth()
+  const { session, isAdmin, loading, profile } = useAuth()
 
-  if (loading) return null
+  if (loading || (session && !profile)) return null
 
   if (session) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to={isAdmin ? '/admin' : '/dashboard'} replace />
   }
 
   return children
 }
 
+function SmartRedirect() {
+  const { session, isAdmin, profile, loading } = useAuth()
+  if (loading || (session && !profile)) return null
+  return <Navigate to={isAdmin ? '/admin' : '/dashboard'} replace />
+}
+
+function TitleUpdater() {
+  const { session, isAdmin, tpk, loading } = useAuth()
+
+  useEffect(() => {
+    if (loading) return
+    if (!session) {
+      document.title = 'Deskra'
+      return
+    }
+    if (isAdmin) {
+      document.title = 'Deskra — Admin'
+    } else {
+      const nama = tpk?.nama_tpk ?? 'TPK'
+      document.title = `Deskra — TPK ${nama}`
+    }
+  }, [session, isAdmin, tpk, loading])
+
+  return null
+}
+
 function AppRoutes() {
   return (
+    <>
+      <TitleUpdater />
     <Routes>
       <Route
         path="/login"
@@ -132,8 +165,9 @@ function AppRoutes() {
       <Route path="cetak/absen/:periodeId" element={<CetakAbsen />} />
       <Route path="cetak/absen/:periodeId/:itemKey" element={<CetakAbsen />} />
 
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<SmartRedirect />} />
     </Routes>
+    </>
   )
 }
 

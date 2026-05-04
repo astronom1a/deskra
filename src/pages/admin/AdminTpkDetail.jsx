@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthProvider'
+import { computeTotalUK } from '../../lib/rekapPekerjaan'
 import {
   ArrowLeft, Save, Check, Info, Database, UserCog,
   CheckCircle2, XCircle, Mail, RefreshCw, AlertCircle,
@@ -61,10 +62,15 @@ export default function AdminTpkDetail() {
       setPeriodeLoading(true)
       supabase
         .from('tabel_periode')
-        .select('id, periode, tgl_awal, tgl_akhir, total_uk, status')
+        .select('id, periode, tgl_awal, tgl_akhir, status')
         .eq('tpk_id', id)
         .order('created_at', { ascending: false })
-        .then(({ data }) => { setPeriodes(data || []); setPeriodeLoading(false) })
+        .then(async ({ data }) => {
+          const list = data || []
+          const totals = await Promise.all(list.map(p => computeTotalUK(p.id, p.periode)))
+          setPeriodes(list.map((p, i) => ({ ...p, total_uk: totals[i] })))
+          setPeriodeLoading(false)
+        })
     }
   }, [tab, id])
 

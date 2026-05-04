@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { computeTotalUK } from '../lib/rekapPekerjaan'
 import { Link2, Users, Layers, Package, Clock, TrendingUp, AlertCircle, Eye, EyeOff, FileText, BookOpen } from 'lucide-react'
 import { useAccount } from '../lib/useAccount'
+import { useAuth } from '../lib/AuthProvider'
 
 const shortcuts = [
   {
@@ -72,7 +73,8 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const now = useDateTime()
   const { account } = useAccount()
-  const namaTpk = account.namaTpk || 'Wongsorejo'
+  const { profile, tpk } = useAuth()
+  const namaTpk = tpk?.nama_tpk || account.namaTpk || 'Wongsorejo'
   const [periodes, setPeriodes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -92,16 +94,17 @@ export default function Dashboard() {
   const maskRupiah = v => hideAmount ? 'Rp ••••••••' : formatRupiah(v)
 
   useEffect(() => {
+    if (!tpk?.id) return
     async function fetchPeriodes() {
       try {
         const { data, error } = await supabase
           .from('tabel_periode')
           .select('*')
+          .eq('tpk_id', tpk.id)
           .order('created_at', { ascending: false })
           .limit(5)
         if (error) throw error
         const list = data || []
-        // Hitung total UK live dari sumber tunggal (sama dengan Main Link)
         const totals = await Promise.all(
           list.map(p => computeTotalUK(p.id, p.periode))
         )
@@ -113,7 +116,7 @@ export default function Dashboard() {
       }
     }
     fetchPeriodes()
-  }, [])
+  }, [tpk?.id])
 
   const totalAll = periodes.reduce((sum, p) => sum + (p.total_uk || 0), 0)
 
@@ -124,7 +127,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Selamat datang di Deskra — Sistem Administrasi Kantor TPK {namaTpk}
+            <>Selamat datang, <span className="font-medium text-gray-700 dark:text-gray-200">{profile?.nama_operator || 'Operator'}</span> — {tpk?.kode_tpk ? `${tpk.kode_tpk} - TPK ${namaTpk}` : `TPK ${namaTpk}`}</>}
           </p>
         </div>
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-5 py-3.5 text-right shrink-0">
