@@ -5,7 +5,7 @@ import { ArrowLeft, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
 
 export default function AdminTpkBuat() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ nama_tpk: '', kode_tpk: '', email: '', password: '' })
+  const [form, setForm] = useState({ namatpk: '', kode_tpk: '', email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -14,7 +14,7 @@ export default function AdminTpkBuat() {
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const kodeErr = form.kode_tpk !== '' && !/^\d{7}$/.test(form.kode_tpk)
-  const canSubmit = form.nama_tpk.trim() && form.email.trim() &&
+  const canSubmit = form.namatpk.trim() && form.email.trim() &&
     form.password.length >= 8 && !kodeErr && !loading
 
   const handleSubmit = async (e) => {
@@ -36,7 +36,7 @@ export default function AdminTpkBuat() {
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
-          nama_tpk: form.nama_tpk.trim(),
+          namatpk: /^tpk\s/i.test(form.namatpk.trim()) ? form.namatpk.trim() : `TPK ${form.namatpk.trim()}`,
           kode_tpk: form.kode_tpk || null,
           email: form.email.trim(),
           password: form.password,
@@ -66,7 +66,7 @@ export default function AdminTpkBuat() {
             </div>
           </div>
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
-            TPK {form.nama_tpk} berhasil dibuat
+            {/^tpk\s/i.test(form.namatpk.trim()) ? form.namatpk.trim() : `TPK ${form.namatpk.trim()}`} berhasil dibuat
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
             Akun operator dengan email <strong>{form.email}</strong> sudah aktif dan bisa login.
@@ -79,7 +79,7 @@ export default function AdminTpkBuat() {
               Lihat Daftar TPK
             </button>
             <button
-              onClick={() => { setSuccess(false); setForm({ nama_tpk: '', kode_tpk: '', email: '', password: '' }) }}
+              onClick={() => { setSuccess(false); setForm({ namatpk: '', kode_tpk: '', email: '', password: '' }) }}
               className="px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
             >
               Tambah TPK Lain
@@ -107,12 +107,12 @@ export default function AdminTpkBuat() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 sm:col-span-1">
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1.5">Nama TPK</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1.5">Lokasi TPK</label>
               <input
                 type="text"
-                value={form.nama_tpk}
-                onChange={e => setField('nama_tpk', e.target.value)}
-                placeholder="cth. Wongsorejo"
+                value={form.namatpk}
+                onChange={e => setField('namatpk', e.target.value)}
+                placeholder="cth. TPK Wongsorejo"
                 required
                 className={inputCls}
               />

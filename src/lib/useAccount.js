@@ -4,7 +4,7 @@ const STORAGE_KEY = 'deskra-account'
 
 const DEFAULTS = {
   namaOperator: '',
-  namaTpk: 'Wongsorejo',
+  namaTpk: 'TPK Wongsorejo',
   kodeTpk: '',
 }
 

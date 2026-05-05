@@ -125,7 +125,7 @@ function GPDoc({ periode }) {
             <td className="border border-black px-2 align-top">
               Bayar Uang Kerja periode<br/>
               <span className="font-bold">{periode.periode}</span><br/>
-              <span className="font-bold">GABUNGAN TPK {tpkUpper}</span>
+              <span className="font-bold">GABUNGAN {tpkUpper}</span>
             </td>
             <td className="border border-black text-center align-top">-</td>
             <td className="border border-black text-center align-top">-</td>

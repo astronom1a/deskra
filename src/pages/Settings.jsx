@@ -59,10 +59,10 @@ export default function Settings() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Nama TPK</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Lokasi TPK</label>
             <input
               type="text"
-              value={tpk?.nama_tpk || '—'}
+              value={tpk?.namatpk || '—'}
               disabled
               className={`${inputCls} border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed`}
             />

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/AuthProvider'
+import PageTransition from './components/PageTransition'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -96,8 +97,8 @@ function TitleUpdater() {
     if (isAdmin) {
       document.title = 'Deskra — Admin'
     } else {
-      const nama = tpk?.nama_tpk ?? 'TPK'
-      document.title = `Deskra — TPK ${nama}`
+      const nama = tpk?.namatpk ?? 'TPK'
+      document.title = `Deskra — ${nama}`
     }
   }, [session, isAdmin, tpk, loading])
 
@@ -108,7 +109,8 @@ function AppRoutes() {
   return (
     <>
       <TitleUpdater />
-    <Routes>
+      <PageTransition>
+        <Routes>
       <Route
         path="/login"
         element={
@@ -166,7 +168,8 @@ function AppRoutes() {
       <Route path="cetak/absen/:periodeId/:itemKey" element={<CetakAbsen />} />
 
       <Route path="*" element={<SmartRedirect />} />
-    </Routes>
+        </Routes>
+      </PageTransition>
     </>
   )
 }

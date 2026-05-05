@@ -155,7 +155,7 @@ function KwitansiDoc({ periode }) {
         <p className="font-bold text-[13px]">PERUSAHAAN UMUM KEHUTANAN NEGARA</p>
         <p className="font-bold text-[12px]">( PERUM PERHUTANI )</p>
         <p className="font-bold text-[12px]">DIVISI REGIONAL JAWA TIMUR</p>
-        <p className="font-bold text-[12px]">TPK {tpkUpper}</p>
+        <p className="font-bold text-[12px]">{tpkUpper}</p>
       </div>
 
       {/* ── Kotak atas: Telah terima (kiri) + KUITANSI (kanan) ── */}
@@ -350,10 +350,10 @@ function KwitansiDoc({ periode }) {
               Kuasa pengguna Anggaran<br/>Wk.Adm / KSKPH
             </td>
             <td className="border border-black p-1 text-center">
-              Bendahara Pengeluaran/PPC<br/>Kepala TPK.{tpkName}
+              Bendahara Pengeluaran/PPC<br/>Kepala {tpkName}
             </td>
             <td className="border border-black p-1 text-center">
-              Sp.TPK {tpkName}
+              Sp.{tpkName}
             </td>
           </tr>
           <tr>

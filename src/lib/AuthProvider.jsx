@@ -30,7 +30,7 @@ export function AuthProvider({ children }) {
 
     supabase
       .from('profiles')
-      .select('id, role, tpk_id, nama_operator, tabel_tpk(id, nama_tpk, kode_tpk)')
+      .select('id, role, tpk_id, nama_operator, tabel_tpk(id, namatpk, kode_tpk)')
       .eq('id', session.user.id)
       .single()
       .then(({ data }) => {

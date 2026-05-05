@@ -74,7 +74,7 @@ export default function Dashboard() {
   const now = useDateTime()
   const { account } = useAccount()
   const { profile, tpk } = useAuth()
-  const namaTpk = tpk?.nama_tpk || account.namaTpk || 'Wongsorejo'
+  const namaTpk = tpk?.namatpk || account.namaTpk || 'TPK Wongsorejo'
   const [periodes, setPeriodes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -94,7 +94,7 @@ export default function Dashboard() {
   const maskRupiah = v => hideAmount ? 'Rp ••••••••' : formatRupiah(v)
 
   useEffect(() => {
-    if (!tpk?.id) return
+    if (!tpk?.id) { setLoading(false); return }
     async function fetchPeriodes() {
       try {
         const { data, error } = await supabase
@@ -127,7 +127,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            <>Selamat datang, <span className="font-medium text-gray-700 dark:text-gray-200">{profile?.nama_operator || 'Operator'}</span> — {tpk?.kode_tpk ? `${tpk.kode_tpk} - TPK ${namaTpk}` : `TPK ${namaTpk}`}</>}
+            Selamat datang, <span className="font-medium text-gray-700 dark:text-gray-200">{profile?.nama_operator || 'Operator'}</span> — {tpk?.kode_tpk ? `${tpk.kode_tpk} - ${namaTpk}` : namaTpk}
           </p>
         </div>
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-5 py-3.5 text-right shrink-0">

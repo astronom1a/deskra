@@ -92,7 +92,7 @@ export default function Layout() {
   const { theme, toggle } = useTheme()
   const { account } = useAccount()
   const { tpk, isAdmin, activeTpkId, setActiveTpkId, signOut } = useAuth()
-  const namaTpk = tpk?.nama_tpk || account.namaTpk || 'Wongsorejo'
+  const namaTpk = tpk?.namatpk || account.namaTpk || 'TPK Wongsorejo'
   const isDark = theme === 'dark'
   const navItems = isAdmin ? adminNavItems : operatorNavItems
 
@@ -146,7 +146,7 @@ export default function Layout() {
                 <p className="text-amber-300 text-xs font-medium">Superadmin</p>
               </div>
             ) : (
-              <p className="text-primary-300 dark:text-gray-400 text-xs">TPK {namaTpk}</p>
+              <p className="text-primary-300 dark:text-gray-400 text-xs">{namaTpk}</p>
             )}
           </div>
         </div>

@@ -3,6 +3,49 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { computeTotalUK } from '../../lib/rekapPekerjaan'
 import { Building2, CheckCircle2, XCircle, CalendarDays, ChevronRight } from 'lucide-react'
+import { gsap } from 'gsap'
+
+// Angka acak cepat selama ~650 ms, lalu count-up smooth ke nilai asli.
+// `delay` (detik) memungkinkan stagger antar card.
+function ScrambleNumber({ value, delay = 0 }) {
+  const [display, setDisplay] = useState('—')
+
+  useEffect(() => {
+    if (value == null) { setDisplay('—'); return }
+
+    const SCRAMBLE_MS = 650  // durasi fase acak
+    let tween = null
+
+    const timer = setTimeout(() => {
+      const obj      = { n: 0 }
+      const startTime = Date.now()
+
+      tween = gsap.to(obj, {
+        n: value,
+        duration: 1.1,
+        ease: 'power2.out',
+        onUpdate() {
+          const elapsed = Date.now() - startTime
+          if (elapsed < SCRAMBLE_MS) {
+            // Fase scramble: angka acak dalam rentang ~4× nilai asli
+            setDisplay(Math.floor(Math.random() * Math.max(value * 4, 20)))
+          } else {
+            // Fase settle: tampilkan progress count-up
+            setDisplay(Math.round(obj.n))
+          }
+        },
+        onComplete() { setDisplay(value) },
+      })
+    }, delay * 1000)
+
+    return () => {
+      clearTimeout(timer)
+      tween?.kill()
+    }
+  }, [value, delay])
+
+  return <>{display}</>
+}
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -15,7 +58,7 @@ export default function AdminDashboard() {
     async function load() {
       try {
         const [{ data: tpkData, error: tpkErr }, { data: periodeData, error: periodeErr }] = await Promise.all([
-          supabase.from('tabel_tpk').select('id, nama_tpk, kode_tpk, aktif, created_at').order('created_at'),
+          supabase.from('tabel_tpk').select('id, namatpk, kode_tpk, aktif, created_at').order('created_at'),
           supabase.from('tabel_periode').select('id, tpk_id, periode, status'),
         ])
 
@@ -69,16 +112,21 @@ export default function AdminDashboard() {
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Total TPK', value: loading ? '—' : stats?.total, icon: Building2, color: 'text-primary-600' },
-          { label: 'TPK Aktif', value: loading ? '—' : stats?.aktif, icon: CheckCircle2, color: 'text-emerald-600' },
-          { label: 'Total Periode', value: loading ? '—' : stats?.totalPeriode, icon: CalendarDays, color: 'text-blue-600' },
+          { label: 'Total TPK',    value: stats?.total,       icon: Building2,   color: 'text-primary-600', delay: 0    },
+          { label: 'TPK Aktif',    value: stats?.aktif,       icon: CheckCircle2, color: 'text-emerald-600', delay: 0.12 },
+          { label: 'Total Periode',value: stats?.totalPeriode, icon: CalendarDays, color: 'text-blue-600',   delay: 0.24 },
         ].map(s => (
           <div key={s.label} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex items-center gap-4">
             <div className="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900">
               <s.icon size={20} className={s.color} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{s.value}</p>
+              <p className="text-2xl font-bold tabular-nums text-gray-800 dark:text-gray-100">
+                {loading
+                  ? <span className="inline-block w-6 h-6 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                  : <ScrambleNumber value={s.value} delay={s.delay} />
+                }
+              </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{s.label}</p>
             </div>
           </div>
@@ -108,7 +156,7 @@ export default function AdminDashboard() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                 <tr>
-                  <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Nama TPK</th>
+                  <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Lokasi TPK</th>
                   <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Kode</th>
                   <th className="text-center px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Periode</th>
                   <th className="text-right px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Total UK</th>
@@ -122,7 +170,7 @@ export default function AdminDashboard() {
                     onClick={() => navigate(`/admin/tpk/${t.id}`)}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
                   >
-                    <td className="px-5 py-3.5 font-medium text-gray-800 dark:text-gray-100">{t.nama_tpk}</td>
+                    <td className="px-5 py-3.5 font-medium text-gray-800 dark:text-gray-100">{t.namatpk}</td>
                     <td className="px-5 py-3.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{t.kode_tpk || '—'}</td>
                     <td className="px-5 py-3.5 text-center text-gray-500 dark:text-gray-400">{t.periodeCount}</td>
                     <td className="px-5 py-3.5 text-right font-semibold text-primary-700 dark:text-primary-400">

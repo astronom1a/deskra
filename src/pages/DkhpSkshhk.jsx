@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { getNamaTpk } from '../lib/useAccount'
+import { useAuth } from '../lib/AuthProvider'
 
 const MONTH_FULL_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 const MONTH_SHORT_ID = ['JAN','FEB','MAR','APR','MEI','JUN','JUL','AGS','SEP','OKT','NOV','DES']
@@ -147,6 +148,7 @@ const EMPTY_FORM = {
 }
 
 export default function DkhpSkshhk() {
+  const { profile } = useAuth()
   const [rows, setRows]       = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
@@ -221,7 +223,8 @@ export default function DkhpSkshhk() {
       setPreview(null)
       return
     }
-    const { error } = await supabase.from('tabel_dkhp_skshhk').insert(dedup)
+    const tpk_id = profile?.tpk_id
+    const { error } = await supabase.from('tabel_dkhp_skshhk').insert(dedup.map(r => ({ ...r, tpk_id })))
     setImporting(false)
     if (error) { showToast(error.message, 'error'); return }
     showToast(`${dedup.length} SKSHHK baru berhasil diimport`)
@@ -246,7 +249,8 @@ export default function DkhpSkshhk() {
     payload.jml_m3 = +(payload.ai_m3 + payload.aii_m3 + payload.aiii_m3).toFixed(3)
     let error
     if (editRow._new) {
-      ({ error } = await supabase.from('tabel_dkhp_skshhk').insert(payload))
+      payload.tpk_id = profile?.tpk_id
+      ;({ error } = await supabase.from('tabel_dkhp_skshhk').insert(payload))
     } else {
       ({ error } = await supabase.from('tabel_dkhp_skshhk').update(payload).eq('id', editRow.id))
     }
@@ -415,7 +419,7 @@ export default function DkhpSkshhk() {
       }
       const dateRow = new Array(17).fill(null); dateRow[14] = dateLine
       aoa.push(dateRow)
-      const titleRow = new Array(17).fill(null); titleRow[8] = 'Pejabat Penerbit'; titleRow[14] = `Kepala TPK ${tpkName}`
+      const titleRow = new Array(17).fill(null); titleRow[8] = 'Pejabat Penerbit'; titleRow[14] = `Kepala ${tpkName}`
       aoa.push(titleRow)
       aoa.push([]); aoa.push([])  // ttd space
       const nameRow = new Array(17).fill(null)

@@ -47,7 +47,7 @@ export default function AdminTpkDetail() {
           .single()
         if (error) throw error
         setTpk(data)
-        setDraft({ nama_tpk: data.nama_tpk, kode_tpk: data.kode_tpk || '', aktif: data.aktif })
+        setDraft({ namatpk: data.namatpk, kode_tpk: data.kode_tpk || '', aktif: data.aktif })
       } catch (err) {
         setError(err.message)
       } finally {
@@ -91,7 +91,7 @@ export default function AdminTpkDetail() {
   }, [tab, id])
 
   const dirty = draft && tpk && (
-    draft.nama_tpk.trim() !== tpk.nama_tpk ||
+    draft.namatpk.trim() !== tpk.namatpk ||
     draft.kode_tpk !== (tpk.kode_tpk || '') ||
     draft.aktif !== tpk.aktif
   )
@@ -101,10 +101,11 @@ export default function AdminTpkDetail() {
   const handleSave = async () => {
     setSaving(true)
     setSaved(false)
+    const rawNama = draft.namatpk.trim()
     const { error } = await supabase
       .from('tabel_tpk')
       .update({
-        nama_tpk: draft.nama_tpk.trim(),
+        namatpk: /^tpk\s/i.test(rawNama) ? rawNama : `TPK ${rawNama}`,
         kode_tpk: draft.kode_tpk || null,
         aktif: draft.aktif,
       })
@@ -149,7 +150,7 @@ export default function AdminTpkDetail() {
       </button>
 
       <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">TPK {tpk.nama_tpk}</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{tpk.namatpk}</h1>
         {tpk.aktif ? (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
             <CheckCircle2 size={10} /> Aktif
@@ -187,11 +188,11 @@ export default function AdminTpkDetail() {
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 sm:col-span-1">
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1.5">Nama TPK</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1.5">Lokasi TPK</label>
               <input
                 type="text"
-                value={draft.nama_tpk}
-                onChange={e => setDraft(d => ({ ...d, nama_tpk: e.target.value }))}
+                value={draft.namatpk}
+                onChange={e => setDraft(d => ({ ...d, namatpk: e.target.value }))}
                 className={inputCls}
               />
             </div>
@@ -248,13 +249,13 @@ export default function AdminTpkDetail() {
               <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Mode Edit Data TPK</p>
               <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
                 Kamu bisa membuka semua halaman operasional (Main Link, Register Kapling, dll) dalam konteks TPK ini.
-                Semua perubahan yang kamu buat akan tersimpan ke data TPK {tpk.nama_tpk}.
+                Semua perubahan yang kamu buat akan tersimpan ke data {tpk.namatpk}.
               </p>
               <button
                 onClick={handleBrowseData}
                 className="mt-3 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium transition-colors"
               >
-                Buka Data TPK {tpk.nama_tpk}
+                Buka Data {tpk.namatpk}
               </button>
             </div>
           </div>

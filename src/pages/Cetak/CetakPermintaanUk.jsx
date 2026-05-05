@@ -52,7 +52,7 @@ function PermintaanUkDoc({ periode }) {
 
       {/* ── Pembuka ─────────────────────────────────────── */}
       <p className="text-justify">
-        Bendahara pengeluaran : <span className="font-bold">TPK {tpkUpper}</span> berdasarkan kegiatan pekerjaan yang akan / telah
+        Bendahara pengeluaran : <span className="font-bold">{tpkUpper}</span> berdasarkan kegiatan pekerjaan yang akan / telah
         dilaksanakan dalam periode <span className="font-bold">{periode.periode}</span>, masa pembayaran dari tanggal <span className="font-bold">{formatTanggalLengkap(periode.tgl_awal)}</span> sampai
         dengan <span className="font-bold">{formatTanggalLengkap(periode.tgl_akhir)}</span> diperlukan uang kerja dari satuan kantor KPH Banyuwangi Utara sebesar
       </p>

@@ -37,28 +37,7 @@ input::-moz-contacts-auto-fill-button {
   pointer-events: none;
 }
 
-/* Login page geometric animations */
-@keyframes geo-float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50%       { transform: translateY(-22px) rotate(180deg); }
-}
-@keyframes geo-drift {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  33%       { transform: translate(14px, -18px) rotate(120deg); }
-  66%       { transform: translate(-10px, 8px) rotate(240deg); }
-}
-@keyframes geo-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-@keyframes orb-breathe {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.6; transform: scale(1.12); }
-}
-@keyframes card-enter {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/* Login animations handled by GSAP — no CSS keyframes needed */
 
 @media print {
   .no-print { display: none !important; }

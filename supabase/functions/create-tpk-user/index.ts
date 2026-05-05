@@ -36,10 +36,10 @@ Deno.serve(async (req) => {
     }
 
     // Parse body
-    const { nama_tpk, kode_tpk, email, password } = await req.json()
+    const { namatpk, kode_tpk, email, password } = await req.json()
 
     // Validasi input
-    if (!nama_tpk?.trim()) return json({ error: 'nama_tpk wajib diisi' }, 400)
+    if (!namatpk?.trim()) return json({ error: 'namatpk wajib diisi' }, 400)
     if (!email?.trim())    return json({ error: 'email wajib diisi' }, 400)
     if (!password)         return json({ error: 'password wajib diisi' }, 400)
     if (password.length < 8) return json({ error: 'password minimal 8 karakter' }, 400)
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     // 1. Buat TPK
     const { data: tpk, error: tpkErr } = await admin
       .from('tabel_tpk')
-      .insert({ nama_tpk: nama_tpk.trim(), kode_tpk: kode_tpk || null })
+      .insert({ namatpk: namatpk.trim(), kode_tpk: kode_tpk || null })
       .select('id')
       .single()
 
@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     return json({
       tpk_id: tpk.id,
       user_id: authUser.user.id,
-      message: `Akun TPK ${nama_tpk} berhasil dibuat`,
+      message: `Akun TPK ${namatpk} berhasil dibuat`,
     }, 200)
 
   } catch (err) {

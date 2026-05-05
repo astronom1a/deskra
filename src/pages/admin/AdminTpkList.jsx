@@ -14,7 +14,7 @@ export default function AdminTpkList() {
     async function load() {
       try {
         const [{ data: tpkData, error: tpkErr }, { data: periodeData, error: periodeErr }] = await Promise.all([
-          supabase.from('tabel_tpk').select('*').order('nama_tpk'),
+          supabase.from('tabel_tpk').select('*').order('namatpk'),
           supabase.from('tabel_periode').select('id, tpk_id, total_uk'),
         ])
         if (tpkErr) throw tpkErr
@@ -46,7 +46,7 @@ export default function AdminTpkList() {
   }).format(Math.round(v || 0))
 
   const filtered = tpkList.filter(t =>
-    t.nama_tpk.toLowerCase().includes(search.toLowerCase()) ||
+    t.namatpk.toLowerCase().includes(search.toLowerCase()) ||
     (t.kode_tpk || '').includes(search)
   )
 
@@ -90,7 +90,7 @@ export default function AdminTpkList() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
               <tr>
-                <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Nama TPK</th>
+                <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Lokasi TPK</th>
                 <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Kode</th>
                 <th className="text-center px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Periode</th>
                 <th className="text-right px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Total UK</th>
@@ -105,7 +105,7 @@ export default function AdminTpkList() {
                   onClick={() => navigate(`/admin/tpk/${t.id}`)}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
                 >
-                  <td className="px-5 py-3.5 font-medium text-gray-800 dark:text-gray-100">{t.nama_tpk}</td>
+                  <td className="px-5 py-3.5 font-medium text-gray-800 dark:text-gray-100">{t.namatpk}</td>
                   <td className="px-5 py-3.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{t.kode_tpk || '—'}</td>
                   <td className="px-5 py-3.5 text-center text-gray-500 dark:text-gray-400">{t.periodeCount}</td>
                   <td className="px-5 py-3.5 text-right font-semibold text-primary-700 dark:text-primary-400">{fmt(t.totalUk)}</td>
