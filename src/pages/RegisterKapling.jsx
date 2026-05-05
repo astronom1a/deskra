@@ -3,6 +3,7 @@ import { Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2, FileTex
 import * as XLSX from 'xlsx'
 import * as pdfjsLib from 'pdfjs-dist'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthProvider'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -195,6 +196,7 @@ function SertBadge({ val }) {
 }
 
 export default function RegisterKapling() {
+  const { profile } = useAuth()
   const [rows, setRows]             = useState([])
   const [loading, setLoading]       = useState(true)
   const [importing, setImporting]   = useState(false)
@@ -304,11 +306,17 @@ export default function RegisterKapling() {
     if (!preview) return
     setImporting(true)
     const existingKeys = new Set(rows.map(r => r.no_kapling))
+    const tpkId = profile?.tpk_id
+    if (!tpkId) {
+      setImporting(false)
+      showToast('Profil pengguna tidak ditemukan. Coba login ulang.', 'error')
+      return
+    }
     const newRows = Object.values(
       preview.rows
         .filter(r => !existingKeys.has(r.no_kapling))
         .reduce((acc, r) => {
-          acc[r.no_kapling] = { ...r, file_name: preview.fileName }
+          acc[r.no_kapling] = { ...r, file_name: preview.fileName, tpk_id: tpkId }
           return acc
         }, {})
     )
