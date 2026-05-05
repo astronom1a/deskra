@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/AuthProvider'
 import PageTransition from './components/PageTransition'
@@ -18,13 +18,23 @@ import DetailPekerjaan from './pages/DetailPekerjaan'
 import RegisterKapling from './pages/RegisterKapling'
 import DkhpSkshhk from './pages/DkhpSkshhk'
 import Settings from './pages/Settings'
-import CetakBiayaTPK from './pages/Cetak/CetakBiayaTPK'
-import CetakGabunganPembayaran from './pages/Cetak/CetakGabunganPembayaran'
-import CetakPjUk from './pages/Cetak/CetakPjUk'
-import CetakPermintaanUk from './pages/Cetak/CetakPermintaanUk'
-import CetakKwitansi from './pages/Cetak/CetakKwitansi'
-import CetakLampiran31 from './pages/Cetak/CetakLampiran31'
-import CetakAbsen from './pages/Cetak/CetakAbsen'
+
+// Halaman cetak di-lazy-load — hanya dimuat saat dibutuhkan
+const CetakBiayaTPK          = lazy(() => import('./pages/Cetak/CetakBiayaTPK'))
+const CetakGabunganPembayaran = lazy(() => import('./pages/Cetak/CetakGabunganPembayaran'))
+const CetakPjUk               = lazy(() => import('./pages/Cetak/CetakPjUk'))
+const CetakPermintaanUk       = lazy(() => import('./pages/Cetak/CetakPermintaanUk'))
+const CetakKwitansi           = lazy(() => import('./pages/Cetak/CetakKwitansi'))
+const CetakLampiran31         = lazy(() => import('./pages/Cetak/CetakLampiran31'))
+const CetakAbsen              = lazy(() => import('./pages/Cetak/CetakAbsen'))
+
+function PrintFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <span className="inline-block w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+    </div>
+  )
+}
 
 function ProtectedRoute({ children }) {
   const { session, isAdmin, profile, loading } = useAuth()
@@ -156,16 +166,16 @@ function AppRoutes() {
         <Route path="settings" element={<Settings />} />
       </Route>
 
-      {/* Halaman cetak — standalone tanpa sidebar */}
-      <Route path="cetak/biaya-tpk/:periodeId" element={<CetakBiayaTPK />} />
-      <Route path="cetak/gabungan-pembayaran/:periodeId" element={<CetakGabunganPembayaran />} />
-      <Route path="cetak/pj-uk/:periodeId" element={<CetakPjUk />} />
-      <Route path="cetak/permintaan-uk/:periodeId" element={<CetakPermintaanUk />} />
-      <Route path="cetak/kwitansi/:periodeId/:itemKey" element={<CetakKwitansi />} />
-      <Route path="cetak/lampiran-31/:periodeId/:itemKey" element={<CetakLampiran31 />} />
-      <Route path="cetak/lampiran-62/:periodeId/:itemKey" element={<CetakLampiran31 />} />
-      <Route path="cetak/absen/:periodeId" element={<CetakAbsen />} />
-      <Route path="cetak/absen/:periodeId/:itemKey" element={<CetakAbsen />} />
+      {/* Halaman cetak — standalone, lazy-loaded */}
+      <Route path="cetak/biaya-tpk/:periodeId" element={<Suspense fallback={<PrintFallback />}><CetakBiayaTPK /></Suspense>} />
+      <Route path="cetak/gabungan-pembayaran/:periodeId" element={<Suspense fallback={<PrintFallback />}><CetakGabunganPembayaran /></Suspense>} />
+      <Route path="cetak/pj-uk/:periodeId" element={<Suspense fallback={<PrintFallback />}><CetakPjUk /></Suspense>} />
+      <Route path="cetak/permintaan-uk/:periodeId" element={<Suspense fallback={<PrintFallback />}><CetakPermintaanUk /></Suspense>} />
+      <Route path="cetak/kwitansi/:periodeId/:itemKey" element={<Suspense fallback={<PrintFallback />}><CetakKwitansi /></Suspense>} />
+      <Route path="cetak/lampiran-31/:periodeId/:itemKey" element={<Suspense fallback={<PrintFallback />}><CetakLampiran31 /></Suspense>} />
+      <Route path="cetak/lampiran-62/:periodeId/:itemKey" element={<Suspense fallback={<PrintFallback />}><CetakLampiran31 /></Suspense>} />
+      <Route path="cetak/absen/:periodeId" element={<Suspense fallback={<PrintFallback />}><CetakAbsen /></Suspense>} />
+      <Route path="cetak/absen/:periodeId/:itemKey" element={<Suspense fallback={<PrintFallback />}><CetakAbsen /></Suspense>} />
 
       <Route path="*" element={<SmartRedirect />} />
         </Routes>

@@ -6,4 +6,17 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['pdfjs-dist'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react':    ['react', 'react-dom', 'react-router-dom'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-xlsx':     ['xlsx'],
+          'vendor-lucide':   ['lucide-react'],
+          'vendor-pdfjs':    ['pdfjs-dist'],
+        },
+      },
+    },
+  },
 })

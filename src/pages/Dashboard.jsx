@@ -121,17 +121,17 @@ export default function Dashboard() {
   const totalAll = periodes.reduce((sum, p) => sum + (p.total_uk || 0), 0)
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
             Selamat datang, <span className="font-medium text-gray-700 dark:text-gray-200">{profile?.nama_operator || 'Operator'}</span> — {tpk?.kode_tpk ? `${tpk.kode_tpk} - ${namaTpk}` : namaTpk}
           </p>
         </div>
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-5 py-3.5 text-right shrink-0">
-          <p className="text-2xl font-bold text-gray-800 dark:text-gray-100 tabular-nums">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 sm:px-5 sm:py-3.5 sm:text-right shrink-0">
+          <p className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 tabular-nums">
             {(() => {
               const h = now.getHours() % 12 || 12
               const m = String(now.getMinutes()).padStart(2, '0')
@@ -215,25 +215,25 @@ export default function Dashboard() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                 <tr>
-                  <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Periode</th>
-                  <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Tanggal</th>
-                  <th className="text-right px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Total UK</th>
-                  <th className="text-center px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Status</th>
+                  <th className="text-left px-3 sm:px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Periode</th>
+                  <th className="hidden sm:table-cell text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Tanggal</th>
+                  <th className="text-right px-3 sm:px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Total UK</th>
+                  <th className="text-center px-3 sm:px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                 {periodes.map(p => (
                   <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <td className="px-5 py-3.5 font-medium text-gray-700 dark:text-gray-200">{p.periode}</td>
-                    <td className="px-5 py-3.5 text-gray-500 dark:text-gray-400">
+                    <td className="px-3 sm:px-5 py-3.5 font-medium text-gray-700 dark:text-gray-200">{p.periode}</td>
+                    <td className="hidden sm:table-cell px-5 py-3.5 text-gray-500 dark:text-gray-400">
                       {p.tgl_awal && p.tgl_akhir
                         ? `${new Date(p.tgl_awal).toLocaleDateString('id-ID')} – ${new Date(p.tgl_akhir).toLocaleDateString('id-ID')}`
                         : '—'}
                     </td>
-                    <td className="px-5 py-3.5 text-right font-semibold text-primary-700">
+                    <td className="px-3 sm:px-5 py-3.5 text-right font-semibold text-primary-700">
                       {maskRupiah(p.total_uk)}
                     </td>
-                    <td className="px-5 py-3.5 text-center">
+                    <td className="px-3 sm:px-5 py-3.5 text-center">
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         p.status === 'aktif'
                           ? 'bg-green-100 text-green-700'
