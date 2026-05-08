@@ -36,6 +36,7 @@ function extractDesa(alamat) {
 }
 
 const MIN_BERSIH_PER_HARI = 110_000
+const ROWS_MIN = 20
 
 export default function CetakLampiran31() {
   return (
@@ -186,8 +187,6 @@ function SingleWorkerBody({ data, item, grand, cfg, itemKey }) {
     return data.tenagaKerja.find(t => hasPos(t, 'TENAGA_KAPLING')) || {}
   })()
 
-  const ROWS_MIN = 12
-
   return (
     <table className="w-full border-collapse border border-black text-[9.5px]">
       <thead>
@@ -225,7 +224,7 @@ function SingleWorkerBody({ data, item, grand, cfg, itemKey }) {
         </tr>
         {Array.from({length: ROWS_MIN-1}).map((_,i) => (
           <tr key={i}>
-            {Array.from({length:11}).map((_,j) => <td key={j} className="border border-black h-4"/>)}
+            {Array.from({length:11}).map((_,j) => <td key={j} className="border border-black h-5"/>)}
           </tr>
         ))}
         <tr className="font-bold">
@@ -325,7 +324,6 @@ function TumpukBody({ data, grand }) {
           const isLastWorker = i === N - 1
           const bersih = w ? (isLastWorker ? lastWorker : perWorker) : null
 
-          // Render perincian/sortimen cell
           let perincianCell = null, volCell = null, tarifCell = null, kotorCell = null
           if (p) {
             if (p.type === 'header') {
@@ -364,6 +362,11 @@ function TumpukBody({ data, grand }) {
             </tr>
           )
         })}
+        {Array.from({length: Math.max(0, ROWS_MIN - totalRows)}).map((_,i) => (
+          <tr key={`filler-${i}`}>
+            {Array.from({length:11}).map((_,j) => <td key={j} className="border border-black h-5"/>)}
+          </tr>
+        ))}
         <tr className="font-bold">
           <td colSpan={7} className="border border-black px-2 py-1 text-center">JUMLAH</td>
           <td className="border border-black text-right px-1">{formatAngka(grand)}</td>
@@ -416,6 +419,11 @@ function TenagaBody({ data, item, grand }) {
             <td className="border border-black px-1 text-center align-top"/>
             <td className="border border-black px-1 text-right align-top">{formatAngka(tarif)}</td>
             <td className="border border-black px-1 text-left align-top">{i+1}.</td>
+          </tr>
+        ))}
+        {Array.from({length: Math.max(0, ROWS_MIN - workers.length)}).map((_,i) => (
+          <tr key={`filler-${i}`}>
+            {Array.from({length:11}).map((_,j) => <td key={j} className="border border-black h-5"/>)}
           </tr>
         ))}
         <tr className="font-bold">

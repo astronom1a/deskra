@@ -5,6 +5,7 @@ import CetakLayout from './CetakLayout'
 import { parsePeriode, formatTanggalLengkap } from './cetakHelpers'
 
 const CALIBRI = { fontFamily: 'Calibri, "Segoe UI", Arial, sans-serif' }
+const ABSEN_ROWS_MIN = 14
 const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 
 function daysInMonth(month, year) {
@@ -141,20 +142,22 @@ function AbsenDoc({ periode }) {
               <td className="border border-black px-1 py-1">{w.nama || ''}</td>
               <td className="border border-black px-1 py-1">{w.nik || ''}</td>
               {dayCols.map(day => (
-                <td key={day} className="border border-black h-6"></td>
+                <td key={day} className="border border-black h-8"></td>
               ))}
               <td className="border border-black px-1 py-1 text-center"></td>
             </tr>
           ))}
-          <tr>
-            <td className="border border-black h-6"></td>
-            <td className="border border-black"></td>
-            <td className="border border-black"></td>
-            {dayCols.map(day => (
-              <td key={`empty-${day}`} className="border border-black"></td>
-            ))}
-            <td className="border border-black"></td>
-          </tr>
+          {Array.from({ length: Math.max(0, ABSEN_ROWS_MIN - workers.length) }).map((_, i) => (
+            <tr key={`filler-${i}`}>
+              <td className="border border-black h-8"></td>
+              <td className="border border-black"></td>
+              <td className="border border-black"></td>
+              {dayCols.map(day => (
+                <td key={day} className="border border-black h-8"></td>
+              ))}
+              <td className="border border-black"></td>
+            </tr>
+          ))}
         </tbody>
       </table>
 
