@@ -300,7 +300,7 @@ function KwitansiDoc({ periode }) {
                 <td className="border border-black text-center align-bottom px-1 py-1">-</td>
                 <td className="border border-black text-right align-bottom px-1 py-1">{formatAngka(grand)}</td>
               </tr>
-              <tr><td colSpan={9} className="border border-black h-6"/></tr>
+              <tr><td colSpan={9} className="border border-black h-44"/></tr>
               <tr className="font-bold">
                 <td colSpan={4} className="border border-black px-2 py-1 text-right">Jumlah Rp.</td>
                 <td className="border border-black text-center">-</td>
