@@ -215,6 +215,17 @@ export default function Layout() {
         <div className="px-5 py-4 border-t border-primary-700 dark:border-gray-800">
           <p className="text-primary-400 dark:text-gray-500 text-xs">Perum Perhutani</p>
           <p className="text-primary-400 dark:text-gray-500 text-xs">KPH Banyuwangi Utara</p>
+          <p className="text-primary-500 dark:text-gray-600 text-[10px] mt-2">
+            © 2026{' '}
+            <a
+              href="https://astrolabs.my.id"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary-300 dark:hover:text-gray-400 transition-colors"
+            >
+              AstroLabs
+            </a>
+          </p>
         </div>
       </aside>
 
