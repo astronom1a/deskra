@@ -1,45 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TreePine, LogIn, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { version as appVersion } from '../../package.json'
 import { gsap } from 'gsap'
-
-const SHAPES = [
-  { id: 1,  type: 'triangle', size: 60, pos: { top: '8%',  left: '6%'   }, opacity: 0.18, dur: 9,    del: 0,    anim: 'float', color: '#277350' },
-  { id: 2,  type: 'hexagon',  size: 44, pos: { top: '5%',  right: '9%'  }, opacity: 0.14, dur: 12,   del: 1.5,  anim: 'drift', color: '#5aad83' },
-  { id: 3,  type: 'diamond',  size: 34, pos: { top: '56%', left: '4%'   }, opacity: 0.20, dur: 8,    del: 3,    anim: 'float', color: '#379165' },
-  { id: 4,  type: 'circle',   size: 20, pos: { top: '72%', left: '17%'  }, opacity: 0.22, dur: 7,    del: 0.5,  anim: 'drift', color: '#8dcaaa' },
-  { id: 5,  type: 'square',   size: 26, pos: { top: '20%', right: '6%'  }, opacity: 0.15, dur: 10,   del: 2,    anim: 'float', color: '#277350' },
-  { id: 6,  type: 'triangle', size: 18, pos: { top: '82%', right: '13%' }, opacity: 0.14, dur: 7.5,  del: 4,    anim: 'drift', color: '#5aad83' },
-  { id: 7,  type: 'ring',     size: 56, pos: { top: '40%', right: '4%'  }, opacity: 0.12, dur: 20,   del: 0,    anim: 'spin',  color: '#379165' },
-  { id: 8,  type: 'hexagon',  size: 28, pos: { top: '62%', right: '22%' }, opacity: 0.12, dur: 13,   del: 2.5,  anim: 'float', color: '#1c4a35' },
-  { id: 9,  type: 'diamond',  size: 16, pos: { top: '16%', left: '27%'  }, opacity: 0.16, dur: 8.5,  del: 1,    anim: 'drift', color: '#8dcaaa' },
-  { id: 10, type: 'square',   size: 44, pos: { top: '87%', left: '36%'  }, opacity: 0.09, dur: 14,   del: 3.5,  anim: 'float', color: '#277350' },
-  { id: 11, type: 'circle',   size: 14, pos: { top: '46%', left: '11%'  }, opacity: 0.16, dur: 6,    del: 2,    anim: 'drift', color: '#5aad83' },
-  { id: 12, type: 'triangle', size: 38, pos: { top: '30%', left: '50%'  }, opacity: 0.07, dur: 16,   del: 0.5,  anim: 'float', color: '#379165' },
-  { id: 13, type: 'ring',     size: 32, pos: { top: '15%', left: '42%'  }, opacity: 0.10, dur: 14,   del: 3,    anim: 'spin',  color: '#5aad83' },
-  { id: 14, type: 'hexagon',  size: 20, pos: { top: '90%', right: '35%' }, opacity: 0.13, dur: 9,    del: 1,    anim: 'drift', color: '#277350' },
-]
-
-const CLIP = {
-  triangle: 'polygon(50% 0%, 0% 100%, 100% 100%)',
-  hexagon:  'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
-  diamond:  'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
-  square:   'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
-}
-
-const inputStyle = {
-  width: '100%',
-  padding: '10px 12px',
-  borderRadius: 10,
-  border: '1px solid rgba(39,115,80,0.3)',
-  background: 'rgba(6,20,12,0.6)',
-  color: '#e2f0ea',
-  fontSize: 14,
-  outline: 'none',
-  transition: 'border-color 0.2s, box-shadow 0.2s',
-}
 
 export default function Login() {
   const navigate = useNavigate()
@@ -49,73 +13,23 @@ export default function Login() {
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState('')
 
-  const rootRef   = useRef(null)
-  const shapeRefs = useRef([])
+  const rootRef = useRef(null)
 
-  // ── GSAP animations ──────────────────────────────────────────────────────
+  // ── GSAP entrance ─────────────────────────────────────────────────────────
   useEffect(() => {
     const ctx = gsap.context(() => {
-
-      // Entrance timeline
       gsap.timeline({ defaults: { ease: 'power3.out' } })
-        .from('[data-logo]', {
-          scale: 0.45, opacity: 0, rotation: -25,
-          duration: 0.85, ease: 'back.out(2.8)',
-        })
-        .from('[data-brand-title]', { y: 14, opacity: 0, duration: 0.5 }, '-=0.42')
-        .from('[data-brand-sub]',   { y: 10, opacity: 0, duration: 0.4 }, '-=0.32')
-        .from('[data-brand-ver]',   { y:  8, opacity: 0, duration: 0.35 }, '-=0.28')
-        .from('[data-card]', {
-          y: 36, opacity: 0, scale: 0.96,
-          duration: 0.7, ease: 'power4.out',
-        }, '-=0.3')
-        .from('[data-field]', {
-          x: -18, opacity: 0,
-          stagger: 0.1, duration: 0.42,
-        }, '-=0.38')
-
-      // Orb breathe (each with a different rhythm)
-      gsap.utils.toArray('[data-orb]').forEach((el, i) => {
-        gsap.to(el, {
-          scale: 1.13, opacity: 0.55,
-          duration: 9 + i * 2,
-          delay: i * 2.2,
-          repeat: -1, yoyo: true,
-          ease: 'sine.inOut',
-        })
-      })
-
-      // Shape animations — replace CSS keyframes with GSAP
-      shapeRefs.current.forEach((el, i) => {
-        if (!el) return
-        const { dur, del, anim } = SHAPES[i]
-
-        if (anim === 'float') {
-          gsap.to(el, {
-            y: -22, rotation: 180,
-            duration: dur, delay: del,
-            repeat: -1, yoyo: true, ease: 'sine.inOut',
-          })
-        } else if (anim === 'drift') {
-          gsap.timeline({ repeat: -1, delay: del })
-            .to(el, { x:  14, y: -18, rotation: 120, duration: dur * 0.33, ease: 'sine.inOut' })
-            .to(el, { x: -10, y:   8, rotation: 240, duration: dur * 0.33, ease: 'sine.inOut' })
-            .to(el, { x:   0, y:   0, rotation: 360, duration: dur * 0.34, ease: 'sine.inOut' })
-        } else if (anim === 'spin') {
-          gsap.to(el, {
-            rotation: 360,
-            duration: dur, delay: del,
-            repeat: -1, ease: 'linear',
-          })
-        }
-      })
-
+        .from('[data-logo]',        { scale: 0.5, opacity: 0, duration: 0.8, ease: 'back.out(2.5)' })
+        .from('[data-brand-label]', { y: 10, opacity: 0, duration: 0.4 }, '-=0.35')
+        .from('[data-brand-title]', { y: 12, opacity: 0, duration: 0.45 }, '-=0.3')
+        .from('[data-brand-sub]',   { y: 8,  opacity: 0, duration: 0.35 }, '-=0.25')
+        .from('[data-card]',        { y: 32, opacity: 0, scale: 0.97, duration: 0.65, ease: 'power4.out' }, '-=0.25')
+        .from('[data-field]',       { x: -14, opacity: 0, stagger: 0.09, duration: 0.38 }, '-=0.35')
     }, rootRef)
-
     return () => ctx.revert()
   }, [])
 
-  // ── Auth ─────────────────────────────────────────────────────────────────
+  // ── Auth ──────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -126,7 +40,6 @@ export default function Login() {
     if (error) {
       setError('Email atau password salah. Silakan coba lagi.')
       setLoading(false)
-      // Shake the card
       gsap.timeline()
         .to('[data-card]', { x: -8, duration: 0.07, ease: 'power2.out' })
         .to('[data-card]', { x:  8, duration: 0.07 })
@@ -152,104 +65,137 @@ export default function Login() {
     <div
       ref={rootRef}
       className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #060e0a 0%, #0b1c12 50%, #060d08 100%)' }}
+      style={{ background: '#0a0a0a', color: '#f0f0f0' }}
     >
-      {/* Ambient glow orbs */}
-      <div data-orb style={{
-        position: 'absolute', top: '-10%', right: '-8%',
-        width: 520, height: 520, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(39,115,80,0.18) 0%, transparent 70%)',
-        pointerEvents: 'none', willChange: 'transform',
-      }} />
-      <div data-orb style={{
-        position: 'absolute', bottom: '-15%', left: '-10%',
-        width: 480, height: 480, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(55,145,101,0.14) 0%, transparent 70%)',
-        pointerEvents: 'none', willChange: 'transform',
-      }} />
-      <div data-orb style={{
-        position: 'absolute', top: '35%', left: '22%',
-        width: 320, height: 320, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(28,74,53,0.12) 0%, transparent 70%)',
-        pointerEvents: 'none', willChange: 'transform',
-      }} />
+      {/* CSS keyframes */}
+      <style>{`
+        @keyframes geo-rotate-cw  { to { transform: rotate(360deg);  } }
+        @keyframes geo-rotate-ccw { to { transform: rotate(-360deg); } }
+        @keyframes geo-float {
+          0%,100% { transform: translate(-50%,-50%) translateY(0px);   }
+          50%      { transform: translate(-50%,-50%) translateY(-18px); }
+        }
+        @keyframes geo-pulse {
+          0%,100% { opacity: 0.05; }
+          50%      { opacity: 0.14; }
+        }
+        @keyframes mark-orbit { to { transform: rotate(360deg); } }
+        @keyframes mark-pulse { 0%,100%{opacity:.35} 50%{opacity:.9} }
+        .mark-spin  { transform-origin: 50% 50%; animation: mark-orbit 18s linear infinite; }
+        .mark-pulse { animation: mark-pulse 2.4s ease-in-out infinite; }
+        .login-input::placeholder { color: rgba(255,255,255,0.2); }
+        .login-input:focus {
+          outline: none;
+          border-color: rgba(0,255,136,0.5);
+          box-shadow: 0 0 0 3px rgba(0,255,136,0.08);
+        }
+      `}</style>
 
       {/* Dot grid */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        backgroundImage: 'radial-gradient(circle, rgba(39,115,80,0.18) 1px, transparent 1px)',
-        backgroundSize: '30px 30px',
-        pointerEvents: 'none', opacity: 0.5,
-      }} />
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
+        <defs>
+          <pattern id="dots" width="56" height="56" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="0.8" fill="white" opacity="0.10" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#dots)" />
+      </svg>
 
-      {/* Geometric shapes — GSAP-animated via shapeRefs */}
-      {SHAPES.map((s, i) => {
-        const base = {
-          position: 'absolute',
-          width: s.size,
-          height: s.type === 'triangle' ? Math.round(s.size * 0.87) : s.size,
-          ...s.pos,
-          pointerEvents: 'none',
-          willChange: 'transform',
-        }
-        const ref = el => { shapeRefs.current[i] = el }
-        if (s.type === 'ring') return (
-          <div key={s.id} ref={ref}
-            style={{ ...base, borderRadius: '50%', border: `2px solid ${s.color}`, opacity: s.opacity }} />
-        )
-        if (s.type === 'circle') return (
-          <div key={s.id} ref={ref}
-            style={{ ...base, borderRadius: '50%', backgroundColor: s.color, opacity: s.opacity }} />
-        )
-        return (
-          <div key={s.id} ref={ref}
-            style={{ ...base, backgroundColor: s.color, clipPath: CLIP[s.type], opacity: s.opacity }} />
-        )
-      })}
+      {/* Hexagon — top right, slow CW */}
+      <div className="absolute pointer-events-none" style={{ top: '2%', right: '2%', animation: 'geo-rotate-cw 70s linear infinite' }}>
+        <svg width="320" height="320" viewBox="-160 -160 320 320">
+          <polygon points="0,-110 95.3,-55 95.3,55 0,110 -95.3,55 -95.3,-55"
+            fill="none" stroke="#00ff88" strokeWidth="0.7" opacity="0.25" />
+          <polygon points="0,-70 60.6,-35 60.6,35 0,70 -60.6,35 -60.6,-35"
+            fill="none" stroke="#00ff88" strokeWidth="0.3" opacity="0.15" />
+        </svg>
+      </div>
 
-      {/* ── Content ─────────────────────────────────────────────────────── */}
+      {/* Triangle — bottom left, slow CCW */}
+      <div className="absolute pointer-events-none" style={{ bottom: '3%', left: '2%', animation: 'geo-rotate-ccw 90s linear infinite' }}>
+        <svg width="260" height="260" viewBox="-130 -130 260 260">
+          <polygon points="0,-100 86.6,50 -86.6,50"
+            fill="none" stroke="white" strokeWidth="0.6" opacity="0.12" />
+          <polygon points="0,-58 50.2,29 -50.2,29"
+            fill="none" stroke="#00ff88" strokeWidth="0.4" opacity="0.10" />
+        </svg>
+      </div>
+
+      {/* Cross lines — center, float */}
+      <div className="absolute pointer-events-none" style={{ top: '46%', left: '50%', animation: 'geo-float 14s ease-in-out infinite' }}>
+        <svg width="200" height="200" viewBox="-100 -100 200 200">
+          <line x1="-80" y1="0" x2="80" y2="0" stroke="white" strokeWidth="0.4" opacity="0.06" />
+          <line x1="0" y1="-80" x2="0" y2="80" stroke="white" strokeWidth="0.4" opacity="0.06" />
+          <line x1="-56" y1="-56" x2="56" y2="56" stroke="#00ff88" strokeWidth="0.4" opacity="0.06" />
+          <line x1="56" y1="-56" x2="-56" y2="56" stroke="#00ff88" strokeWidth="0.4" opacity="0.06" />
+          <circle cx="0" cy="0" r="4" fill="none" stroke="#00ff88" strokeWidth="0.5" opacity="0.12" />
+        </svg>
+      </div>
+
+      {/* Square — right mid, CW */}
+      <div className="absolute pointer-events-none" style={{ top: '45%', right: '5%', animation: 'geo-rotate-cw 35s linear infinite' }}>
+        <svg width="100" height="100" viewBox="-50 -50 100 100">
+          <rect x="-38" y="-38" width="76" height="76" fill="none" stroke="white"    strokeWidth="0.5" opacity="0.09" />
+          <rect x="-22" y="-22" width="44" height="44" fill="none" stroke="#00ff88" strokeWidth="0.4" opacity="0.09" />
+        </svg>
+      </div>
+
+      {/* Diamond — top left, pulse */}
+      <div className="absolute pointer-events-none" style={{ top: '18%', left: '5%', animation: 'geo-pulse 8s ease-in-out infinite' }}>
+        <svg width="80" height="80" viewBox="-40 -40 80 80">
+          <polygon points="0,-34 34,0 0,34 -34,0"
+            fill="none" stroke="#00ff88" strokeWidth="0.6" opacity="0.45" />
+        </svg>
+      </div>
+
+      {/* ── Content ─────────────────────────────────────────────────────────── */}
       <div className="relative z-10 w-full max-w-sm">
 
         {/* Brand */}
         <div className="flex flex-col items-center mb-8">
-          <div data-logo className="p-3.5 rounded-2xl mb-4" style={{
-            background: 'linear-gradient(135deg, #277350, #1c4a35)',
-            boxShadow: '0 0 28px rgba(39,115,80,0.45), 0 0 60px rgba(39,115,80,0.15)',
-          }}>
-            <TreePine size={28} className="text-white" />
+          {/* Orbital mark */}
+          <div data-logo className="mb-5">
+            <svg viewBox="0 0 100 100" width="64" height="64" fill="none" aria-hidden="true">
+              <g className="mark-spin">
+                <ellipse cx="50" cy="50" rx="42" ry="14" stroke="#1a2a1a" strokeWidth="1.2"/>
+                <ellipse cx="50" cy="50" rx="42" ry="14" stroke="#1a2a1a" strokeWidth="1.2" transform="rotate(60 50 50)"/>
+                <ellipse cx="50" cy="50" rx="42" ry="14" stroke="#1a2a1a" strokeWidth="1.2" transform="rotate(120 50 50)"/>
+                <circle r="2.4" fill="#f0f0f0">
+                  <animateMotion dur="8s" repeatCount="indefinite" rotate="none"
+                    path="M 92,50 A 42,14 0 0,1 8,50 A 42,14 0 0,1 92,50"/>
+                </circle>
+              </g>
+              <circle cx="50" cy="50" r="11" stroke="#00ff88" strokeWidth="1.2" opacity=".5" className="mark-pulse"/>
+              <circle cx="50" cy="50" r="6" fill="#00ff88"/>
+            </svg>
           </div>
-          <h1 data-brand-title className="text-2xl font-bold tracking-tight" style={{ color: '#e8f5ee' }}>
+
+          <h1 data-brand-title className="text-3xl font-bold tracking-tight" style={{ color: '#f0f0f0', letterSpacing: '-0.02em' }}>
             Deskra
           </h1>
-          <p data-brand-sub className="text-sm mt-1" style={{ color: '#8dcaaa' }}>
-            Sistem Administrasi Kantor
+          <p data-brand-label className="text-xs font-mono tracking-widest uppercase mt-2" style={{ color: '#00ff88' }}>
+            sistem administrasi
           </p>
-          <span data-brand-ver className="mt-2 px-2 py-0.5 rounded-md text-[10px] font-mono" style={{
-            background: 'rgba(39,115,80,0.15)',
-            color: '#5aad83',
-            border: '1px solid rgba(39,115,80,0.25)',
-          }}>
-            v{appVersion}
-          </span>
         </div>
 
         {/* Card */}
         <div data-card style={{
-          background: 'rgba(6,18,11,0.78)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          border: '1px solid rgba(39,115,80,0.22)',
-          borderRadius: 20,
-          padding: 24,
-          boxShadow: '0 30px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(141,202,170,0.06)',
+          background: 'rgba(255,255,255,0.025)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 4,
+          padding: '28px 28px 24px',
         }}>
-          <h2 className="font-semibold mb-5" style={{ color: '#d1ead9', fontSize: 15 }}>
-            Masuk ke akun Anda
-          </h2>
+          <p className="text-xs font-mono mb-5" style={{ color: '#666666' }}>
+            — masuk ke akun anda
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div data-field>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: '#8dcaaa' }}>Email</label>
+              <label className="block text-xs font-mono mb-1.5 tracking-wide" style={{ color: '#00ff88' }}>
+                email
+              </label>
               <input
                 type="email"
                 value={email}
@@ -257,20 +203,22 @@ export default function Login() {
                 placeholder="nama@email.com"
                 required
                 autoComplete="email"
-                style={inputStyle}
-                onFocus={e => {
-                  e.target.style.borderColor = 'rgba(39,115,80,0.7)'
-                  e.target.style.boxShadow   = '0 0 0 3px rgba(39,115,80,0.15)'
-                }}
-                onBlur={e => {
-                  e.target.style.borderColor = 'rgba(39,115,80,0.3)'
-                  e.target.style.boxShadow   = 'none'
+                className="login-input w-full text-sm transition-all"
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: 3,
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: 'rgba(255,255,255,0.03)',
+                  color: '#f0f0f0',
+                  fontSize: 14,
                 }}
               />
             </div>
 
             <div data-field>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: '#8dcaaa' }}>Password</label>
+              <label className="block text-xs font-mono mb-1.5 tracking-wide" style={{ color: '#00ff88' }}>
+                password
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -279,70 +227,82 @@ export default function Login() {
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
-                  style={{ ...inputStyle, paddingRight: 40 }}
-                  onFocus={e => {
-                    e.target.style.borderColor = 'rgba(39,115,80,0.7)'
-                    e.target.style.boxShadow   = '0 0 0 3px rgba(39,115,80,0.15)'
-                  }}
-                  onBlur={e => {
-                    e.target.style.borderColor = 'rgba(39,115,80,0.3)'
-                    e.target.style.boxShadow   = 'none'
+                  className="login-input w-full text-sm transition-all"
+                  style={{
+                    padding: '10px 40px 10px 12px',
+                    borderRadius: 3,
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(255,255,255,0.03)',
+                    color: '#f0f0f0',
+                    fontSize: 14,
                   }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(v => !v)}
                   tabIndex={-1}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-                  style={{ color: '#5aad83' }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-100"
+                  style={{ color: 'rgba(255,255,255,0.3)' }}
                 >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  {showPassword ? <EyeOff size={14}/> : <Eye size={14}/>}
                 </button>
               </div>
             </div>
 
             {error && (
-              <p data-field className="text-xs rounded-lg px-3 py-2" style={{
-                color: '#fca5a5',
-                background: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.2)',
+              <div data-field className="text-xs font-mono px-3 py-2" style={{
+                color: '#ff6b6b',
+                background: 'rgba(255,107,107,0.08)',
+                border: '1px solid rgba(255,107,107,0.15)',
+                borderRadius: 3,
               }}>
                 {error}
-              </p>
+              </div>
             )}
 
-            <div data-field>
+            <div data-field className="pt-1">
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className="w-full flex items-center justify-center gap-2 text-sm font-medium text-white"
+                className="w-full flex items-center justify-center gap-2 text-sm font-semibold font-mono transition-all"
                 style={{
                   padding: '10px 16px',
-                  borderRadius: 10,
+                  borderRadius: 3,
                   border: 'none',
                   cursor: canSubmit ? 'pointer' : 'not-allowed',
-                  background: canSubmit
-                    ? 'linear-gradient(135deg, #277350 0%, #379165 100%)'
-                    : 'rgba(39,115,80,0.3)',
-                  boxShadow: canSubmit ? '0 4px 20px rgba(39,115,80,0.4)' : 'none',
-                  opacity: canSubmit ? 1 : 0.6,
-                  transition: 'box-shadow 0.2s, opacity 0.2s',
+                  background: canSubmit ? '#00ff88' : 'rgba(0,255,136,0.15)',
+                  color: canSubmit ? '#0a0a0a' : 'rgba(0,255,136,0.4)',
+                  letterSpacing: '0.04em',
                 }}
-                onMouseEnter={e => { if (canSubmit) e.currentTarget.style.boxShadow = '0 6px 28px rgba(39,115,80,0.55)' }}
-                onMouseLeave={e => { if (canSubmit) e.currentTarget.style.boxShadow = '0 4px 20px rgba(39,115,80,0.4)' }}
               >
                 {loading
-                  ? <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  : <LogIn size={15} />}
-                {loading ? 'Memproses...' : 'Masuk'}
+                  ? <span className="inline-block w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(0,0,0,0.2)', borderTopColor: '#0a0a0a' }}/>
+                  : null}
+                {loading ? 'memproses...' : 'masuk'}
               </button>
             </div>
           </form>
         </div>
 
-        <p className="text-center text-xs mt-6" style={{ color: 'rgba(141,202,170,0.35)' }}>
-          Perum Perhutani · KPH Banyuwangi Utara
-        </p>
+        {/* Footer */}
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>
+            v{appVersion}
+          </p>
+          <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>
+            ©{' '}
+            <a
+              href="https://astrolabs.site"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'rgba(0,255,136,0.35)', transition: 'color 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#00ff88' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(0,255,136,0.35)' }}
+            >
+              AstroLabs Studio
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   )

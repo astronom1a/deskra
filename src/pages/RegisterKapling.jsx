@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2, FileText, Pencil, Trash2, Settings, ChevronUp, ChevronDown, ChevronsUpDown, SlidersHorizontal, ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2, FileText, Pencil, Trash2, Settings, ChevronUp, ChevronDown, ChevronsUpDown, SlidersHorizontal, ChevronLeft, ChevronRight, Search, Plus } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import * as pdfjsLib from 'pdfjs-dist'
 import { supabase } from '../lib/supabase'
@@ -254,14 +254,26 @@ function analyzeKapling(rows) {
   return { last, missing, shorten }
 }
 
+const JENIS_STYLE = {
+  JATI:     { background: 'rgba(0,255,136,0.12)', color: '#00ff88', border: '1px solid rgba(0,255,136,0.25)' },
+  MAHONI:   { background: 'rgba(255,107,107,0.12)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.25)' },
+  KEDAWUNG: { background: 'rgba(255,107,107,0.12)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.25)' },
+}
+const RK_BADGE_BASE = { display: 'inline-block', padding: '2px 6px', borderRadius: 3, fontSize: 10, fontWeight: 600, fontFamily: 'monospace' }
+const RK_BADGE_DEF  = { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.1)' }
+
+function JenisKayuBadge({ val }) {
+  if (!val) return <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>
+  return <span style={{ ...RK_BADGE_BASE, ...(JENIS_STYLE[val.toUpperCase()] || RK_BADGE_DEF) }}>{val}</span>
+}
+
 function SertBadge({ val }) {
-  if (!val || val === '-') return <span className="text-gray-400 dark:text-gray-500">-</span>
+  if (!val || val === '-') return <span style={{ color: 'rgba(255,255,255,0.2)' }}>-</span>
   const isFsc = val.toUpperCase() === 'FSC'
-  return (
-    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-      isFsc ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-    }`}>{val}</span>
-  )
+  const style = isFsc
+    ? { background: 'rgba(0,255,136,0.12)', color: '#00ff88', border: '1px solid rgba(0,255,136,0.25)' }
+    : { background: 'rgba(255,170,0,0.12)', color: '#ffaa00', border: '1px solid rgba(255,170,0,0.25)' }
+  return <span style={{ ...RK_BADGE_BASE, ...style }}>{val}</span>
 }
 
 export default function RegisterKapling() {
@@ -476,38 +488,44 @@ export default function RegisterKapling() {
     fetchData()
   }
 
-  // ── Edit row ──────────────────────────────────────────────────────────────
+  // ── Edit / Add row ────────────────────────────────────────────────────────
   async function handleEditSave() {
     if (!editRow) return
+    if (!editRow.no_kapling?.trim()) { showToast('No. Kapling wajib diisi.', 'error'); return }
     setEditSaving(true)
-    const { error } = await supabase
-      .from('tabel_register_kapling')
-      .update({
-        tgl_kapling:    editRow.tgl_kapling || null,
-        periode:        editRow.periode,
-        no_blok:        editRow.no_blok,
-        jenis:          editRow.jenis,
-        sortimen:       editRow.sortimen,
-        sort_untuk:     editRow.sort_untuk || null,
-        panjang:        editRow.panjang,
-        lebar:          editRow.lebar || null,
-        diameter_tebal: editRow.diameter_tebal,
-        status:         editRow.status,
-        mutu:           editRow.mutu,
-        cacat:          editRow.cacat,
-        asal_kayu:      editRow.asal_kayu || null,
-        sertifikasi:    editRow.sertifikasi,
-        batang:         Number(editRow.batang) || 0,
-        volume:         Number(editRow.volume) || 0,
-        no_invois:      editRow.no_invois,
-        pembeli:        editRow.pembeli,
-        dkhp:           editRow.dkhp || null,
-        skshhk:         editRow.skshhk || null,
-      })
-      .eq('no_kapling', editRow.no_kapling)
+    const payload = {
+      tgl_kapling:    editRow.tgl_kapling || null,
+      periode:        editRow.periode,
+      no_blok:        editRow.no_blok,
+      jenis:          editRow.jenis,
+      sortimen:       editRow.sortimen,
+      sort_untuk:     editRow.sort_untuk || null,
+      panjang:        editRow.panjang,
+      lebar:          editRow.lebar || null,
+      diameter_tebal: editRow.diameter_tebal,
+      status:         editRow.status,
+      mutu:           editRow.mutu,
+      cacat:          editRow.cacat,
+      asal_kayu:      editRow.asal_kayu || null,
+      sertifikasi:    editRow.sertifikasi,
+      batang:         Number(editRow.batang) || 0,
+      volume:         Number(editRow.volume) || 0,
+      no_invois:      editRow.no_invois || null,
+      pembeli:        editRow.pembeli || null,
+      dkhp:           editRow.dkhp || null,
+      skshhk:         editRow.skshhk || null,
+    }
+    let error
+    if (editRow._new) {
+      payload.no_kapling = editRow.no_kapling.trim()
+      payload.tpk_id     = profile?.tpk_id
+      ;({ error } = await supabase.from('tabel_register_kapling').insert(payload))
+    } else {
+      ;({ error } = await supabase.from('tabel_register_kapling').update(payload).eq('no_kapling', editRow.no_kapling))
+    }
     setEditSaving(false)
     if (error) { showToast(error.message, 'error'); return }
-    showToast('Data kapling berhasil diperbarui')
+    showToast(editRow._new ? 'Kapling baru berhasil ditambahkan' : 'Data kapling berhasil diperbarui')
     setEditRow(null)
     fetchData()
   }
@@ -608,6 +626,12 @@ export default function RegisterKapling() {
 
   const kaplingInfo = useMemo(() => analyzeKapling(rows), [rows])
 
+  const totalMissingCount = useMemo(() =>
+    kaplingInfo
+      ? kaplingInfo.missing.reduce((s, m) => s + Number(BigInt(m.to) - BigInt(m.from) + 1n), 0)
+      : 0
+  , [kaplingInfo])
+
   const totalBatang = rows.reduce((s, r) => s + (r.batang || 0), 0)
   const totalVolume = rows.reduce((s, r) => s + Number(r.volume || 0), 0)
 
@@ -704,57 +728,71 @@ export default function RegisterKapling() {
   const sortVolume = Object.fromEntries(SORTIMENS.map(m => [m, rows.filter(r => (r.sortimen || '').trim().toUpperCase() === m).reduce((s, r) => s + Number(r.volume || 0), 0)]))
 
   return (
-    <div className="p-6 max-w-full mx-auto">
+    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+      <style>{`
+        .rk-input { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #f0f0f0 !important; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; }
+        .rk-input:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
+        .rk-input option { background: #1a1a1a; color: #f0f0f0; }
+        .rk-input::placeholder { color: rgba(255,255,255,0.2) !important; }
+        .rk-row:hover td { background: rgba(255,255,255,0.025) !important; }
+        .rk-row-sel td { background: rgba(0,255,136,0.05) !important; }
+        .rk-th:hover { background: rgba(255,255,255,0.04) !important; }
+        .rk-cb { accent-color: #00ff88; }
+        .rk-row:hover .rk-actions { opacity: 1 !important; }
+      `}</style>
+
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm text-white ${
-          toast.type === 'error' ? 'bg-red-500' : 'bg-primary-600'
-        }`}>
-          {toast.type === 'error' ? <AlertCircle size={15}/> : <CheckCircle2 size={15}/>}
+        <div style={{
+          position: 'fixed', top: 20, right: 20, zIndex: 50, display: 'flex', alignItems: 'center', gap: 8,
+          padding: '10px 16px', borderRadius: 3, fontSize: 12, fontFamily: 'monospace',
+          background: toast.type === 'error' ? 'rgba(255,107,107,0.12)' : 'rgba(0,255,136,0.10)',
+          border: `1px solid ${toast.type === 'error' ? 'rgba(255,107,107,0.3)' : 'rgba(0,255,136,0.3)'}`,
+          color: toast.type === 'error' ? '#ff6b6b' : '#00ff88',
+        }}>
+          {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>}
           {toast.msg}
         </div>
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Register Kapling</h1>
-            <span className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-              realtimeStatus === 'connected'    ? 'bg-green-50 text-green-600' :
-              realtimeStatus === 'disconnected' ? 'bg-red-50 text-red-500'    :
-                                                  'bg-yellow-50 text-yellow-600'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${
-                realtimeStatus === 'connected'    ? 'bg-green-500 animate-pulse' :
-                realtimeStatus === 'disconnected' ? 'bg-red-400'                 :
-                                                    'bg-yellow-400 animate-pulse'
-              }`}/>
-              {realtimeStatus === 'connected' ? 'Live' : realtimeStatus === 'disconnected' ? 'Offline' : 'Connecting'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>Register Kapling</h1>
+            <span style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '2px 8px', borderRadius: 3, fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
+              background: realtimeStatus === 'connected' ? 'rgba(0,255,136,0.08)' : realtimeStatus === 'disconnected' ? 'rgba(255,107,107,0.08)' : 'rgba(255,170,0,0.08)',
+              border: realtimeStatus === 'connected' ? '1px solid rgba(0,255,136,0.2)' : realtimeStatus === 'disconnected' ? '1px solid rgba(255,107,107,0.2)' : '1px solid rgba(255,170,0,0.2)',
+              color: realtimeStatus === 'connected' ? '#00ff88' : realtimeStatus === 'disconnected' ? '#ff6b6b' : '#ffaa00',
+            }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: realtimeStatus === 'connected' ? '#00ff88' : realtimeStatus === 'disconnected' ? '#ff6b6b' : '#ffaa00' }}/>
+              {realtimeStatus === 'connected' ? 'live' : realtimeStatus === 'disconnected' ? 'offline' : 'connecting'}
             </span>
           </div>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Data register kapling dari file DP Kapling (.xlsx)</p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>data register kapling dari file dp kapling (.xlsx)</p>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => { setDraftMap({ ...colMap }); setShowSettings(true) }}
-            className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            title="Pengaturan header kolom"
-          >
-            <Settings size={15}/>
-          </button>
-          <button
-            onClick={() => invoisRef.current?.click()}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            <FileText size={15}/> Input Invois
-          </button>
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            <Upload size={15}/> Import Excel
-          </button>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={() => { setDraftMap({ ...colMap }); setShowSettings(true) }} title="Pengaturan header kolom"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 10px', fontSize: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#f0f0f0' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
+          ><Settings size={14}/></button>
+          <button onClick={() => setEditRow({ _new: true, no_kapling: '', tgl_kapling: '', periode: '', no_blok: '', jenis: '', sortimen: '', sort_untuk: '', panjang: '', lebar: '', diameter_tebal: '', status: '', mutu: '', cacat: '', asal_kayu: '', sertifikasi: '', batang: 0, volume: 0, no_invois: '', pembeli: '', dkhp: '', skshhk: '' })}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', fontSize: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#f0f0f0' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
+          ><Plus size={14}/> tambah manual</button>
+          <button onClick={() => invoisRef.current?.click()}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', fontSize: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#f0f0f0' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
+          ><FileText size={14}/> input invois</button>
+          <button onClick={() => fileRef.current?.click()}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', fontSize: 12, background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 700 }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          ><Upload size={14}/> import excel</button>
         </div>
         <input ref={fileRef}   type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange}/>
         <input ref={invoisRef} type="file" accept=".pdf"       className="hidden" onChange={handleInvoisFileChange}/>
@@ -762,59 +800,53 @@ export default function RegisterKapling() {
 
       {/* Summary cards */}
       {rows.length > 0 && (
-        <div className="grid grid-cols-3 gap-4 mb-5">
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-5 py-4 flex gap-4">
-            {/* kiri: total + terakhir */}
-            <div className="shrink-0">
-              <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Total Kapling</p>
-              <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{rows.length.toLocaleString('id')}</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '16px 20px', display: 'flex', gap: 16 }}>
+            <div style={{ flexShrink: 0 }}>
+              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>total kapling</p>
+              <p style={{ fontSize: 22, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>{rows.length.toLocaleString('id')}</p>
               {kaplingInfo && (
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5">
-                  Terakhir:&nbsp;
-                  <span className="font-mono font-semibold text-gray-600 dark:text-gray-300">
-                    {kaplingInfo.shorten(kaplingInfo.last)}
-                  </span>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 6, fontFamily: 'monospace' }}>
+                  terakhir: <span style={{ color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>{kaplingInfo.shorten(kaplingInfo.last)}</span>
                 </p>
               )}
             </div>
-            {/* kanan: rincian loncat */}
             {kaplingInfo?.missing.length > 0 && (
-              <div className="flex-1 min-w-0 border-l border-gray-100 dark:border-gray-700 pl-4">
-                <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 mb-1.5">
-                  Missing ({kaplingInfo.missing.length})
+              <div style={{ flex: 1, minWidth: 0, borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: 16 }}>
+                <p style={{ fontSize: 10, fontWeight: 600, color: '#ffaa00', marginBottom: 6, fontFamily: 'monospace' }}>
+                  missing <span style={{ fontWeight: 700 }}>{totalMissingCount.toLocaleString('id')}</span>
+                  <span style={{ opacity: 0.6 }}> ({kaplingInfo.missing.length} gap)</span>
                 </p>
-                <div className="flex flex-wrap gap-1 content-start max-h-[60px] overflow-y-auto pr-0.5">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, maxHeight: 60, overflowY: 'auto' }}>
                   {kaplingInfo.missing.map((m, i) => (
-                    <span key={i} className="text-[10px] font-mono bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded px-1.5 py-0.5 leading-none whitespace-nowrap">
-                      {m.from === m.to
-                        ? kaplingInfo.shorten(m.from)
-                        : `${kaplingInfo.shorten(m.from)}–${kaplingInfo.shorten(m.to)}`}
+                    <span key={i} style={{ fontSize: 10, fontFamily: 'monospace', background: 'rgba(255,170,0,0.08)', color: '#ffaa00', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 2, padding: '1px 5px', whiteSpace: 'nowrap' }}>
+                      {m.from === m.to ? kaplingInfo.shorten(m.from) : `${kaplingInfo.shorten(m.from)}–${kaplingInfo.shorten(m.to)}`}
                     </span>
                   ))}
                 </div>
               </div>
             )}
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-5 py-4">
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Total Batang</p>
-            <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{totalBatang.toLocaleString('id')}</p>
-            <div className="flex gap-3 mt-2">
+          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '16px 20px' }}>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>total batang</p>
+            <p style={{ fontSize: 22, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>{totalBatang.toLocaleString('id')}</p>
+            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
               {SORTIMENS.map(m => (
-                <div key={m} className="flex items-center gap-1">
-                  <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">{m}</span>
-                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{sortBatang[m].toLocaleString('id')}</span>
+                <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>{m}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{sortBatang[m].toLocaleString('id')}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-5 py-4">
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Total Volume (M³)</p>
-            <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{totalVolume.toFixed(3)}</p>
-            <div className="flex gap-3 mt-2">
+          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '16px 20px' }}>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>total volume (m³)</p>
+            <p style={{ fontSize: 22, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>{totalVolume.toFixed(3)}</p>
+            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
               {SORTIMENS.map(m => (
-                <div key={m} className="flex items-center gap-1">
-                  <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">{m}</span>
-                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{sortVolume[m].toFixed(3)}</span>
+                <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>{m}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{sortVolume[m].toFixed(3)}</span>
                 </div>
               ))}
             </div>
@@ -824,62 +856,37 @@ export default function RegisterKapling() {
 
       {/* Settings modal */}
       {showSettings && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-start justify-between mb-5">
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 480, padding: 24, maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
               <div>
-                <p className="font-semibold text-gray-800 dark:text-gray-100">Pengaturan Header Kolom</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Sesuaikan nama header kolom sesuai file Excel</p>
+                <p style={{ fontWeight: 600, color: '#f0f0f0', fontFamily: 'monospace', fontSize: 13 }}>pengaturan header kolom</p>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>sesuaikan nama header kolom sesuai file excel</p>
               </div>
-              <button onClick={() => setShowSettings(false)}><X size={16} className="text-gray-400 dark:text-gray-500 hover:text-gray-600"/></button>
+              <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
             </div>
-
-            {excelHeaders.length > 0 && (
-              <datalist id="excel-headers-list">
-                {excelHeaders.map(h => <option key={h} value={h}/>)}
-              </datalist>
-            )}
-
-            <div className="space-y-2 mb-5">
+            {excelHeaders.length > 0 && <datalist id="excel-headers-list">{excelHeaders.map(h => <option key={h} value={h}/>)}</datalist>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
               {FIELD_DEFS.map(f => (
-                <div key={f.key} className="grid grid-cols-2 gap-3 items-center">
-                  <label className="text-xs text-gray-600 dark:text-gray-300 font-medium">
-                    {f.label}
-                    {f.required && <span className="text-red-400 ml-0.5">*</span>}
+                <div key={f.key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, alignItems: 'center' }}>
+                  <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: 'monospace', fontWeight: 500 }}>
+                    {f.label}{f.required && <span style={{ color: '#ff6b6b', marginLeft: 2 }}>*</span>}
                   </label>
-                  <input
-                    list="excel-headers-list"
-                    value={draftMap[f.key] || ''}
-                    onChange={e => setDraftMap(prev => ({ ...prev, [f.key]: e.target.value }))}
-                    placeholder="Nama header di Excel..."
-                    className="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
+                  <input list="excel-headers-list" value={draftMap[f.key] || ''} onChange={e => setDraftMap(prev => ({ ...prev, [f.key]: e.target.value }))} placeholder="nama header di excel..." className="rk-input" style={{ padding: '5px 8px', width: '100%', boxSizing: 'border-box' }}/>
                 </div>
               ))}
             </div>
-
             {excelHeaders.length > 0 && (
-              <div className="bg-gray-50 dark:bg-gray-900/60 border border-gray-100 dark:border-gray-700 rounded-lg px-3 py-2 mb-4">
-                <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Header terdeteksi dari file terakhir:</p>
-                <p className="text-xs text-gray-600 dark:text-gray-200 font-mono leading-relaxed">{excelHeaders.join(', ')}</p>
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, padding: '8px 12px', marginBottom: 16 }}>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 3, fontFamily: 'monospace' }}>header terdeteksi:</p>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', fontFamily: 'monospace', lineHeight: 1.6 }}>{excelHeaders.join(', ')}</p>
               </div>
             )}
-
-            <div className="flex gap-2 justify-between">
-              <button
-                onClick={() => setDraftMap({ ...DEFAULT_COL_MAP })}
-                className="px-3 py-2 text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
-              >
-                Reset ke default
-              </button>
-              <div className="flex gap-2">
-                <button onClick={() => setShowSettings(false)} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">Batal</button>
-                <button
-                  onClick={() => { saveColMap(draftMap); setShowSettings(false); showToast('Pengaturan disimpan') }}
-                  className="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-                >
-                  Simpan
-                </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+              <button onClick={() => setDraftMap({ ...DEFAULT_COL_MAP })} style={{ padding: '7px 12px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>reset default</button>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={() => setShowSettings(false)} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
+                <button onClick={() => { saveColMap(draftMap); setShowSettings(false); showToast('Pengaturan disimpan') }} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, background: '#00ff88', color: '#0a0a0a', border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 700 }}>simpan</button>
               </div>
             </div>
           </div>
@@ -888,111 +895,72 @@ export default function RegisterKapling() {
 
       {/* Excel import preview modal */}
       {preview && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
-
-            {/* header */}
-            <div className="flex items-start justify-between px-6 pt-6 pb-4 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary-50 dark:bg-primary-900/30 p-2 rounded-lg">
-                  <FileSpreadsheet size={20} className="text-primary-600"/>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '20px 24px 16px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ padding: 8, background: 'rgba(0,255,136,0.08)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 3 }}>
+                  <FileSpreadsheet size={16} style={{ color: '#00ff88' }}/>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{preview.fileName}</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{preview.rows.length} baris ditemukan</p>
+                  <p style={{ fontWeight: 600, color: '#f0f0f0', fontSize: 13, fontFamily: 'monospace' }}>{preview.fileName}</p>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontFamily: 'monospace' }}>{preview.rows.length} baris ditemukan</p>
                 </div>
               </div>
-              <button onClick={() => setPreview(null)}><X size={16} className="text-gray-400 dark:text-gray-500 hover:text-gray-600"/></button>
+              <button onClick={() => setPreview(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
             </div>
-
-            {/* mode tabs */}
-            <div className="px-6 flex-shrink-0">
-              <div className="flex p-1 bg-gray-100 dark:bg-gray-900 rounded-lg mb-4">
-                <button
-                  onClick={() => setPreview(p => ({ ...p, mode: 'insert' }))}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                    preview.mode === 'insert'
-                      ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
-                  }`}
-                >
-                  Tambah Baru
-                  <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    preview.mode === 'insert' ? 'bg-green-100 text-green-700' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
-                  }`}>{preview.newCount}</span>
-                </button>
-                <button
-                  onClick={() => setPreview(p => ({ ...p, mode: 'update' }))}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                    preview.mode === 'update'
-                      ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
-                  }`}
-                >
-                  Update Kolom Kosong
-                  <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    preview.mode === 'update' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
-                  }`}>{preview.updateRows.length}</span>
-                </button>
+            <div style={{ padding: '0 24px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', background: 'rgba(255,255,255,0.04)', borderRadius: 3, padding: 3, marginBottom: 16 }}>
+                {[{ key: 'insert', label: 'Tambah Baru', count: preview.newCount }, { key: 'update', label: 'Update Kosong', count: preview.updateRows.length }].map(tab => (
+                  <button key={tab.key} onClick={() => setPreview(p => ({ ...p, mode: tab.key }))} style={{ flex: 1, padding: '6px 0', fontSize: 11, borderRadius: 2, fontFamily: 'monospace', cursor: 'pointer', border: 'none', background: preview.mode === tab.key ? 'rgba(255,255,255,0.08)' : 'transparent', color: preview.mode === tab.key ? '#f0f0f0' : 'rgba(255,255,255,0.38)', fontWeight: preview.mode === tab.key ? 600 : 400 }}>
+                    {tab.label} <span style={{ marginLeft: 4, padding: '1px 5px', borderRadius: 99, fontSize: 9, fontWeight: 700, background: preview.mode === tab.key ? '#00ff88' : 'rgba(255,255,255,0.08)', color: preview.mode === tab.key ? '#0a0a0a' : 'rgba(255,255,255,0.4)' }}>{tab.count}</span>
+                  </button>
+                ))}
               </div>
             </div>
-
-            {/* body */}
-            <div className="px-6 overflow-y-auto flex-1 min-h-0">
+            <div style={{ padding: '0 24px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
               {preview.mode === 'insert' ? (
                 <>
-                  <div className="flex gap-3 mb-4">
-                    <div className="flex-1 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl px-4 py-3">
-                      <p className="text-xs text-green-600 dark:text-green-400 mb-0.5">Kapling baru</p>
-                      <p className="text-xl font-bold text-green-700 dark:text-green-300">{preview.newCount}</p>
+                  <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+                    <div style={{ flex: 1, background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 3, padding: '12px 16px' }}>
+                      <p style={{ fontSize: 10, color: '#00ff88', marginBottom: 3, fontFamily: 'monospace' }}>kapling baru</p>
+                      <p style={{ fontSize: 20, fontWeight: 700, color: '#00ff88', fontFamily: 'monospace' }}>{preview.newCount}</p>
                     </div>
                     {(preview.skipCount > 0 || preview.updateRows.length > 0) && (
-                      <div className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Sudah ada</p>
-                        <p className="text-xl font-bold text-gray-500 dark:text-gray-400">
-                          {preview.skipCount + preview.updateRows.length}
-                        </p>
+                      <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '12px 16px' }}>
+                        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 3, fontFamily: 'monospace' }}>sudah ada</p>
+                        <p style={{ fontSize: 20, fontWeight: 700, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>{preview.skipCount + preview.updateRows.length}</p>
                       </div>
                     )}
                   </div>
-                  {preview.newCount === 0
-                    ? <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 mb-4 text-xs text-amber-700 dark:text-amber-400">
-                        Semua kapling dalam file ini sudah ada di database.
-                      </div>
-                    : <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg px-4 py-3 mb-4 text-xs text-blue-700 dark:text-blue-400">
-                        Hanya kapling baru yang akan ditambahkan. Data yang sudah ada tidak akan diubah.
-                      </div>
-                  }
+                  <div style={{ background: preview.newCount === 0 ? 'rgba(255,170,0,0.06)' : 'rgba(0,180,255,0.06)', border: `1px solid ${preview.newCount === 0 ? 'rgba(255,170,0,0.2)' : 'rgba(0,180,255,0.2)'}`, borderRadius: 3, padding: '10px 14px', marginBottom: 14, fontSize: 11, fontFamily: 'monospace', color: preview.newCount === 0 ? '#ffaa00' : 'rgba(100,200,255,0.9)' }}>
+                    {preview.newCount === 0 ? 'semua kapling dalam file ini sudah ada di database.' : 'hanya kapling baru yang akan ditambahkan. data yang sudah ada tidak akan diubah.'}
+                  </div>
                 </>
               ) : (
                 <>
                   {preview.updateRows.length === 0 ? (
-                    <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 mb-4 text-xs text-gray-500 dark:text-gray-400">
-                      Tidak ada kapling dengan kolom kosong yang bisa diisi.
+                    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '10px 14px', marginBottom: 14, fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.35)' }}>
+                      tidak ada kapling dengan kolom kosong yang bisa diisi.
                     </div>
                   ) : (
                     <>
-                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg px-4 py-3 mb-3 text-xs text-blue-700 dark:text-blue-400">
-                        Hanya kolom yang kosong di database yang akan diisi. Kolom yang sudah berisi data tidak akan diubah.
+                      <div style={{ background: 'rgba(0,180,255,0.06)', border: '1px solid rgba(0,180,255,0.2)', borderRadius: 3, padding: '10px 14px', marginBottom: 10, fontSize: 11, fontFamily: 'monospace', color: 'rgba(100,200,255,0.9)' }}>
+                        hanya kolom yang kosong di database yang akan diisi.
                       </div>
-                      <div className="border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden mb-4">
-                        <div className="bg-gray-50 dark:bg-gray-900 px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 flex justify-between">
-                          <span>No. Kapling</span>
-                          <span>Kolom yang akan diisi</span>
+                      <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden', marginBottom: 14 }}>
+                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 12px', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.4)', display: 'flex', justifyContent: 'space-between', fontFamily: 'monospace' }}>
+                          <span>no. kapling</span><span>kolom yang akan diisi</span>
                         </div>
-                        <div className="divide-y divide-gray-50 dark:divide-gray-800 max-h-[260px] overflow-y-auto">
+                        <div style={{ maxHeight: 260, overflowY: 'auto' }}>
                           {preview.updateRows.map(({ row, fields }) => (
-                            <div key={row.no_kapling} className="px-3 py-2 flex items-center justify-between gap-2">
-                              <span className="font-mono text-xs text-gray-700 dark:text-gray-200 shrink-0">{row.no_kapling}</span>
-                              <div className="flex flex-wrap gap-1 justify-end">
+                            <div key={row.no_kapling} style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                              <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.65)', flexShrink: 0 }}>{row.no_kapling}</span>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, justifyContent: 'flex-end' }}>
                                 {fields.slice(0, 4).map(f => (
-                                  <span key={f.key} className="text-[10px] bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded px-1.5 py-0.5 leading-none whitespace-nowrap">
-                                    {f.label}
-                                  </span>
+                                  <span key={f.key} style={{ fontSize: 9, background: 'rgba(0,180,255,0.08)', color: 'rgba(100,200,255,0.8)', border: '1px solid rgba(0,180,255,0.2)', borderRadius: 2, padding: '1px 5px', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>{f.label}</span>
                                 ))}
-                                {fields.length > 4 && (
-                                  <span className="text-[10px] text-gray-400 dark:text-gray-500">+{fields.length - 4}</span>
-                                )}
+                                {fields.length > 4 && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>+{fields.length - 4}</span>}
                               </div>
                             </div>
                           ))}
@@ -1003,29 +971,17 @@ export default function RegisterKapling() {
                 </>
               )}
             </div>
-
-            {/* footer */}
-            <div className="flex gap-2 justify-end px-6 pb-6 pt-2 flex-shrink-0 border-t border-gray-100 dark:border-gray-700 mt-2">
-              <button onClick={() => setPreview(null)} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
-                Batal
-              </button>
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', padding: '14px 24px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+              <button onClick={() => setPreview(null)} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
               {preview.mode === 'insert' ? (
-                <button
-                  onClick={handleImport}
-                  disabled={importing || preview.newCount === 0}
-                  className="flex items-center gap-2 px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-60"
-                >
-                  {importing && <Loader2 size={13} className="animate-spin"/>}
-                  {importing ? 'Menyimpan...' : `Tambah ${preview.newCount} Kapling`}
+                <button onClick={handleImport} disabled={importing || preview.newCount === 0} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 11, borderRadius: 3, background: (importing || !preview.newCount) ? 'rgba(0,255,136,0.15)' : '#00ff88', color: (importing || !preview.newCount) ? 'rgba(0,255,136,0.4)' : '#0a0a0a', border: 'none', cursor: (importing || !preview.newCount) ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700 }}>
+                  {importing && <Loader2 size={11} className="animate-spin"/>}
+                  {importing ? 'menyimpan…' : `tambah ${preview.newCount} kapling`}
                 </button>
               ) : (
-                <button
-                  onClick={handleImport}
-                  disabled={importing || preview.updateRows.length === 0}
-                  className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
-                >
-                  {importing && <Loader2 size={13} className="animate-spin"/>}
-                  {importing ? 'Mengupdate...' : `Update ${preview.updateRows.length} Kapling`}
+                <button onClick={handleImport} disabled={importing || preview.updateRows.length === 0} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 11, borderRadius: 3, background: (importing || !preview.updateRows.length) ? 'rgba(0,180,255,0.15)' : 'rgba(0,180,255,0.9)', color: '#fff', border: 'none', cursor: (importing || !preview.updateRows.length) ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700 }}>
+                  {importing && <Loader2 size={11} className="animate-spin"/>}
+                  {importing ? 'mengupdate…' : `update ${preview.updateRows.length} kapling`}
                 </button>
               )}
             </div>
@@ -1035,54 +991,54 @@ export default function RegisterKapling() {
 
       {/* Invoice PDF preview modal */}
       {invoisPreview && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col p-6">
-            <div className="flex items-start justify-between mb-5 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-50 p-2 rounded-lg">
-                  <FileText size={20} className="text-blue-600"/>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', maxHeight: '90vh', padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ padding: 8, background: 'rgba(0,180,255,0.08)', border: '1px solid rgba(0,180,255,0.15)', borderRadius: 3 }}>
+                  <FileText size={16} style={{ color: 'rgba(0,180,255,0.9)' }}/>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{invoisPreview.fileName}</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Data invois berhasil dibaca</p>
+                  <p style={{ fontWeight: 600, color: '#f0f0f0', fontSize: 13, fontFamily: 'monospace' }}>{invoisPreview.fileName}</p>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontFamily: 'monospace' }}>data invois berhasil dibaca</p>
                 </div>
               </div>
-              <button onClick={() => setInvoisPreview(null)}><X size={16} className="text-gray-400 dark:text-gray-500 hover:text-gray-600"/></button>
+              <button onClick={() => setInvoisPreview(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
             </div>
 
-            <div className="space-y-3 mb-5 overflow-y-auto flex-1 min-h-0">
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-xl px-4 py-3 grid grid-cols-2 gap-3">
+            <div style={{ overflowY: 'auto', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, padding: '12px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">No. Invois</p>
-                  <p className="text-sm font-bold text-gray-800 dark:text-gray-100 font-mono">{invoisPreview.noInvois}</p>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: 'monospace' }}>no. invois</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>{invoisPreview.noInvois}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">Pembeli</p>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{invoisPreview.pembeli || '-'}</p>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: 'monospace' }}>pembeli</p>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#f0f0f0', fontFamily: 'monospace' }}>{invoisPreview.pembeli || '-'}</p>
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <div className="flex-1 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                  <p className="text-xs text-green-600 mb-0.5">Kapling ditemukan</p>
-                  <p className="text-xl font-bold text-green-700">{invoisPreview.matched.length}</p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ flex: 1, background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 3, padding: '12px 16px' }}>
+                  <p style={{ fontSize: 10, color: '#00ff88', marginBottom: 3, fontFamily: 'monospace' }}>kapling ditemukan</p>
+                  <p style={{ fontSize: 20, fontWeight: 700, color: '#00ff88', fontFamily: 'monospace' }}>{invoisPreview.matched.length}</p>
                 </div>
                 {invoisPreview.unmatched.length > 0 && (
-                  <div className="flex-1 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                    <p className="text-xs text-amber-600 mb-0.5">Tidak ada di register</p>
-                    <p className="text-xl font-bold text-amber-700">{invoisPreview.unmatched.length}</p>
+                  <div style={{ flex: 1, background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.15)', borderRadius: 3, padding: '12px 16px' }}>
+                    <p style={{ fontSize: 10, color: '#ffaa00', marginBottom: 3, fontFamily: 'monospace' }}>tidak ada di register</p>
+                    <p style={{ fontSize: 20, fontWeight: 700, color: '#ffaa00', fontFamily: 'monospace' }}>{invoisPreview.unmatched.length}</p>
                   </div>
                 )}
               </div>
 
               {invoisPreview.matched.length > 0 && (
-                <div className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
-                  <div className="bg-gray-50 dark:bg-gray-900 px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">Kapling yang akan diperbarui</div>
-                  <div className="divide-y divide-gray-50">
+                <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 12px', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>kapling yang akan diperbarui</div>
+                  <div>
                     {invoisPreview.matched.map(r => (
-                      <div key={r.no_kapling} className="px-3 py-1.5 flex items-center justify-between text-xs">
-                        <span className="font-mono text-gray-700 dark:text-gray-200">{r.no_kapling}</span>
-                        <span className="text-gray-400 dark:text-gray-500">{r.jenis} · {r.sortimen}</span>
+                      <div key={r.no_kapling} style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                        <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.65)' }}>{r.no_kapling}</span>
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>{r.jenis} · {r.sortimen}</span>
                       </div>
                     ))}
                   </div>
@@ -1090,18 +1046,18 @@ export default function RegisterKapling() {
               )}
 
               {invoisPreview.matched.length === 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-xs text-red-600">
+                <div style={{ background: 'rgba(255,107,107,0.06)', border: '1px solid rgba(255,107,107,0.2)', borderRadius: 3, padding: '10px 14px', fontSize: 11, fontFamily: 'monospace', color: '#ff6b6b' }}>
                   Tidak ada nomor kapling dalam invois ini yang cocok dengan data register. Pastikan data Excel sudah diimport terlebih dahulu.
                 </div>
               )}
             </div>
 
-            <div className="flex gap-2 justify-end flex-shrink-0 pt-2">
-              <button onClick={() => setInvoisPreview(null)} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Batal</button>
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexShrink: 0, paddingTop: 2 }}>
+              <button onClick={() => setInvoisPreview(null)} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
               {invoisPreview.matched.length > 0 && (
-                <button onClick={handleInvoisSave} disabled={invoisSaving} className="flex items-center gap-2 px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-60">
-                  {invoisSaving && <Loader2 size={13} className="animate-spin"/>}
-                  {invoisSaving ? 'Menyimpan...' : `Simpan (${invoisPreview.matched.length} kapling)`}
+                <button onClick={handleInvoisSave} disabled={invoisSaving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 11, borderRadius: 3, background: invoisSaving ? 'rgba(0,255,136,0.15)' : '#00ff88', color: invoisSaving ? 'rgba(0,255,136,0.4)' : '#0a0a0a', border: 'none', cursor: invoisSaving ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700 }}>
+                  {invoisSaving && <Loader2 size={11} className="animate-spin"/>}
+                  {invoisSaving ? 'menyimpan...' : `simpan (${invoisPreview.matched.length} kapling)`}
                 </button>
               )}
             </div>
@@ -1110,161 +1066,135 @@ export default function RegisterKapling() {
       )}
 
       {/* Edit modal */}
-      {editRow && (
-        <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col">
-            {/* Header */}
-            <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-100 dark:border-gray-700/60 shrink-0">
-              <div>
-                <p className="font-semibold text-gray-800 dark:text-gray-100">Edit Kapling</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">{editRow.no_kapling}</p>
-              </div>
-              <button onClick={() => setEditRow(null)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <X size={16} className="text-gray-400 dark:text-gray-500"/>
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="overflow-y-auto px-6 py-4 flex flex-col gap-5">
-
-              {/* Identitas */}
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Identitas</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: 'Tgl Kapling', key: 'tgl_kapling', type: 'date', span: 1 },
-                    { label: 'Periode',     key: 'periode',     span: 1 },
-                    { label: 'No Blok',     key: 'no_blok',     span: 1 },
-                  ].map(f => (
-                    <div key={f.key} className={f.span === 2 ? 'col-span-2' : ''}>
-                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{f.label}</label>
-                      <input
-                        type={f.type || 'text'}
-                        value={editRow[f.key] ?? ''}
-                        onChange={e => setEditRow(prev => ({ ...prev, [f.key]: e.target.value }))}
-                        className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                        step={f.type === 'number' ? 'any' : undefined}
-                      />
-                    </div>
-                  ))}
+      {editRow && (() => {
+        const iStyle = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '6px 10px', color: '#f0f0f0', fontFamily: 'monospace', fontSize: 12, width: '100%', boxSizing: 'border-box', outline: 'none' }
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+            <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 640, maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '20px 24px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                <div>
+                  <p style={{ fontWeight: 600, color: '#f0f0f0', fontFamily: 'monospace', fontSize: 13 }}>{editRow._new ? 'tambah kapling' : 'edit kapling'}</p>
+                  {!editRow._new && <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>{editRow.no_kapling}</p>}
                 </div>
+                <button onClick={() => setEditRow(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
               </div>
 
-              {/* Kayu */}
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Kayu</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: 'Jenis Kayu',   key: 'jenis' },
-                    { label: 'Sortimen',     key: 'sortimen' },
-                    { label: 'Sort. Untuk',  key: 'sort_untuk' },
-                    { label: 'Asal Kayu',    key: 'asal_kayu' },
-                    { label: 'Panjang',      key: 'panjang' },
-                    { label: 'Lebar',        key: 'lebar' },
-                    { label: 'Dia/Tebal',    key: 'diameter_tebal' },
-                    { label: 'Jumlah',       key: 'batang',  type: 'number' },
-                    { label: 'Volume (M³)',  key: 'volume',  type: 'number' },
-                  ].map(f => (
-                    <div key={f.key}>
-                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{f.label}</label>
-                      <input
-                        type={f.type || 'text'}
-                        value={editRow[f.key] ?? ''}
-                        onChange={e => setEditRow(prev => ({ ...prev, [f.key]: e.target.value }))}
-                        className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                        step={f.type === 'number' ? 'any' : undefined}
-                      />
-                    </div>
-                  ))}
+              <div style={{ overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+                <div>
+                  <p style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.3)', marginBottom: 10, fontFamily: 'monospace' }}>Identitas</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                    {[
+                      ...(editRow._new ? [{ label: 'No. Kapling', key: 'no_kapling', span: 3 }] : []),
+                      { label: 'Tgl Kapling', key: 'tgl_kapling', type: 'date', span: 1 },
+                      { label: 'Periode',     key: 'periode',     span: 1 },
+                      { label: 'No Blok',     key: 'no_blok',     span: 1 },
+                    ].map(f => (
+                      <div key={f.key} style={f.span === 3 ? { gridColumn: '1 / -1' } : f.span === 2 ? { gridColumn: 'span 2' } : {}}>
+                        <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4, fontFamily: 'monospace' }}>{f.label}</label>
+                        <input type={f.type || 'text'} value={editRow[f.key] ?? ''} onChange={e => setEditRow(prev => ({ ...prev, [f.key]: e.target.value }))} className="rk-input" style={{ ...iStyle }} step={f.type === 'number' ? 'any' : undefined}/>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Kualitas */}
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Kualitas</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: 'Status',  key: 'status',      opts: ['LOKAL', 'INDUSTRI'] },
-                    { label: 'Mutu',    key: 'mutu',         opts: ['P', 'D', 'T', 'M', 'L', 'KBP'] },
-                    { label: 'Cacat',   key: 'cacat',        opts: [{ v: 'NRM', l: 'NRM' }, { v: 'BUN', l: 'BUN (BC)' }, { v: 'DOR', l: 'DOR (DR)' }] },
-                    { label: 'Sertifikasi', key: 'sertifikasi', opts: ['FSC', 'NFSC'] },
-                  ].map(f => (
-                    <div key={f.key}>
-                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{f.label}</label>
-                      <select
-                        value={editRow[f.key] ?? ''}
-                        onChange={e => setEditRow(prev => ({ ...prev, [f.key]: e.target.value }))}
-                        className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                      >
-                        <option value="">— Pilih —</option>
-                        {f.opts.map(o => typeof o === 'string'
-                          ? <option key={o} value={o}>{o}</option>
-                          : <option key={o.v} value={o.v}>{o.l}</option>
-                        )}
-                      </select>
-                    </div>
-                  ))}
+                <div>
+                  <p style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.3)', marginBottom: 10, fontFamily: 'monospace' }}>Kayu</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                    {[
+                      { label: 'Jenis Kayu',  key: 'jenis' },
+                      { label: 'Sortimen',    key: 'sortimen' },
+                      { label: 'Sort. Untuk', key: 'sort_untuk' },
+                      { label: 'Asal Kayu',   key: 'asal_kayu' },
+                      { label: 'Panjang',     key: 'panjang' },
+                      { label: 'Lebar',       key: 'lebar' },
+                      { label: 'Dia/Tebal',   key: 'diameter_tebal' },
+                      { label: 'Jumlah',      key: 'batang',  type: 'number' },
+                      { label: 'Volume (M³)', key: 'volume',  type: 'number' },
+                    ].map(f => (
+                      <div key={f.key}>
+                        <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4, fontFamily: 'monospace' }}>{f.label}</label>
+                        <input type={f.type || 'text'} value={editRow[f.key] ?? ''} onChange={e => setEditRow(prev => ({ ...prev, [f.key]: e.target.value }))} className="rk-input" style={{ ...iStyle }} step={f.type === 'number' ? 'any' : undefined}/>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Dokumen */}
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Dokumen</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: 'No. Invois', key: 'no_invois', span: 2 },
-                    { label: 'DKHP',       key: 'dkhp' },
-                    { label: 'SKSHHK',     key: 'skshhk', span: 2 },
-                    { label: 'Pembeli',    key: 'pembeli' },
-                  ].map(f => (
-                    <div key={f.key} className={f.span === 2 ? 'col-span-2' : ''}>
-                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{f.label}</label>
-                      <input
-                        type="text"
-                        value={editRow[f.key] ?? ''}
-                        onChange={e => setEditRow(prev => ({ ...prev, [f.key]: e.target.value }))}
-                        className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                      />
-                    </div>
-                  ))}
+                <div>
+                  <p style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.3)', marginBottom: 10, fontFamily: 'monospace' }}>Kualitas</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                    {[
+                      { label: 'Status',      key: 'status',      opts: ['LOKAL', 'INDUSTRI'] },
+                      { label: 'Mutu',        key: 'mutu',         opts: ['P', 'D', 'T', 'M', 'L', 'KBP'] },
+                      { label: 'Cacat',       key: 'cacat',        opts: [{ v: 'NRM', l: 'NRM' }, { v: 'BUN', l: 'BUN (BC)' }, { v: 'DOR', l: 'DOR (DR)' }] },
+                      { label: 'Sertifikasi', key: 'sertifikasi',  opts: ['FSC', 'NFSC'] },
+                    ].map(f => (
+                      <div key={f.key}>
+                        <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4, fontFamily: 'monospace' }}>{f.label}</label>
+                        <select value={editRow[f.key] ?? ''} onChange={e => setEditRow(prev => ({ ...prev, [f.key]: e.target.value }))} className="rk-input" style={{ ...iStyle }}>
+                          <option value="">— Pilih —</option>
+                          {f.opts.map(o => typeof o === 'string'
+                            ? <option key={o} value={o}>{o}</option>
+                            : <option key={o.v} value={o.v}>{o.l}</option>
+                          )}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
+                <div>
+                  <p style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.3)', marginBottom: 10, fontFamily: 'monospace' }}>Dokumen</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                    {[
+                      { label: 'No. Invois', key: 'no_invois', span: 2 },
+                      { label: 'DKHP',       key: 'dkhp' },
+                      { label: 'SKSHHK',     key: 'skshhk', span: 2 },
+                      { label: 'Pembeli',    key: 'pembeli' },
+                    ].map(f => (
+                      <div key={f.key} style={f.span === 2 ? { gridColumn: 'span 2' } : {}}>
+                        <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4, fontFamily: 'monospace' }}>{f.label}</label>
+                        <input type="text" value={editRow[f.key] ?? ''} onChange={e => setEditRow(prev => ({ ...prev, [f.key]: e.target.value }))} className="rk-input" style={{ ...iStyle }}/>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
               </div>
 
-            </div>
-
-            {/* Footer */}
-            <div className="flex gap-2 justify-end px-6 py-4 border-t border-gray-100 dark:border-gray-700/60 shrink-0">
-              <button onClick={() => setEditRow(null)} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">Batal</button>
-              <button onClick={handleEditSave} disabled={editSaving} className="flex items-center gap-2 px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-60 transition-colors">
-                {editSaving && <Loader2 size={13} className="animate-spin"/>}
-                {editSaving ? 'Menyimpan...' : 'Simpan'}
-              </button>
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                <button onClick={() => setEditRow(null)} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
+                <button onClick={handleEditSave} disabled={editSaving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 11, borderRadius: 3, background: editSaving ? 'rgba(0,255,136,0.15)' : '#00ff88', color: editSaving ? 'rgba(0,255,136,0.4)' : '#0a0a0a', border: 'none', cursor: editSaving ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700 }}>
+                  {editSaving && <Loader2 size={11} className="animate-spin"/>}
+                  {editSaving ? 'menyimpan...' : editRow._new ? 'tambah' : 'simpan'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Delete confirm modal */}
       {deleteRow && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-red-50 p-2 rounded-lg">
-                <Trash2 size={18} className="text-red-500"/>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 360, padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{ padding: 8, background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.2)', borderRadius: 3 }}>
+                <Trash2 size={16} style={{ color: '#ff6b6b' }}/>
               </div>
               <div>
-                <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Hapus Kapling</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">{deleteRow.no_kapling}</p>
+                <p style={{ fontWeight: 600, color: '#f0f0f0', fontSize: 13, fontFamily: 'monospace' }}>hapus kapling</p>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontFamily: 'monospace' }}>{deleteRow.no_kapling}</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 20, fontFamily: 'monospace', lineHeight: 1.5 }}>
               Data kapling ini akan dihapus permanen dan tidak dapat dikembalikan.
             </p>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setDeleteRow(null)} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Batal</button>
-              <button onClick={handleDelete} disabled={deleting} className="flex items-center gap-2 px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-60">
-                {deleting && <Loader2 size={13} className="animate-spin"/>}
-                {deleting ? 'Menghapus...' : 'Hapus'}
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+              <button onClick={() => setDeleteRow(null)} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
+              <button onClick={handleDelete} disabled={deleting} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 11, borderRadius: 3, background: '#ff6b6b', color: '#0a0a0a', border: 'none', cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700, opacity: deleting ? 0.6 : 1 }}>
+                {deleting && <Loader2 size={11} className="animate-spin"/>}
+                {deleting ? 'menghapus...' : 'hapus'}
               </button>
             </div>
           </div>
@@ -1273,34 +1203,25 @@ export default function RegisterKapling() {
 
       {/* Batch delete confirm modal */}
       {showBatchDelete && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-red-50 p-2 rounded-lg">
-                <Trash2 size={18} className="text-red-500"/>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 360, padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{ padding: 8, background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.2)', borderRadius: 3 }}>
+                <Trash2 size={16} style={{ color: '#ff6b6b' }}/>
               </div>
               <div>
-                <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Hapus Data Terpilih</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{selectedIds.size} kapling dipilih</p>
+                <p style={{ fontWeight: 600, color: '#f0f0f0', fontSize: 13, fontFamily: 'monospace' }}>hapus data terpilih</p>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontFamily: 'monospace' }}>{selectedIds.size} kapling dipilih</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 20, fontFamily: 'monospace', lineHeight: 1.5 }}>
               Semua kapling yang dipilih akan dihapus permanen dan tidak dapat dikembalikan.
             </p>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setShowBatchDelete(false)}
-                className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleBatchDelete}
-                disabled={batchDeleting}
-                className="flex items-center gap-2 px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-60"
-              >
-                {batchDeleting && <Loader2 size={13} className="animate-spin"/>}
-                {batchDeleting ? 'Menghapus...' : `Hapus ${selectedIds.size} Kapling`}
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowBatchDelete(false)} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
+              <button onClick={handleBatchDelete} disabled={batchDeleting} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 11, borderRadius: 3, background: '#ff6b6b', color: '#0a0a0a', border: 'none', cursor: batchDeleting ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700, opacity: batchDeleting ? 0.6 : 1 }}>
+                {batchDeleting && <Loader2 size={11} className="animate-spin"/>}
+                {batchDeleting ? 'menghapus...' : `hapus ${selectedIds.size} kapling`}
               </button>
             </div>
           </div>
@@ -1308,156 +1229,103 @@ export default function RegisterKapling() {
       )}
 
       {/* Batch edit modal */}
-      {showBatchEdit && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-lg">
-                <Pencil size={18} className="text-blue-600 dark:text-blue-400"/>
+      {showBatchEdit && (() => {
+        const iStyle = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '6px 10px', color: '#f0f0f0', fontFamily: 'monospace', fontSize: 12, width: '100%', boxSizing: 'border-box', outline: 'none' }
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+            <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 380, padding: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ padding: 8, background: 'rgba(0,180,255,0.08)', border: '1px solid rgba(0,180,255,0.15)', borderRadius: 3 }}>
+                    <Pencil size={14} style={{ color: 'rgba(0,180,255,0.9)' }}/>
+                  </div>
+                  <div>
+                    <p style={{ fontWeight: 600, color: '#f0f0f0', fontSize: 13, fontFamily: 'monospace' }}>edit massal</p>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontFamily: 'monospace' }}>{selectedIds.size} kapling terpilih · isi field yang ingin diubah</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowBatchEdit(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
               </div>
-              <div>
-                <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Edit Massal</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{selectedIds.size} kapling terpilih · isi field yang ingin diubah</p>
-              </div>
-              <button onClick={() => setShowBatchEdit(false)} className="ml-auto">
-                <X size={16} className="text-gray-400 dark:text-gray-500 hover:text-gray-600"/>
-              </button>
-            </div>
 
-            <div className="space-y-3 mb-5">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tgl Kapling</label>
-                <input
-                  type="date"
-                  value={batchEditData.tgl_kapling}
-                  onChange={e => setBatchEditData(prev => ({ ...prev, tgl_kapling: e.target.value }))}
-                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                {[
+                  { label: 'Tgl Kapling', key: 'tgl_kapling', type: 'date' },
+                  { label: 'Periode',     key: 'periode',     placeholder: 'Kosongkan untuk tidak diubah' },
+                  { label: 'No Blok',     key: 'no_blok',     placeholder: 'Kosongkan untuk tidak diubah' },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4, fontFamily: 'monospace' }}>{f.label}</label>
+                    <input type={f.type || 'text'} value={batchEditData[f.key]} onChange={e => setBatchEditData(prev => ({ ...prev, [f.key]: e.target.value }))} placeholder={f.placeholder} className="rk-input" style={{ ...iStyle }}/>
+                  </div>
+                ))}
+                <div>
+                  <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4, fontFamily: 'monospace' }}>Sertifikasi</label>
+                  <select value={batchEditData.sertifikasi} onChange={e => setBatchEditData(prev => ({ ...prev, sertifikasi: e.target.value }))} className="rk-input" style={{ ...iStyle }}>
+                    <option value="">— Tidak diubah —</option>
+                    <option value="FSC">FSC</option>
+                    <option value="NFSC">NFSC</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Periode</label>
-                <input
-                  type="text"
-                  value={batchEditData.periode}
-                  onChange={e => setBatchEditData(prev => ({ ...prev, periode: e.target.value }))}
-                  placeholder="Kosongkan untuk tidak diubah"
-                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">No Blok</label>
-                <input
-                  type="text"
-                  value={batchEditData.no_blok}
-                  onChange={e => setBatchEditData(prev => ({ ...prev, no_blok: e.target.value }))}
-                  placeholder="Kosongkan untuk tidak diubah"
-                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sertifikasi</label>
-                <select
-                  value={batchEditData.sertifikasi}
-                  onChange={e => setBatchEditData(prev => ({ ...prev, sertifikasi: e.target.value }))}
-                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                >
-                  <option value="">— Tidak diubah —</option>
-                  <option value="FSC">FSC</option>
-                  <option value="NFSC">NFSC</option>
-                </select>
-              </div>
-            </div>
 
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setShowBatchEdit(false)}
-                className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleBatchEdit}
-                disabled={batchEditSaving}
-                className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
-              >
-                {batchEditSaving && <Loader2 size={13} className="animate-spin"/>}
-                {batchEditSaving ? 'Menyimpan...' : `Update ${selectedIds.size} Kapling`}
-              </button>
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                <button onClick={() => setShowBatchEdit(false)} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
+                <button onClick={handleBatchEdit} disabled={batchEditSaving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 11, borderRadius: 3, background: batchEditSaving ? 'rgba(0,180,255,0.15)' : 'rgba(0,180,255,0.9)', color: '#fff', border: 'none', cursor: batchEditSaving ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700, opacity: batchEditSaving ? 0.7 : 1 }}>
+                  {batchEditSaving && <Loader2 size={11} className="animate-spin"/>}
+                  {batchEditSaving ? 'menyimpan...' : `update ${selectedIds.size} kapling`}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Sort panel modal */}
       {showSortPanel && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <div className="flex items-start justify-between mb-5">
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 440, padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
               <div>
-                <p className="font-semibold text-gray-800 dark:text-gray-100">Urutan Data</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Atur prioritas kolom dan arah pengurutan</p>
+                <p style={{ fontWeight: 600, color: '#f0f0f0', fontFamily: 'monospace', fontSize: 13 }}>urutan data</p>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>atur prioritas kolom dan arah pengurutan</p>
               </div>
-              <button onClick={() => setShowSortPanel(false)}><X size={16} className="text-gray-400 dark:text-gray-500 hover:text-gray-600"/></button>
+              <button onClick={() => setShowSortPanel(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
             </div>
 
-            <div className="space-y-2 mb-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
               {draftSorts.length === 0 && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3">Belum ada aturan pengurutan</p>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '12px 0', fontFamily: 'monospace' }}>belum ada aturan pengurutan</p>
               )}
               {draftSorts.map((s, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 w-4 text-center">{i + 1}</span>
-                  <select
-                    value={s.key}
-                    onChange={e => setDraftSorts(prev => prev.map((x, j) => j === i ? { ...x, key: e.target.value } : x))}
-                    className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', width: 16, textAlign: 'center', fontFamily: 'monospace' }}>{i + 1}</span>
+                  <select value={s.key} onChange={e => setDraftSorts(prev => prev.map((x, j) => j === i ? { ...x, key: e.target.value } : x))} className="rk-input" style={{ flex: 1, padding: '5px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#f0f0f0', borderRadius: 3, fontSize: 11, fontFamily: 'monospace', outline: 'none' }}>
                     {COLS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                   </select>
-                  <button
-                    onClick={() => setDraftSorts(prev => prev.map((x, j) => j === i ? { ...x, dir: x.dir === 'asc' ? 'desc' : 'asc' } : x))}
-                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 min-w-[60px] justify-center"
-                  >
+                  <button onClick={() => setDraftSorts(prev => prev.map((x, j) => j === i ? { ...x, dir: x.dir === 'asc' ? 'desc' : 'asc' } : x))} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', fontSize: 11, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.55)', cursor: 'pointer', minWidth: 60, justifyContent: 'center', fontFamily: 'monospace' }}>
                     {s.dir === 'asc' ? <><ChevronUp size={11}/> A–Z</> : <><ChevronDown size={11}/> Z–A</>}
                   </button>
-                  <button
-                    onClick={() => setDraftSorts(prev => prev.filter((_, j) => j !== i))}
-                    className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 dark:text-gray-500 hover:text-red-500"
-                  >
-                    <X size={13}/>
-                  </button>
+                  <button onClick={() => setDraftSorts(prev => prev.filter((_, j) => j !== i))} style={{ padding: 6, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+                  ><X size={12}/></button>
                 </div>
               ))}
             </div>
 
             {draftSorts.length < COLS.length && (
-              <button
-                onClick={() => {
-                  const used = new Set(draftSorts.map(s => s.key))
-                  const next = COLS.find(c => !used.has(c.key))?.key || COLS[0].key
-                  setDraftSorts(prev => [...prev, { key: next, dir: 'asc' }])
-                }}
-                className="w-full py-2 mb-4 text-xs border border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 transition-colors"
-              >
-                + Tambah Kolom Urutan
-              </button>
+              <button onClick={() => { const used = new Set(draftSorts.map(s => s.key)); const next = COLS.find(c => !used.has(c.key))?.key || COLS[0].key; setDraftSorts(prev => [...prev, { key: next, dir: 'asc' }]) }}
+                style={{ width: '100%', padding: '7px 0', marginBottom: 16, fontSize: 11, border: '1px dashed rgba(255,255,255,0.12)', borderRadius: 3, background: 'none', color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontFamily: 'monospace' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,255,136,0.35)'; e.currentTarget.style.color = '#00ff88' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(255,255,255,0.35)' }}
+              >+ tambah kolom urutan</button>
             )}
 
-            <div className="flex gap-2 justify-between">
-              <button
-                onClick={() => { setDraftSorts([]); setSorts([]); setCurrentPage(1); setShowSortPanel(false) }}
-                className="px-3 py-2 text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
-              >
-                Reset
-              </button>
-              <div className="flex gap-2">
-                <button onClick={() => setShowSortPanel(false)} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">Batal</button>
-                <button
-                  onClick={() => { setSorts(draftSorts); setCurrentPage(1); setShowSortPanel(false) }}
-                  className="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-                >
-                  Terapkan
-                </button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <button onClick={() => { setDraftSorts([]); setSorts([]); setCurrentPage(1); setShowSortPanel(false) }} style={{ padding: '7px 12px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>reset</button>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={() => setShowSortPanel(false)} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
+                <button onClick={() => { setSorts(draftSorts); setCurrentPage(1); setShowSortPanel(false) }} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, background: '#00ff88', color: '#0a0a0a', border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 700 }}>terapkan</button>
               </div>
             </div>
           </div>
@@ -1466,122 +1334,69 @@ export default function RegisterKapling() {
 
       {/* Table toolbar */}
       {rows.length > 0 && (
-        <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-              Menampilkan{' '}
-              <span className="font-semibold text-gray-600 dark:text-gray-300">{displayedRows.length.toLocaleString('id')}</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>
+              menampilkan{' '}
+              <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.65)' }}>{displayedRows.length.toLocaleString('id')}</span>
               {' '}dari{' '}
-              <span className="font-semibold text-gray-600 dark:text-gray-300">{searchedRows.length.toLocaleString('id')}</span>
-              {searchTerm.trim() && (
-                <span className="text-gray-400 dark:text-gray-500">
-                  {' '}(total {rows.length.toLocaleString('id')})
-                </span>
-              )}
+              <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.65)' }}>{searchedRows.length.toLocaleString('id')}</span>
+              {searchTerm.trim() && <span style={{ color: 'rgba(255,255,255,0.25)' }}>{' '}(total {rows.length.toLocaleString('id')})</span>}
               {' '}kapling
             </p>
             {selectedIds.size > 0 && (
               <>
-                <button
-                  onClick={() => { setBatchEditData({ tgl_kapling: '', periode: '', no_blok: '', sertifikasi: '' }); setShowBatchEdit(true) }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-                >
-                  <Pencil size={12}/>
-                  Edit {selectedIds.size} terpilih
-                </button>
-                <button
-                  onClick={() => setShowBatchDelete(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-                >
-                  <Trash2 size={12}/>
-                  Hapus {selectedIds.size} terpilih
-                </button>
+                <button onClick={() => { setBatchEditData({ tgl_kapling: '', periode: '', no_blok: '', sertifikasi: '' }); setShowBatchEdit(true) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', fontSize: 11, background: 'rgba(0,180,255,0.08)', border: '1px solid rgba(0,180,255,0.2)', borderRadius: 3, color: 'rgba(0,180,255,0.9)', cursor: 'pointer', fontFamily: 'monospace' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,180,255,0.14)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,180,255,0.08)'}
+                ><Pencil size={11}/> edit {selectedIds.size} terpilih</button>
+                <button onClick={() => setShowBatchDelete(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', fontSize: 11, background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.2)', borderRadius: 3, color: '#ff6b6b', cursor: 'pointer', fontFamily: 'monospace' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,107,107,0.14)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,107,107,0.08)'}
+                ><Trash2 size={11}/> hapus {selectedIds.size} terpilih</button>
               </>
             )}
             {pageSize > 0 && totalPages > 1 && (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={safePage === 1}
-                  className="flex items-center gap-0.5 px-2 py-1 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft size={11}/> Prev
-                </button>
-                <span className="text-xs text-gray-500 dark:text-gray-400 px-2 font-medium">
-                  {safePage} / {totalPages}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={safePage === totalPages}
-                  className="flex items-center gap-0.5 px-2 py-1 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Next <ChevronRight size={11}/>
-                </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+                  style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 8px', fontSize: 11, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', cursor: safePage === 1 ? 'not-allowed' : 'pointer', opacity: safePage === 1 ? 0.4 : 1, fontFamily: 'monospace' }}
+                ><ChevronLeft size={10}/> prev</button>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', padding: '0 6px', fontFamily: 'monospace' }}>{safePage} / {totalPages}</span>
+                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+                  style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 8px', fontSize: 11, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', cursor: safePage === totalPages ? 'not-allowed' : 'pointer', opacity: safePage === totalPages ? 0.4 : 1, fontFamily: 'monospace' }}
+                >next <ChevronRight size={10}/></button>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            {/* Search */}
-            <div className="flex items-center gap-1">
-              <select
-                value={searchCol}
-                onChange={e => setSearchCol(e.target.value)}
-                className="h-7 px-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary-400"
-              >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <select value={searchCol} onChange={e => setSearchCol(e.target.value)} className="rk-input" style={{ height: 28, padding: '0 6px', fontSize: 11 }}>
                 <option value="all">Semua Kolom</option>
-                {COLS.map(c => (
-                  <option key={c.key} value={c.key}>{c.label}</option>
-                ))}
+                {COLS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
               </select>
-              <div className="relative flex items-center">
-                <Search size={12} className="absolute left-2 text-gray-400 dark:text-gray-500 pointer-events-none"/>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  placeholder="Cari..."
-                  className="h-7 pl-6 pr-6 text-xs w-40 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-400"
-                />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Search size={11} style={{ position: 'absolute', left: 7, color: 'rgba(255,255,255,0.3)', pointerEvents: 'none' }}/>
+                <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="cari..." className="rk-input" style={{ height: 28, paddingLeft: 22, paddingRight: searchTerm ? 22 : 8, width: 140, fontSize: 11 }}/>
                 {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                  >
-                    <X size={11}/>
-                  </button>
+                  <button onClick={() => setSearchTerm('')} style={{ position: 'absolute', right: 5, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 0 }}><X size={10}/></button>
                 )}
               </div>
             </div>
-            <button
-              onClick={() => { setDraftSorts([...sorts]); setShowSortPanel(true) }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                sorts.length > 0
-                  ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-200 dark:border-primary-700 text-primary-700 dark:text-primary-400'
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-              }`}
+            <button onClick={() => { setDraftSorts([...sorts]); setShowSortPanel(true) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', fontSize: 11, borderRadius: 3, border: sorts.length > 0 ? '1px solid rgba(0,255,136,0.3)' : '1px solid rgba(255,255,255,0.1)', background: sorts.length > 0 ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.04)', color: sorts.length > 0 ? '#00ff88' : 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}
             >
-              <SlidersHorizontal size={12}/>
-              Urutan
-              {sorts.length > 0 && (
-                <span className="bg-primary-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold leading-none">
-                  {sorts.length}
-                </span>
-              )}
+              <SlidersHorizontal size={11}/>
+              urutan
+              {sorts.length > 0 && <span style={{ background: '#00ff88', color: '#0a0a0a', borderRadius: 99, width: 15, height: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>{sorts.length}</span>}
             </button>
-            <span className="text-xs text-gray-400 dark:text-gray-500">Tampilkan:</span>
-            <div className="flex gap-1">
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace' }}>tampilkan:</span>
+            <div style={{ display: 'flex', gap: 3 }}>
               {PAGE_SIZES.map(p => (
-                <button
-                  key={p.value}
-                  onClick={() => { setPageSize(p.value); setCurrentPage(1) }}
-                  className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${
-                    pageSize === p.value
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  {p.label}
-                </button>
+                <button key={p.value} onClick={() => { setPageSize(p.value); setCurrentPage(1) }}
+                  style={{ padding: '3px 8px', fontSize: 11, borderRadius: 3, fontWeight: 600, fontFamily: 'monospace', cursor: 'pointer', border: pageSize === p.value ? 'none' : '1px solid rgba(255,255,255,0.08)', background: pageSize === p.value ? '#00ff88' : 'rgba(255,255,255,0.04)', color: pageSize === p.value ? '#0a0a0a' : 'rgba(255,255,255,0.4)' }}
+                >{p.label}</button>
               ))}
             </div>
           </div>
@@ -1589,118 +1404,98 @@ export default function RegisterKapling() {
       )}
 
       {/* Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
         {loading ? (
-          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Memuat...</div>
+          <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 12, fontFamily: 'monospace' }}>memuat...</div>
         ) : rows.length === 0 ? (
-          <div className="p-14 flex flex-col items-center justify-center text-center">
-            <FileSpreadsheet size={38} className="text-gray-200 mb-3"/>
-            <p className="font-medium text-gray-500 dark:text-gray-400">Belum ada data</p>
-            <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Klik <span className="font-medium text-primary-600">Import Excel</span> untuk mengimpor file DP Kapling</p>
+          <div style={{ padding: 56, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+            <FileSpreadsheet size={36} style={{ color: 'rgba(255,255,255,0.1)', marginBottom: 12 }}/>
+            <p style={{ fontWeight: 600, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace', fontSize: 13 }}>belum ada data</p>
+            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11, marginTop: 4, fontFamily: 'monospace' }}>klik <span style={{ color: '#00ff88' }}>import excel</span> untuk mengimpor file DP Kapling</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="text-xs">
-              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ fontSize: 12, width: 'max-content', minWidth: '100%' }}>
+              <thead style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <tr>
-                  <th className="px-2 py-2.5 sticky left-0 bg-gray-50 dark:bg-gray-900 z-10 w-8">
-                    <input
-                      ref={selectAllRef}
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={toggleSelectAll}
-                      className="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500 cursor-pointer"
-                    />
+                  <th style={{ padding: '8px 8px', position: 'sticky', left: 0, background: 'rgba(13,13,13,0.98)', zIndex: 10, width: 32 }}>
+                    <input ref={selectAllRef} type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="rk-cb" style={{ cursor: 'pointer' }}/>
                   </th>
-                  <th className="px-2 py-2.5 text-left font-semibold text-gray-500 dark:text-gray-400 w-8">No</th>
+                  <th style={{ padding: '8px 8px', textAlign: 'left', fontWeight: 600, color: 'rgba(255,255,255,0.3)', width: 32, fontFamily: 'monospace', fontSize: 11 }}>No</th>
                   {COLS.map(c => (
-                    <th
-                      key={c.key}
-                      onClick={() => toggleSort(c.key)}
-                      className={`px-2 py-2.5 font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${c.num ? 'text-right' : 'text-left'} ${c.w}`}
+                    <th key={c.key} onClick={() => toggleSort(c.key)} className="rk-th"
+                      style={{ padding: '8px 8px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none', textAlign: c.num ? 'right' : 'left', fontFamily: 'monospace', fontSize: 11 }}
                     >
-                      <span className="inline-flex items-center gap-1">
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                         {c.label}
                         {(() => {
                           const idx = sorts.findIndex(s => s.key === c.key)
-                          if (idx === -1) return <ChevronsUpDown size={11} className="text-gray-300 dark:text-gray-600"/>
+                          if (idx === -1) return <ChevronsUpDown size={10} style={{ color: 'rgba(255,255,255,0.15)' }}/>
                           const s = sorts[idx]
                           return (
-                            <span className="inline-flex items-center gap-0.5">
-                              {sorts.length > 1 && <span className="text-[9px] font-bold text-primary-400 leading-none">{idx + 1}</span>}
-                              {s.dir === 'asc'
-                                ? <ChevronUp size={11} className="text-primary-500"/>
-                                : <ChevronDown size={11} className="text-primary-500"/>}
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                              {sorts.length > 1 && <span style={{ fontSize: 9, fontWeight: 700, color: '#00ff88' }}>{idx + 1}</span>}
+                              {s.dir === 'asc' ? <ChevronUp size={10} style={{ color: '#00ff88' }}/> : <ChevronDown size={10} style={{ color: '#00ff88' }}/>}
                             </span>
                           )
                         })()}
                       </span>
                     </th>
                   ))}
-                  <th className="px-2 py-2.5 w-12"></th>
+                  <th style={{ padding: '8px 8px', width: 48 }}></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody>
                 {displayedRows.map((row, i) => (
-                  <tr
-                    key={row.id}
-                    className={`transition-colors group ${selectedIds.has(row.id) ? 'bg-primary-50 dark:bg-primary-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                  <tr key={row.id} className={`rk-row${selectedIds.has(row.id) ? ' rk-row-sel' : ''}`}
+                    style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
                     onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, row }) }}
                   >
-                    <td className="px-2 py-2 sticky left-0 z-10 bg-inherit">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(row.id)}
-                        onChange={() => toggleSelectRow(row.id)}
-                        className="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500 cursor-pointer"
-                      />
+                    <td style={{ padding: '6px 8px', position: 'sticky', left: 0, zIndex: 10, background: selectedIds.has(row.id) ? 'rgba(0,255,136,0.05)' : '#0a0a0a' }}>
+                      <input type="checkbox" checked={selectedIds.has(row.id)} onChange={() => toggleSelectRow(row.id)} className="rk-cb" style={{ cursor: 'pointer' }}/>
                     </td>
-                    <td className="px-2 py-2 text-gray-400 dark:text-gray-500">{(safePage - 1) * (pageSize || 0) + i + 1}</td>
+                    <td style={{ padding: '6px 8px', color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace' }}>{(safePage - 1) * (pageSize || 0) + i + 1}</td>
                     {COLS.map(c => (
-                      <td key={c.key} className={`px-2 py-2 whitespace-nowrap ${c.num ? 'text-right font-mono' : 'text-gray-700 dark:text-gray-200'}`}>
+                      <td key={c.key} style={{ padding: '6px 8px', whiteSpace: 'nowrap', textAlign: c.num ? 'right' : 'left', fontFamily: c.num ? 'monospace' : 'inherit', color: c.num ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.75)' }}>
                         {c.key === 'sertifikasi'
                           ? <SertBadge val={row.sertifikasi}/>
+                          : c.key === 'jenis'
+                            ? <JenisKayuBadge val={row.jenis}/>
                           : c.key === 'volume'
                             ? Number(row.volume).toFixed(3)
                             : c.key === 'mutu_label'
                               ? getMutuLabel(row)
                               : c.key === 'tgl_kapling'
-                                ? (displayDate(row.tgl_kapling) ?? <span className="text-gray-300 dark:text-gray-600">—</span>)
+                                ? (displayDate(row.tgl_kapling) ?? <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>)
                                 : c.key === 'pembeli'
-                                  ? (getPembeliName(row.pembeli) ?? <span className="text-gray-300 dark:text-gray-600">—</span>)
-                                  : (row[c.key] ?? <span className="text-gray-300 dark:text-gray-600">—</span>)
+                                  ? (getPembeliName(row.pembeli) ?? <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>)
+                                  : (row[c.key] ?? <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>)
                         }
                       </td>
                     ))}
-                    <td className="px-2 py-2">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => setEditRow({ ...row })}
-                          className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600"
-                        >
-                          <Pencil size={13}/>
-                        </button>
-                        <button
-                          onClick={() => setDeleteRow(row)}
-                          className="p-1 rounded hover:bg-red-100 text-gray-400 dark:text-gray-500 hover:text-red-500"
-                        >
-                          <Trash2 size={13}/>
-                        </button>
+                    <td style={{ padding: '6px 8px' }}>
+                      <div className="rk-actions" style={{ display: 'flex', alignItems: 'center', gap: 3, opacity: 0, transition: 'opacity 0.15s' }}>
+                        <button onClick={() => setEditRow({ ...row })}
+                          style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}
+                          onMouseEnter={e => { e.currentTarget.style.color = '#f0f0f0'; e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
+                          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
+                        ><Pencil size={12}/></button>
+                        <button onClick={() => setDeleteRow(row)}
+                          style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}
+                          onMouseEnter={e => { e.currentTarget.style.color = '#ff6b6b'; e.currentTarget.style.background = 'rgba(255,107,107,0.08)' }}
+                          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
+                        ><Trash2 size={12}/></button>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                <tr className="font-semibold text-gray-700 dark:text-gray-200">
-                  <td className="px-2 py-2 sticky left-0 bg-gray-50 dark:bg-gray-900 z-10" colSpan={12}>TOTAL</td>
-                  <td className="px-2 py-2 text-right font-mono">{totalBatang.toLocaleString('id')}</td>
-                  <td className="px-2 py-2 text-right font-mono">{totalVolume.toFixed(3)}</td>
-                  <td className="px-2 py-2"></td>
-                  <td className="px-2 py-2"></td>
-                  <td className="px-2 py-2"></td>
-                  <td className="px-2 py-2"></td>
-                  <td className="px-2 py-2"></td>
+              <tfoot style={{ borderTop: '2px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+                <tr style={{ fontWeight: 700, color: 'rgba(255,255,255,0.65)', fontFamily: 'monospace' }}>
+                  <td style={{ padding: '7px 8px', position: 'sticky', left: 0, background: 'rgba(13,13,13,0.98)', zIndex: 10 }} colSpan={12}>TOTAL</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right' }}>{totalBatang.toLocaleString('id')}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right' }}>{totalVolume.toFixed(3)}</td>
+                  <td colSpan={5}></td>
                 </tr>
               </tfoot>
             </table>
@@ -1708,49 +1503,60 @@ export default function RegisterKapling() {
         )}
       </div>
 
+      {/* Bottom pagination */}
+      {rows.length > 0 && pageSize > 0 && totalPages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 }}>
+          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', fontSize: 12, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: safePage === 1 ? 'not-allowed' : 'pointer', opacity: safePage === 1 ? 0.4 : 1, fontFamily: 'monospace' }}
+          ><ChevronLeft size={13}/> prev</button>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>
+            halaman <span style={{ fontWeight: 700, color: 'rgba(255,255,255,0.65)' }}>{safePage}</span> dari <span style={{ fontWeight: 700, color: 'rgba(255,255,255,0.65)' }}>{totalPages}</span>
+          </span>
+          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', fontSize: 12, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: safePage === totalPages ? 'not-allowed' : 'pointer', opacity: safePage === totalPages ? 0.4 : 1, fontFamily: 'monospace' }}
+          >next <ChevronRight size={13}/></button>
+        </div>
+      )}
+
       {/* Context menu */}
       {contextMenu && (() => {
         const isBatch = selectedIds.size > 1 && selectedIds.has(contextMenu.row.id)
         return (
           <div
-            className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl py-1 min-w-[160px]"
-            style={{ top: contextMenu.y, left: contextMenu.x }}
+            style={{ position: 'fixed', zIndex: 50, background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.6)', padding: '4px 0', minWidth: 160, top: contextMenu.y, left: contextMenu.x }}
             onMouseDown={e => e.stopPropagation()}
           >
             {isBatch && (
-              <div className="px-4 py-1.5 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              <div style={{ padding: '6px 16px', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
                 {selectedIds.size} kapling terpilih
               </div>
             )}
             <button
               onClick={() => {
-                if (isBatch) {
-                  setBatchEditData({ tgl_kapling: '', periode: '', no_blok: '', sertifikasi: '' })
-                  setShowBatchEdit(true)
-                } else {
-                  setEditRow({ ...contextMenu.row })
-                }
+                if (isBatch) { setBatchEditData({ tgl_kapling: '', periode: '', no_blok: '', sertifikasi: '' }); setShowBatchEdit(true) }
+                else { setEditRow({ ...contextMenu.row }) }
                 setContextMenu(null)
               }}
-              className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '7px 16px', fontSize: 12, color: 'rgba(255,255,255,0.65)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'monospace' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
             >
-              <Pencil size={13} className="text-gray-400 dark:text-gray-500"/>
-              {isBatch ? `Edit ${selectedIds.size} terpilih` : 'Edit'}
+              <Pencil size={12} style={{ color: 'rgba(255,255,255,0.3)' }}/>
+              {isBatch ? `edit ${selectedIds.size} terpilih` : 'edit'}
             </button>
-            <div className="my-1 border-t border-gray-100 dark:border-gray-700"/>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', margin: '3px 0' }}/>
             <button
               onClick={() => {
-                if (isBatch) {
-                  setShowBatchDelete(true)
-                } else {
-                  setDeleteRow(contextMenu.row)
-                }
+                if (isBatch) { setShowBatchDelete(true) }
+                else { setDeleteRow(contextMenu.row) }
                 setContextMenu(null)
               }}
-              className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '7px 16px', fontSize: 12, color: '#ff6b6b', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'monospace' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,107,107,0.07)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
             >
-              <Trash2 size={13}/>
-              {isBatch ? `Hapus ${selectedIds.size} terpilih` : 'Hapus'}
+              <Trash2 size={12}/>
+              {isBatch ? `hapus ${selectedIds.size} terpilih` : 'hapus'}
             </button>
           </div>
         )

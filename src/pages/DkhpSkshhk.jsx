@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx'
 import {
   Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2, Download,
   Plus, Pencil, Trash2, ScrollText, Search, ChevronUp, ChevronDown, ChevronsUpDown,
+  SlidersHorizontal, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { getNamaTpk } from '../lib/useAccount'
@@ -62,6 +63,23 @@ const COLS = [
   { key: 'kota_tujuan',   label: 'Kota Tujuan', w: 'w-[120px]' },
   { key: 'pembeli',       label: 'Pembeli',    w: 'w-[160px]' },
 ]
+
+const KLAS_STYLE = {
+  JATI:  { background: 'rgba(0,255,136,0.12)', color: '#00ff88', border: '1px solid rgba(0,255,136,0.25)' },
+  RIMBA: { background: 'rgba(255,107,107,0.12)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.25)' },
+}
+const BADGE_DEF = { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.1)' }
+const BADGE_BASE = { display: 'inline-block', padding: '2px 6px', borderRadius: 3, fontSize: 10, fontWeight: 600, fontFamily: 'monospace' }
+
+function KlasBadge({ val }) {
+  if (!val) return <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>
+  return <span style={{ ...BADGE_BASE, ...(KLAS_STYLE[val.toUpperCase()] || BADGE_DEF) }}>{val}</span>
+}
+
+function JenisBadge({ val, klas }) {
+  if (!val) return <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>
+  return <span style={{ ...BADGE_BASE, ...(KLAS_STYLE[(klas || '').toUpperCase()] || BADGE_DEF) }}>{val}</span>
+}
 
 const KLAS_OPTIONS = ['JATI', 'RIMBA']
 const JENIS_BY_KLAS = {
@@ -149,10 +167,16 @@ const EMPTY_FORM = {
 
 export default function DkhpSkshhk() {
   const { profile } = useAuth()
-  const [rows, setRows]       = useState([])
-  const [loading, setLoading] = useState(true)
+  const [rows, setRows]           = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [lastUpdated, setLastUpdated] = useState(null)
   const [search, setSearch]   = useState('')
-  const [sort, setSort]       = useState({ key: 'no_dkhp', dir: 'asc' })
+  const [searchCol, setSearchCol] = useState('all')
+  const [sorts, setSorts]     = useState([{ key: 'no_dkhp', dir: 'asc' }])
+  const [showSortPanel, setShowSortPanel] = useState(false)
+  const [draftSorts, setDraftSorts]       = useState([])
+  const [pageSize, setPageSize]           = useState(50)
+  const [currentPage, setCurrentPage]     = useState(1)
   const [preview, setPreview] = useState(null)
   const [importing, setImporting] = useState(false)
   const [editRow, setEditRow] = useState(null)
@@ -181,7 +205,7 @@ export default function DkhpSkshhk() {
       .order('tanggal', { ascending: true })
       .limit(2000)
     if (error) showToast(error.message, 'error')
-    else setRows(data || [])
+    else { setRows(data || []); setLastUpdated(new Date()) }
     setLoading(false)
   }
   useEffect(() => { fetchData() }, [])
@@ -275,29 +299,61 @@ export default function DkhpSkshhk() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return rows
-    return rows.filter(r =>
-      [r.no_dkhp, r.no_skshhk, r.klas, r.jenis, r.nopol, r.pemohon_sopir, r.kota_tujuan, r.pembeli, r.tujuan]
-        .some(v => v && String(v).toLowerCase().includes(q))
-    )
-  }, [rows, search])
+    if (searchCol === 'all') {
+      return rows.filter(r =>
+        [r.no_dkhp, r.no_skshhk, r.klas, r.jenis, r.nopol, r.pemohon_sopir, r.kota_tujuan, r.pembeli, r.tujuan]
+          .some(v => v && String(v).toLowerCase().includes(q))
+      )
+    }
+    return rows.filter(r => {
+      let v = r[searchCol]
+      if (searchCol === 'tanggal') v = displayDate(r.tanggal) || ''
+      return String(v ?? '').toLowerCase().includes(q)
+    })
+  }, [rows, search, searchCol])
 
   const sorted = useMemo(() => {
-    const arr = [...filtered]
-    const { key, dir } = sort
-    arr.sort((a, b) => {
-      const va = a[key] ?? ''
-      const vb = b[key] ?? ''
-      if (typeof va === 'number' && typeof vb === 'number') return dir === 'asc' ? va - vb : vb - va
-      return dir === 'asc'
-        ? String(va).localeCompare(String(vb), 'id', { numeric: true })
-        : String(vb).localeCompare(String(va), 'id', { numeric: true })
+    if (!sorts.length) return filtered
+    return [...filtered].sort((a, b) => {
+      for (const s of sorts) {
+        const va = a[s.key] ?? ''
+        const vb = b[s.key] ?? ''
+        const col = COLS.find(c => c.key === s.key)
+        const cmp = col?.num
+          ? (Number(va) || 0) - (Number(vb) || 0)
+          : String(va).localeCompare(String(vb), 'id', { numeric: true })
+        if (cmp !== 0) return s.dir === 'asc' ? cmp : -cmp
+      }
+      return 0
     })
-    return arr
-  }, [filtered, sort])
+  }, [filtered, sorts])
 
   function toggleSort(key) {
-    setSort(s => s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' })
+    setSorts(prev => {
+      if (prev[0]?.key === key) {
+        const newDir = prev[0].dir === 'asc' ? 'desc' : 'asc'
+        return [{ key, dir: newDir }, ...prev.slice(1)]
+      }
+      return [{ key, dir: 'asc' }]
+    })
+    setCurrentPage(1)
   }
+
+  useEffect(() => { setCurrentPage(1) }, [search, searchCol])
+
+  const PAGE_SIZES = [
+    { label: '50',    value: 50 },
+    { label: '500',   value: 500 },
+    { label: '1.000', value: 1000 },
+    { label: '5.000', value: 5000 },
+    { label: 'Semua', value: 0 },
+  ]
+
+  const totalPages    = pageSize === 0 ? 1 : Math.ceil(sorted.length / pageSize)
+  const safePage      = Math.min(currentPage, totalPages || 1)
+  const displayedRows = pageSize === 0
+    ? sorted
+    : sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   const totals = useMemo(() => sorted.reduce((acc, r) => {
     acc.jml_bt += Number(r.jml_bt) || 0
@@ -465,102 +521,224 @@ export default function DkhpSkshhk() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-start justify-between mb-5 gap-4 flex-wrap">
+    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+      <style>{`
+        .dk-input { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #f0f0f0 !important; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; }
+        .dk-input:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
+        .dk-input option { background: #1a1a1a; color: #f0f0f0; }
+        .dk-row:hover td { background: rgba(255,255,255,0.025) !important; }
+        .dk-th:hover { background: rgba(255,255,255,0.04) !important; }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            <ScrollText size={22} className="text-primary-600 dark:text-primary-300"/>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'monospace' }}>
+            <ScrollText size={18} style={{ color: '#00ff88' }}/>
             DKHP SKSHHK
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Register dokumen pengangkutan hasil hutan kayu.
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>
+            register dokumen pengangkutan hasil hutan kayu
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3 }}>
             <input
               type="month"
               value={exportMonth}
               onChange={e => setExportMonth(e.target.value)}
-              className="bg-transparent text-sm text-gray-700 dark:text-gray-200 px-1 py-1 focus:outline-none [color-scheme:light] dark:[color-scheme:dark]"
+              className="dk-input"
+              style={{ padding: '3px 6px', colorScheme: 'dark' }}
             />
             <button
               onClick={handleExport}
               disabled={exporting || !exportMonth}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-60"
-              title="Download Arus Kayu (Lampiran 6) untuk bulan terpilih"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 11, background: (exporting || !exportMonth) ? 'rgba(0,255,136,0.15)' : '#00ff88', color: (exporting || !exportMonth) ? 'rgba(0,255,136,0.4)' : '#0a0a0a', borderRadius: 3, border: 'none', cursor: (exporting || !exportMonth) ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700 }}
             >
-              {exporting ? <Loader2 size={13} className="animate-spin"/> : <Download size={13}/>}
-              Arus Kayu
+              {exporting ? <Loader2 size={11} className="animate-spin"/> : <Download size={11}/>}
+              arus kayu
             </button>
           </div>
-          <button onClick={openAdd} className="flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
-            <Plus size={14}/> Tambah
+          <button
+            onClick={openAdd}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', fontSize: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#f0f0f0' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
+          >
+            <Plus size={13}/> tambah
           </button>
-          <button onClick={() => fileRef.current?.click()} className="flex items-center gap-2 px-3 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700">
-            <Upload size={14}/> Import Excel
+          <button
+            onClick={() => fileRef.current?.click()}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', fontSize: 12, background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 700 }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          >
+            <Upload size={13}/> import excel
           </button>
           <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFileChange} className="hidden" />
         </div>
       </div>
 
-      <div className="mb-4 flex items-center gap-3 flex-wrap">
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"/>
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Cari SKSHHK, DKHP, jenis, nopol, pembeli…"
-            className="pl-9 pr-3 py-2 w-80 max-w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
+      {rows.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <p style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.35)' }}>
+              menampilkan{' '}
+              <span style={{ color: '#f0f0f0', fontWeight: 600 }}>{displayedRows.length.toLocaleString('id')}</span>
+              {' '}dari{' '}
+              <span style={{ color: '#f0f0f0', fontWeight: 600 }}>{sorted.length.toLocaleString('id')}</span>
+              {search.trim() && <span style={{ color: 'rgba(255,255,255,0.22)' }}> (total {rows.length.toLocaleString('id')})</span>}
+              {' '}dokumen
+            </p>
+            {lastUpdated && (
+              <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.22)' }}>
+                diperbarui{' '}
+                <span style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  {lastUpdated.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}{', '}
+                  {lastUpdated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+                </span>
+              </span>
+            )}
+            {pageSize > 0 && totalPages > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={safePage === 1}
+                  style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '3px 8px', fontSize: 10, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontFamily: 'monospace', opacity: safePage === 1 ? 0.4 : 1 }}
+                >
+                  <ChevronLeft size={10}/> prev
+                </button>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', padding: '0 6px', fontFamily: 'monospace' }}>
+                  {safePage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={safePage === totalPages}
+                  style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '3px 8px', fontSize: 10, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontFamily: 'monospace', opacity: safePage === totalPages ? 0.4 : 1 }}
+                >
+                  next <ChevronRight size={10}/>
+                </button>
+              </div>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <select
+                value={searchCol}
+                onChange={e => setSearchCol(e.target.value)}
+                className="dk-input"
+                style={{ height: 28, padding: '0 6px' }}
+              >
+                <option value="all">Semua Kolom</option>
+                {COLS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+              </select>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Search size={11} style={{ position: 'absolute', left: 7, color: 'rgba(255,255,255,0.25)', pointerEvents: 'none' }}/>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="cari..."
+                  className="dk-input"
+                  style={{ height: 28, paddingLeft: 24, paddingRight: search ? 22 : 8, width: 140 }}
+                />
+                {search && (
+                  <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 5, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', display: 'flex' }}>
+                    <X size={10}/>
+                  </button>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => { setDraftSorts([...sorts]); setShowSortPanel(true) }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 11, borderRadius: 3, cursor: 'pointer', fontFamily: 'monospace',
+                ...(sorts.length > 0
+                  ? { background: 'rgba(0,255,136,0.08)', border: '1px solid rgba(0,255,136,0.2)', color: '#00ff88' }
+                  : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' })
+              }}
+            >
+              <SlidersHorizontal size={11}/>
+              urutan
+              {sorts.length > 0 && (
+                <span style={{ background: '#00ff88', color: '#0a0a0a', borderRadius: 99, width: 14, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>
+                  {sorts.length}
+                </span>
+              )}
+            </button>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.22)', fontFamily: 'monospace' }}>tampilkan:</span>
+            <div style={{ display: 'flex', gap: 3 }}>
+              {PAGE_SIZES.map(p => (
+                <button
+                  key={p.value}
+                  onClick={() => { setPageSize(p.value); setCurrentPage(1) }}
+                  style={{
+                    padding: '4px 8px', fontSize: 10, borderRadius: 3, fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer',
+                    ...(pageSize === p.value
+                      ? { background: '#00ff88', color: '#0a0a0a', border: 'none' }
+                      : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' })
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <p className="text-xs text-gray-400 dark:text-gray-500">
-          {sorted.length} dari {rows.length} dokumen · Σ {totals.jml_bt.toLocaleString('id')} batang · {totals.jml_m3.toFixed(3)} m³
-        </p>
-      </div>
+      )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
         {loading ? (
-          <div className="p-8 flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">
-            <Loader2 size={16} className="animate-spin mr-2"/> Memuat…
+          <div style={{ padding: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 12, fontFamily: 'monospace' }}>
+            <Loader2 size={14} className="animate-spin" style={{ marginRight: 8 }}/> memuat…
           </div>
         ) : !sorted.length ? (
-          <div className="p-10 text-center text-sm text-gray-400 dark:text-gray-500">
-            Belum ada data. Klik <span className="font-semibold">Import Excel</span> atau <span className="font-semibold">Tambah</span> untuk mulai.
+          <div style={{ padding: 40, textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.22)', fontFamily: 'monospace' }}>
+            belum ada data — klik <span style={{ color: '#00ff88' }}>import excel</span> atau <span style={{ color: '#00ff88' }}>tambah</span> untuk mulai
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-xs">
-              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
-                <tr>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ minWidth: '100%', fontSize: 11, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   {COLS.map(c => (
                     <th
                       key={c.key}
                       onClick={() => toggleSort(c.key)}
-                      className={`px-2 py-2.5 font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 ${c.num ? 'text-right' : 'text-left'} ${c.w}`}
+                      className="dk-th"
+                      style={{ padding: '8px 8px', fontFamily: 'monospace', fontWeight: 600, color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none', textAlign: c.num ? 'right' : 'left' }}
                     >
-                      <span className="inline-flex items-center gap-1">
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                         {c.label}
-                        {sort.key === c.key
-                          ? sort.dir === 'asc' ? <ChevronUp size={11} className="text-primary-500"/> : <ChevronDown size={11} className="text-primary-500"/>
-                          : <ChevronsUpDown size={11} className="text-gray-300 dark:text-gray-600"/>
-                        }
+                        {(() => {
+                          const idx = sorts.findIndex(s => s.key === c.key)
+                          if (idx === -1) return <ChevronsUpDown size={10} style={{ color: 'rgba(255,255,255,0.15)' }}/>
+                          const s = sorts[idx]
+                          return (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                              {sorts.length > 1 && <span style={{ fontSize: 8, fontWeight: 700, color: '#00ff88' }}>{idx + 1}</span>}
+                              {s.dir === 'asc' ? <ChevronUp size={10} style={{ color: '#00ff88' }}/> : <ChevronDown size={10} style={{ color: '#00ff88' }}/>}
+                            </span>
+                          )
+                        })()}
                       </span>
                     </th>
                   ))}
-                  <th className="px-2 py-2.5 w-12"></th>
+                  <th style={{ width: 44 }}/>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
-                {sorted.map((row) => (
-                  <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 group">
+              <tbody>
+                {displayedRows.map((row) => (
+                  <tr key={row.id} className="dk-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                     {COLS.map(c => {
                       const v = row[c.key]
                       let content
                       if (c.key === 'tanggal') content = displayDate(v)
+                      else if (c.key === 'klas') content = <KlasBadge val={v}/>
+                      else if (c.key === 'jenis') content = <JenisBadge val={v} klas={row.klas}/>
                       else if (c.num) {
                         const n = Number(v) || 0
-                        if (!n) content = <span className="text-gray-300 dark:text-gray-600">—</span>
+                        if (!n) content = <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>
                         else content = c.int ? n.toLocaleString('id') : n.toFixed(3)
                       } else {
                         content = v
@@ -570,31 +748,46 @@ export default function DkhpSkshhk() {
                         <td
                           key={c.key}
                           title={isTujuan && v ? v : undefined}
-                          className={`px-2 py-2 ${isTujuan ? 'truncate max-w-[280px]' : 'whitespace-nowrap'} ${c.num ? 'text-right font-mono' : 'text-gray-700 dark:text-gray-200'} ${c.total ? 'font-semibold text-gray-800 dark:text-gray-100' : ''}`}
+                          style={{
+                            padding: '7px 8px',
+                            whiteSpace: isTujuan ? 'normal' : 'nowrap',
+                            maxWidth: isTujuan ? 280 : undefined,
+                            overflow: isTujuan ? 'hidden' : undefined,
+                            textOverflow: isTujuan ? 'ellipsis' : undefined,
+                            textAlign: c.num ? 'right' : 'left',
+                            fontFamily: c.num ? 'monospace' : undefined,
+                            color: c.total ? '#f0f0f0' : 'rgba(255,255,255,0.7)',
+                            fontWeight: c.total ? 600 : undefined,
+                          }}
                         >
-                          {content || (!c.num && <span className="text-gray-300 dark:text-gray-600">—</span>)}
+                          {content || (!c.num && <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>)}
                         </td>
                       )
                     })}
-                    <td className="px-2 py-2">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openEdit(row)} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600">
-                          <Pencil size={13}/>
-                        </button>
-                        <button onClick={() => setDeleteRow(row)} className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 dark:text-gray-500 hover:text-red-600">
-                          <Trash2 size={13}/>
-                        </button>
+                    <td style={{ padding: '7px 6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 2, opacity: 0, transition: 'opacity 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                        onMouseLeave={e => e.currentTarget.style.opacity = '0'}
+                      >
+                        <button onClick={() => openEdit(row)} style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}
+                          onMouseEnter={e => { e.currentTarget.style.color = '#f0f0f0'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+                          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
+                        ><Pencil size={12}/></button>
+                        <button onClick={() => setDeleteRow(row)} style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}
+                          onMouseEnter={e => { e.currentTarget.style.color = '#ff6b6b'; e.currentTarget.style.background = 'rgba(255,107,107,0.08)' }}
+                          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
+                        ><Trash2 size={12}/></button>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                <tr className="font-semibold text-gray-700 dark:text-gray-200">
-                  <td className="px-2 py-2" colSpan={11}>TOTAL</td>
-                  <td className="px-2 py-2 text-right font-mono">{totals.jml_bt.toLocaleString('id')}</td>
-                  <td className="px-2 py-2 text-right font-mono">{totals.jml_m3.toFixed(3)}</td>
-                  <td className="px-2 py-2" colSpan={6}></td>
+              <tfoot style={{ borderTop: '2px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+                <tr>
+                  <td style={{ padding: '8px', fontFamily: 'monospace', fontWeight: 700, color: '#f0f0f0', fontSize: 11 }} colSpan={11}>TOTAL</td>
+                  <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: '#f0f0f0', fontSize: 11 }}>{totals.jml_bt.toLocaleString('id')}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: '#f0f0f0', fontSize: 11 }}>{totals.jml_m3.toFixed(3)}</td>
+                  <td colSpan={6}/>
                 </tr>
               </tfoot>
             </table>
@@ -602,40 +795,118 @@ export default function DkhpSkshhk() {
         )}
       </div>
 
+      {/* Bottom pagination */}
+      {rows.length > 0 && pageSize > 0 && totalPages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 }}>
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={safePage === 1}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 12, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontFamily: 'monospace', opacity: safePage === 1 ? 0.4 : 1 }}
+          >
+            <ChevronLeft size={13}/> prev
+          </button>
+          <span style={{ fontSize: 12, fontFamily: 'monospace', color: 'rgba(255,255,255,0.35)' }}>
+            halaman <span style={{ color: '#f0f0f0', fontWeight: 600 }}>{safePage}</span> dari <span style={{ color: '#f0f0f0', fontWeight: 600 }}>{totalPages}</span>
+          </span>
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={safePage === totalPages}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 12, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontFamily: 'monospace', opacity: safePage === totalPages ? 0.4 : 1 }}
+          >
+            next <ChevronRight size={13}/>
+          </button>
+        </div>
+      )}
+
+      {/* Sort panel modal */}
+      {showSortPanel && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 360, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <p style={{ fontFamily: 'monospace', fontWeight: 600, color: '#f0f0f0', fontSize: 13 }}>pengurutan</p>
+              <button onClick={() => setShowSortPanel(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+              {draftSorts.length === 0 && (
+                <p style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.22)', textAlign: 'center', padding: '10px 0' }}>belum ada aturan pengurutan</p>
+              )}
+              {draftSorts.map((s, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', width: 14, textAlign: 'center', fontFamily: 'monospace' }}>{i + 1}</span>
+                  <select value={s.key} onChange={e => setDraftSorts(prev => prev.map((x, j) => j === i ? { ...x, key: e.target.value } : x))} className="dk-input" style={{ flex: 1, padding: '5px 6px' }}>
+                    {COLS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+                  </select>
+                  <button
+                    onClick={() => setDraftSorts(prev => prev.map((x, j) => j === i ? { ...x, dir: x.dir === 'asc' ? 'desc' : 'asc' } : x))}
+                    style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '5px 8px', fontSize: 10, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', minWidth: 52, justifyContent: 'center', fontFamily: 'monospace' }}
+                  >
+                    {s.dir === 'asc' ? <><ChevronUp size={10}/> A–Z</> : <><ChevronDown size={10}/> Z–A</>}
+                  </button>
+                  <button onClick={() => setDraftSorts(prev => prev.filter((_, j) => j !== i))}
+                    style={{ padding: 5, borderRadius: 3, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#ff6b6b'; e.currentTarget.style.background = 'rgba(255,107,107,0.08)' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
+                  ><X size={12}/></button>
+                </div>
+              ))}
+            </div>
+            {draftSorts.length < COLS.length && (
+              <button
+                onClick={() => { const used = new Set(draftSorts.map(s => s.key)); const next = COLS.find(c => !used.has(c.key))?.key || COLS[0].key; setDraftSorts(prev => [...prev, { key: next, dir: 'asc' }]) }}
+                style={{ width: '100%', padding: '6px 0', marginBottom: 12, fontSize: 11, border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 3, background: 'none', color: 'rgba(255,255,255,0.32)', cursor: 'pointer', fontFamily: 'monospace' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,255,136,0.4)'; e.currentTarget.style.color = '#00ff88' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = 'rgba(255,255,255,0.32)' }}
+              >+ tambah kolom urutan</button>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+              <button onClick={() => { setDraftSorts([]); setSorts([]); setCurrentPage(1); setShowSortPanel(false) }} style={{ padding: '7px 12px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>reset</button>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={() => setShowSortPanel(false)} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
+                <button onClick={() => { setSorts(draftSorts); setCurrentPage(1); setShowSortPanel(false) }} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, background: '#00ff88', color: '#0a0a0a', border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 700 }}>terapkan</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
-        <div className={`fixed bottom-4 right-4 px-4 py-2 rounded-lg text-white text-sm shadow-lg flex items-center gap-2 z-50 ${
-          toast.kind === 'error' ? 'bg-red-600' : 'bg-emerald-600'
-        }`}>
-          {toast.kind === 'error' ? <AlertCircle size={14}/> : <CheckCircle2 size={14}/>}
+        <div style={{
+          position: 'fixed', bottom: 16, right: 16, display: 'flex', alignItems: 'center', gap: 8,
+          padding: '10px 16px', borderRadius: 3, fontSize: 12, fontFamily: 'monospace', zIndex: 50,
+          background: toast.kind === 'error' ? 'rgba(255,107,107,0.12)' : 'rgba(0,255,136,0.10)',
+          border: `1px solid ${toast.kind === 'error' ? 'rgba(255,107,107,0.3)' : 'rgba(0,255,136,0.3)'}`,
+          color: toast.kind === 'error' ? '#ff6b6b' : '#00ff88',
+        }}>
+          {toast.kind === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>}
           {toast.msg}
         </div>
       )}
 
       {preview && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary-50 dark:bg-primary-900/20 p-2 rounded-lg">
-                  <FileSpreadsheet size={18} className="text-primary-600 dark:text-primary-300"/>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 400, padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ padding: 8, background: 'rgba(0,255,136,0.08)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 3 }}>
+                  <FileSpreadsheet size={16} style={{ color: '#00ff88' }}/>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Konfirmasi Import</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate max-w-[280px]">{preview.fileName}</p>
+                  <p style={{ fontWeight: 600, color: '#f0f0f0', fontSize: 13, fontFamily: 'monospace' }}>konfirmasi import</p>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontFamily: 'monospace', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview.fileName}</p>
                 </div>
               </div>
-              <button onClick={() => setPreview(null)} disabled={importing}><X size={16} className="text-gray-400 hover:text-gray-600"/></button>
+              <button onClick={() => setPreview(null)} disabled={importing} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
             </div>
-            <div className="space-y-2 text-sm mb-5">
-              <div className="flex justify-between"><span className="text-gray-500 dark:text-gray-400">Total terbaca</span><span className="font-semibold text-gray-800 dark:text-gray-100">{preview.rows.length}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500 dark:text-gray-400">Akan diimport</span><span className="font-semibold text-emerald-600">{preview.newCount}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500 dark:text-gray-400">Sudah ada (skip)</span><span className="font-semibold text-gray-500">{preview.skipCount}</span></div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, marginBottom: 20, fontFamily: 'monospace' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'rgba(255,255,255,0.4)' }}>total terbaca</span><span style={{ color: '#f0f0f0', fontWeight: 600 }}>{preview.rows.length}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'rgba(255,255,255,0.4)' }}>akan diimport</span><span style={{ color: '#00ff88', fontWeight: 600 }}>{preview.newCount}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'rgba(255,255,255,0.4)' }}>sudah ada (skip)</span><span style={{ color: 'rgba(255,255,255,0.35)' }}>{preview.skipCount}</span></div>
             </div>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setPreview(null)} disabled={importing} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">Batal</button>
-              <button onClick={handleImport} disabled={importing || !preview.newCount} className="flex items-center gap-2 px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-60">
-                {importing && <Loader2 size={13} className="animate-spin"/>}
-                {importing ? 'Mengimport…' : `Import ${preview.newCount} data`}
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+              <button onClick={() => setPreview(null)} disabled={importing} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
+              <button onClick={handleImport} disabled={importing || !preview.newCount} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 11, borderRadius: 3, background: (importing || !preview.newCount) ? 'rgba(0,255,136,0.15)' : '#00ff88', color: (importing || !preview.newCount) ? 'rgba(0,255,136,0.4)' : '#0a0a0a', border: 'none', cursor: (importing || !preview.newCount) ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700 }}>
+                {importing && <Loader2 size={11} className="animate-spin"/>}
+                {importing ? 'mengimport…' : `import ${preview.newCount} data`}
               </button>
             </div>
           </div>
@@ -643,22 +914,22 @@ export default function DkhpSkshhk() {
       )}
 
       {editRow && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary-50 dark:bg-primary-900/20 p-2 rounded-lg">
-                  <Pencil size={16} className="text-primary-600 dark:text-primary-300"/>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 700, padding: 24, maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ padding: 8, background: 'rgba(0,255,136,0.08)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 3 }}>
+                  <Pencil size={14} style={{ color: '#00ff88' }}/>
                 </div>
-                <p className="font-semibold text-gray-800 dark:text-gray-100">{editRow._new ? 'Tambah SKSHHK' : 'Edit SKSHHK'}</p>
+                <p style={{ fontWeight: 600, color: '#f0f0f0', fontFamily: 'monospace', fontSize: 13 }}>{editRow._new ? 'tambah skshhk' : 'edit skshhk'}</p>
               </div>
-              <button onClick={() => setEditRow(null)} disabled={saving}><X size={16} className="text-gray-400 hover:text-gray-600"/></button>
+              <button onClick={() => setEditRow(null)} disabled={saving} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
               {(() => {
                 const klasNorm = (editRow.klas || '').toUpperCase()
                 const jenisOptions = JENIS_BY_KLAS[klasNorm] || []
-                const inputCls = 'w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-60'
+                const iStyle = { width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '7px 10px', fontSize: 12, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }
                 const computedBt = num(editRow.ai_bt, true) + num(editRow.aii_bt, true) + num(editRow.aiii_bt, true)
                 const computedM3 = +(num(editRow.ai_m3) + num(editRow.aii_m3) + num(editRow.aiii_m3)).toFixed(3)
                 const fields = [
@@ -680,53 +951,21 @@ export default function DkhpSkshhk() {
                 ]
                 return fields.map(f => (
                   <div key={f.key}>
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{f.label}</label>
+                    <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 4, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{f.label}</label>
                     {f.kind === 'klas' ? (
-                      <select
-                        value={editRow.klas ?? ''}
-                        onChange={e => {
-                          const next = e.target.value
-                          setEditRow(p => {
-                            const allowed = JENIS_BY_KLAS[next] || []
-                            const keepJenis = allowed.includes((p.jenis || '').toUpperCase())
-                            return {
-                              ...p,
-                              klas: next,
-                              jenis: keepJenis ? p.jenis : (allowed.length === 1 ? allowed[0] : ''),
-                            }
-                          })
-                        }}
-                        className={inputCls}
-                      >
+                      <select value={editRow.klas ?? ''} onChange={e => { const next = e.target.value; setEditRow(p => { const allowed = JENIS_BY_KLAS[next] || []; const keepJenis = allowed.includes((p.jenis || '').toUpperCase()); return { ...p, klas: next, jenis: keepJenis ? p.jenis : (allowed.length === 1 ? allowed[0] : '') } }) }} style={{ ...iStyle, cursor: 'pointer' }}>
                         <option value="">— pilih klas —</option>
                         {KLAS_OPTIONS.map(k => <option key={k} value={k}>{k}</option>)}
                       </select>
                     ) : f.kind === 'computed' ? (
-                      <input
-                        type="text"
-                        value={f.display}
-                        readOnly
-                        tabIndex={-1}
-                        className={`${inputCls} bg-gray-50 dark:bg-gray-800 text-right font-mono cursor-not-allowed`}
-                      />
+                      <input type="text" value={f.display} readOnly tabIndex={-1} style={{ ...iStyle, textAlign: 'right', opacity: 0.5, cursor: 'not-allowed' }}/>
                     ) : f.kind === 'jenis' ? (
-                      <select
-                        value={editRow.jenis ?? ''}
-                        onChange={e => setEditRow(p => ({ ...p, jenis: e.target.value }))}
-                        disabled={!klasNorm}
-                        className={inputCls}
-                      >
+                      <select value={editRow.jenis ?? ''} onChange={e => setEditRow(p => ({ ...p, jenis: e.target.value }))} disabled={!klasNorm} style={{ ...iStyle, cursor: klasNorm ? 'pointer' : 'not-allowed', opacity: klasNorm ? 1 : 0.5 }}>
                         <option value="">{klasNorm ? '— pilih jenis —' : 'Pilih klas dulu'}</option>
                         {jenisOptions.map(j => <option key={j} value={j}>{j}</option>)}
                       </select>
                     ) : (
-                      <input
-                        type={f.type || 'text'}
-                        value={editRow[f.key] ?? ''}
-                        onChange={e => setEditRow(p => ({ ...p, [f.key]: e.target.value }))}
-                        step={f.type === 'number' ? 'any' : undefined}
-                        className={inputCls}
-                      />
+                      <input type={f.type || 'text'} value={editRow[f.key] ?? ''} onChange={e => setEditRow(p => ({ ...p, [f.key]: e.target.value }))} step={f.type === 'number' ? 'any' : undefined} style={iStyle}/>
                     )}
                   </div>
                 ))
@@ -737,30 +976,20 @@ export default function DkhpSkshhk() {
               { label: 'Pembeli',         key: 'pembeli' },
               { label: 'Tujuan (alamat lengkap)', key: 'tujuan', multiline: true },
             ].map(f => (
-              <div key={f.key} className="mb-3">
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{f.label}</label>
+              <div key={f.key} style={{ marginBottom: 10 }}>
+                <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 4, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{f.label}</label>
                 {f.multiline ? (
-                  <textarea
-                    rows={2}
-                    value={editRow[f.key] ?? ''}
-                    onChange={e => setEditRow(p => ({ ...p, [f.key]: e.target.value }))}
-                    className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
+                  <textarea rows={2} value={editRow[f.key] ?? ''} onChange={e => setEditRow(p => ({ ...p, [f.key]: e.target.value }))} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '7px 10px', fontSize: 12, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}/>
                 ) : (
-                  <input
-                    type="text"
-                    value={editRow[f.key] ?? ''}
-                    onChange={e => setEditRow(p => ({ ...p, [f.key]: e.target.value }))}
-                    className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
+                  <input type="text" value={editRow[f.key] ?? ''} onChange={e => setEditRow(p => ({ ...p, [f.key]: e.target.value }))} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '7px 10px', fontSize: 12, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}/>
                 )}
               </div>
             ))}
-            <div className="flex gap-2 justify-end mt-4">
-              <button onClick={() => setEditRow(null)} disabled={saving} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">Batal</button>
-              <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-60">
-                {saving && <Loader2 size={13} className="animate-spin"/>}
-                {saving ? 'Menyimpan…' : 'Simpan'}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+              <button onClick={() => setEditRow(null)} disabled={saving} style={{ padding: '8px 16px', fontSize: 12, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
+              <button onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 12, borderRadius: 3, background: saving ? 'rgba(0,255,136,0.3)' : '#00ff88', color: '#0a0a0a', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700, opacity: saving ? 0.7 : 1 }}>
+                {saving && <Loader2 size={12} className="animate-spin"/>}
+                {saving ? 'menyimpan…' : 'simpan'}
               </button>
             </div>
           </div>
@@ -768,23 +997,23 @@ export default function DkhpSkshhk() {
       )}
 
       {deleteRow && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-red-50 dark:bg-red-900/20 p-2 rounded-lg">
-                <Trash2 size={18} className="text-red-500"/>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 320, padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{ padding: 8, background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.2)', borderRadius: 3 }}>
+                <Trash2 size={16} style={{ color: '#ff6b6b' }}/>
               </div>
               <div>
-                <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Hapus SKSHHK</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">{deleteRow.no_skshhk}</p>
+                <p style={{ fontWeight: 600, color: '#f0f0f0', fontSize: 13, fontFamily: 'monospace' }}>hapus skshhk</p>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontFamily: 'monospace' }}>{deleteRow.no_skshhk}</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">Data akan dihapus permanen.</p>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setDeleteRow(null)} disabled={deleting} className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">Batal</button>
-              <button onClick={handleDelete} disabled={deleting} className="flex items-center gap-2 px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-60">
-                {deleting && <Loader2 size={13} className="animate-spin"/>}
-                {deleting ? 'Menghapus…' : 'Hapus'}
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 20, fontFamily: 'monospace' }}>data akan dihapus permanen.</p>
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+              <button onClick={() => setDeleteRow(null)} disabled={deleting} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
+              <button onClick={handleDelete} disabled={deleting} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 11, borderRadius: 3, background: '#ff6b6b', color: '#fff', border: 'none', cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700, opacity: deleting ? 0.7 : 1 }}>
+                {deleting && <Loader2 size={11} className="animate-spin"/>}
+                {deleting ? 'menghapus…' : 'hapus'}
               </button>
             </div>
           </div>

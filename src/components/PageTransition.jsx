@@ -52,19 +52,26 @@ export default function PageTransition({ children }) {
 
   return (
     <div data-barba="wrapper">
-      {/* Transition curtain — same palette as login background */}
+      {/* Transition curtain */}
       <div
         ref={curtainRef}
         data-barba-curtain
         style={{
           position: 'fixed', inset: 0, zIndex: 9999,
-          background: 'linear-gradient(135deg, #060e0a 0%, #0b1c12 60%, #060d08 100%)',
+          background: '#0a0a0a',
           transform: 'scaleY(0)',
           transformOrigin: 'top center',
           pointerEvents: 'none',
           willChange: 'transform',
         }}
-      />
+      >
+        {/* Subtle scan line */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          height: 1,
+          background: 'linear-gradient(90deg, transparent, rgba(0,255,136,0.4), transparent)',
+        }} />
+      </div>
       {/* Page container — Barba.js namespace = first path segment */}
       <div
         ref={containerRef}
