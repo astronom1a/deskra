@@ -26,9 +26,16 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     })
 
+    // Ambil user dari JWT terlebih dahulu
+    const { data: { user }, error: userErr } = await callerClient.auth.getUser()
+    if (userErr || !user) {
+      return json({ error: 'Unauthorized: sesi tidak valid' }, 401)
+    }
+
     const { data: callerProfile, error: profileErr } = await callerClient
       .from('profiles')
       .select('role')
+      .eq('id', user.id)
       .single()
 
     if (profileErr || callerProfile?.role !== 'admin') {
