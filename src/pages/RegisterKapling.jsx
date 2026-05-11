@@ -97,6 +97,17 @@ function getPembeliName(val) {
     .trim() || null
 }
 
+function simplifyRange(val) {
+  if (!val) return val
+  const s = String(val).trim()
+  const dashIdx = s.indexOf('-')
+  if (dashIdx <= 0) return s
+  const left = s.slice(0, dashIdx).trim()
+  const right = s.slice(dashIdx + 1).trim()
+  if (left && left === right) return left
+  return s
+}
+
 function displayDate(val) {
   if (!val) return null
   const m = String(val).match(/^(\d{4})-(\d{2})-(\d{2})$/)
@@ -147,6 +158,9 @@ function parseRowsWithMap(rawRows, colMap) {
     })
     .map(r => {
       const get = (f) => (idxMap[f] != null ? r[idxMap[f]] : null)
+      const batang = Number(get('batang')) || 0
+      const panjangRaw = String(get('panjang') ?? '').trim()
+      const diamRaw    = String(get('diameter_tebal') ?? '').trim()
       return {
         no_kapling:     String(get('no_kapling') ?? '').trim(),
         tgl_kapling:    formatDate(get('tgl_kapling')),
@@ -155,15 +169,15 @@ function parseRowsWithMap(rawRows, colMap) {
         jenis:          String(get('jenis') ?? '').trim(),
         sortimen:       String(get('sortimen') ?? '').trim(),
         sort_untuk:     String(get('sort_untuk') ?? '').trim() || null,
-        panjang:        String(get('panjang') ?? '').trim(),
+        panjang:        batang <= 1 ? simplifyRange(panjangRaw) : panjangRaw,
         lebar:          String(get('lebar') ?? '').trim() || null,
-        diameter_tebal: String(get('diameter_tebal') ?? '').trim(),
+        diameter_tebal: batang <= 1 ? simplifyRange(diamRaw) : diamRaw,
         status:         String(get('status') ?? '').trim(),
         mutu:           String(get('mutu') ?? '').trim(),
         cacat:          String(get('cacat') ?? '').trim(),
         asal_kayu:      String(get('asal_kayu') ?? '').trim() || null,
         sertifikasi:    String(get('sertifikasi') ?? '').trim(),
-        batang:         Number(get('batang')) || 0,
+        batang,
         volume:         Number(get('volume')) || 0,
         dkhp:           String(get('dkhp') ?? '').trim() || null,
         skshhk:         String(get('skshhk') ?? '').trim() || null,
@@ -265,6 +279,10 @@ export default function RegisterKapling() {
   const [selectedIds, setSelectedIds]         = useState(new Set())
   const [showBatchDelete, setShowBatchDelete] = useState(false)
   const [batchDeleting, setBatchDeleting]     = useState(false)
+  const [showBatchEdit, setShowBatchEdit]     = useState(false)
+  const [batchEditData, setBatchEditData]     = useState({ tgl_kapling: '', periode: '', no_blok: '', sertifikasi: '' })
+  const [batchEditSaving, setBatchEditSaving] = useState(false)
+  const [contextMenu, setContextMenu]         = useState(null)
   const [toast, setToast]           = useState(null)
 
   const [colMap, setColMap] = useState(() => {
@@ -326,6 +344,20 @@ export default function RegisterKapling() {
     setSelectedIds(new Set())
     setLoading(false)
   }
+
+  useEffect(() => {
+    if (!contextMenu) return
+    function dismiss(e) {
+      if (e.type === 'keydown' && e.key !== 'Escape') return
+      setContextMenu(null)
+    }
+    document.addEventListener('mousedown', dismiss)
+    document.addEventListener('keydown', dismiss)
+    return () => {
+      document.removeEventListener('mousedown', dismiss)
+      document.removeEventListener('keydown', dismiss)
+    }
+  }, [contextMenu])
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
@@ -495,6 +527,31 @@ export default function RegisterKapling() {
     fetchData()
   }
 
+  // ── Batch edit ───────────────────────────────────────────────────────────
+  async function handleBatchEdit() {
+    const patch = {}
+    if (batchEditData.tgl_kapling) patch.tgl_kapling = batchEditData.tgl_kapling
+    if (batchEditData.periode)     patch.periode      = batchEditData.periode
+    if (batchEditData.no_blok)     patch.no_blok      = batchEditData.no_blok
+    if (batchEditData.sertifikasi) patch.sertifikasi  = batchEditData.sertifikasi
+    if (Object.keys(patch).length === 0) {
+      showToast('Isi minimal satu field untuk diupdate.', 'error')
+      return
+    }
+    setBatchEditSaving(true)
+    const ids = [...selectedIds]
+    const { error } = await supabase
+      .from('tabel_register_kapling')
+      .update(patch)
+      .in('id', ids)
+    setBatchEditSaving(false)
+    if (error) { showToast(error.message, 'error'); return }
+    showToast(`${ids.length} kapling berhasil diupdate`)
+    setShowBatchEdit(false)
+    setBatchEditData({ tgl_kapling: '', periode: '', no_blok: '', sertifikasi: '' })
+    fetchData()
+  }
+
   // ── Delete row ────────────────────────────────────────────────────────────
   async function handleDelete() {
     if (!deleteRow) return
@@ -591,6 +648,8 @@ export default function RegisterKapling() {
     if (key === 'tgl_kapling') return displayDate(row.tgl_kapling) || ''
     if (key === 'pembeli') return getPembeliName(row.pembeli) || ''
     if (key === 'volume') return Number(row.volume).toFixed(3)
+    if ((key === 'panjang' || key === 'diameter_tebal') && Number(row.batang) <= 1)
+      return simplifyRange(String(row[key] ?? ''))
     return String(row[key] ?? '')
   }
 
@@ -1248,6 +1307,87 @@ export default function RegisterKapling() {
         </div>
       )}
 
+      {/* Batch edit modal */}
+      {showBatchEdit && (
+        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-lg">
+                <Pencil size={18} className="text-blue-600 dark:text-blue-400"/>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Edit Massal</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{selectedIds.size} kapling terpilih · isi field yang ingin diubah</p>
+              </div>
+              <button onClick={() => setShowBatchEdit(false)} className="ml-auto">
+                <X size={16} className="text-gray-400 dark:text-gray-500 hover:text-gray-600"/>
+              </button>
+            </div>
+
+            <div className="space-y-3 mb-5">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tgl Kapling</label>
+                <input
+                  type="date"
+                  value={batchEditData.tgl_kapling}
+                  onChange={e => setBatchEditData(prev => ({ ...prev, tgl_kapling: e.target.value }))}
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Periode</label>
+                <input
+                  type="text"
+                  value={batchEditData.periode}
+                  onChange={e => setBatchEditData(prev => ({ ...prev, periode: e.target.value }))}
+                  placeholder="Kosongkan untuk tidak diubah"
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">No Blok</label>
+                <input
+                  type="text"
+                  value={batchEditData.no_blok}
+                  onChange={e => setBatchEditData(prev => ({ ...prev, no_blok: e.target.value }))}
+                  placeholder="Kosongkan untuk tidak diubah"
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sertifikasi</label>
+                <select
+                  value={batchEditData.sertifikasi}
+                  onChange={e => setBatchEditData(prev => ({ ...prev, sertifikasi: e.target.value }))}
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                >
+                  <option value="">— Tidak diubah —</option>
+                  <option value="FSC">FSC</option>
+                  <option value="NFSC">NFSC</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowBatchEdit(false)}
+                className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleBatchEdit}
+                disabled={batchEditSaving}
+                className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
+              >
+                {batchEditSaving && <Loader2 size={13} className="animate-spin"/>}
+                {batchEditSaving ? 'Menyimpan...' : `Update ${selectedIds.size} Kapling`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sort panel modal */}
       {showSortPanel && (
         <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
@@ -1341,13 +1481,22 @@ export default function RegisterKapling() {
               {' '}kapling
             </p>
             {selectedIds.size > 0 && (
-              <button
-                onClick={() => setShowBatchDelete(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-              >
-                <Trash2 size={12}/>
-                Hapus {selectedIds.size} terpilih
-              </button>
+              <>
+                <button
+                  onClick={() => { setBatchEditData({ tgl_kapling: '', periode: '', no_blok: '', sertifikasi: '' }); setShowBatchEdit(true) }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                >
+                  <Pencil size={12}/>
+                  Edit {selectedIds.size} terpilih
+                </button>
+                <button
+                  onClick={() => setShowBatchDelete(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                >
+                  <Trash2 size={12}/>
+                  Hapus {selectedIds.size} terpilih
+                </button>
+              </>
             )}
             {pageSize > 0 && totalPages > 1 && (
               <div className="flex items-center gap-1">
@@ -1493,7 +1642,11 @@ export default function RegisterKapling() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {displayedRows.map((row, i) => (
-                  <tr key={row.id} className={`transition-colors group ${selectedIds.has(row.id) ? 'bg-primary-50 dark:bg-primary-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
+                  <tr
+                    key={row.id}
+                    className={`transition-colors group ${selectedIds.has(row.id) ? 'bg-primary-50 dark:bg-primary-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                    onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, row }) }}
+                  >
                     <td className="px-2 py-2 sticky left-0 z-10 bg-inherit">
                       <input
                         type="checkbox"
@@ -1554,6 +1707,54 @@ export default function RegisterKapling() {
           </div>
         )}
       </div>
+
+      {/* Context menu */}
+      {contextMenu && (() => {
+        const isBatch = selectedIds.size > 1 && selectedIds.has(contextMenu.row.id)
+        return (
+          <div
+            className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl py-1 min-w-[160px]"
+            style={{ top: contextMenu.y, left: contextMenu.x }}
+            onMouseDown={e => e.stopPropagation()}
+          >
+            {isBatch && (
+              <div className="px-4 py-1.5 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                {selectedIds.size} kapling terpilih
+              </div>
+            )}
+            <button
+              onClick={() => {
+                if (isBatch) {
+                  setBatchEditData({ tgl_kapling: '', periode: '', no_blok: '', sertifikasi: '' })
+                  setShowBatchEdit(true)
+                } else {
+                  setEditRow({ ...contextMenu.row })
+                }
+                setContextMenu(null)
+              }}
+              className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <Pencil size={13} className="text-gray-400 dark:text-gray-500"/>
+              {isBatch ? `Edit ${selectedIds.size} terpilih` : 'Edit'}
+            </button>
+            <div className="my-1 border-t border-gray-100 dark:border-gray-700"/>
+            <button
+              onClick={() => {
+                if (isBatch) {
+                  setShowBatchDelete(true)
+                } else {
+                  setDeleteRow(contextMenu.row)
+                }
+                setContextMenu(null)
+              }}
+              className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
+              <Trash2 size={13}/>
+              {isBatch ? `Hapus ${selectedIds.size} terpilih` : 'Hapus'}
+            </button>
+          </div>
+        )
+      })()}
     </div>
   )
 }
