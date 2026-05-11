@@ -1,7 +1,7 @@
 # Design: Multi-TPK Authentication & Admin Panel
 
 **Tanggal:** 2026-05-04
-**Status:** Approved
+**Status:** Approved — diperbarui 2026-05-11
 
 ## Ringkasan
 
@@ -159,11 +159,12 @@ Field **Nama TPK** dan **Kode TPK** dihapus dari halaman Settings (hanya bisa di
 
 - Jumlah TPK terdaftar (aktif / nonaktif)
 - Total UK kumulatif seluruh TPK
-- Top 5 TPK berdasarkan total UK
+- Tabel semua TPK: Nama TPK | Kode | Operator | Periode | Total UK | Status
+- Animasi ScrambleNumber pada stat card (GSAP)
 
 ### `/admin/tpk` — Daftar TPK
 
-Tabel: Nama TPK | Kode TPK | Status | Jumlah Periode | Total UK | Aksi
+Tabel: Nama TPK | Kode | Operator | Periode | Total UK | Status | →
 
 Tombol **"+ Tambah TPK"** di kanan atas → navigasi ke `/admin/tpk/buat`.
 
@@ -193,12 +194,31 @@ Tiga tab:
 - Full CRUD tersedia — admin bisa tambah/edit/hapus data layaknya operator TPK tersebut
 
 **Tab Akun:**
-- Tampilkan email akun operator
-- Tombol reset password (kirim email reset via Supabase Auth)
+- Ambil semua email operator TPK via RPC `get_tpk_user_emails(p_tpk_id)` (returns `TABLE(user_id uuid, email text)`)
+- Setiap email ditampilkan dalam satu baris dengan tombol **Reset Password** inline di sampingnya
+- Mendukung multiple operator per TPK — setiap baris punya state reset independen
+- Tombol reset memanggil `supabase.auth.resetPasswordForEmail(email)`; setelah terkirim, tombol diganti label "Terkirim"
 
 ---
 
-## 5. Edge Function
+## 5. Database Functions (RPC)
+
+Fungsi Postgres dengan `SECURITY DEFINER` agar client (anon key) bisa mengakses `auth.users` secara terbatas.
+
+### `get_tpk_user_emails(p_tpk_id uuid)`
+
+```sql
+RETURNS TABLE(user_id UUID, email TEXT)
+LANGUAGE SQL SECURITY DEFINER
+```
+
+Mengembalikan semua pasangan `(user_id, email)` operator yang terdaftar untuk TPK tersebut, diurutkan `created_at`. Hanya bisa dipanggil user `authenticated`.
+
+Dipanggil dari: `AdminTpkDetail.jsx` tab Akun → `supabase.rpc('get_tpk_user_emails', { p_tpk_id: id })`.
+
+---
+
+## 7. Edge Function
 
 ### `create-tpk-user`
 
@@ -225,7 +245,7 @@ Authorization: hanya bisa dipanggil user dengan role admin (cek JWT di header).
 
 ---
 
-## 6. Migration Strategy
+## 8. Migration Strategy
 
 ### File Migration Baru
 
@@ -261,7 +281,8 @@ Urutan eksekusi:
 
 | Area | Perubahan |
 |---|---|
-| `src/lib/supabase.js` | Tidak berubah |
+| `src/lib/supabase.js` | Tambah guard validasi env var — melempar error deskriptif jika `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` tidak di-set (mencegah blank white page di Vercel) |
+| `src/main.jsx` | Tambah `ErrorBoundary` class component — menangkap error inisialisasi dan menampilkan pesan di layar alih-alih blank white |
 | `src/lib/useAccount.js` | Dihapus, diganti `AuthProvider` |
 | `src/lib/useTheme.js` | Tidak berubah |
 | `src/lib/AuthProvider.jsx` | Baru — context auth global |
@@ -269,7 +290,12 @@ Urutan eksekusi:
 | `src/pages/Settings.jsx` | Hapus field nama/kode TPK |
 | `src/components/Layout.jsx` | Tambah sidebar kondisional per role + auth guard |
 | `src/App.jsx` | Tambah route `/login` dan `/admin/*` |
-| `src/pages/admin/` | Baru — semua halaman admin panel |
+| `src/pages/admin/AdminDashboard.jsx` | Tambah kolom Operator (fetch `profiles`, agregasi per TPK) |
+| `src/pages/admin/AdminTpkList.jsx` | Tambah kolom Operator (fetch `profiles`, agregasi per TPK) |
+| `src/pages/admin/AdminTpkDetail.jsx` | Tab Akun: fetch email via RPC `get_tpk_user_emails`, layout inline reset per email, support multi-operator |
 | `supabase/migrations/20260504000000_multi_tpk_auth.sql` | Baru — migration multi-tenant |
+| `supabase/migrations/get_tpk_user_email_rpc.sql` | Baru — RPC `get_tpk_user_email` (v1, single row, deprecated) |
+| `supabase/migrations/get_tpk_user_emails_array.sql` | Baru — RPC `get_tpk_user_emails` (v2, multi-row, aktif dipakai) |
 | `supabase/functions/create-tpk-user/` | Baru — Edge Function |
-| `.env` | Hapus `SUPABASE_SERVICE_ROLE_KEY` |
+| `vercel.json` | Baru — SPA rewrite `/(.*) → /index.html` |
+| `.env` | Catatan: `SUPABASE_SERVICE_ROLE_KEY` masih ada di `.env` lokal untuk kebutuhan script migrate; tidak di-commit ke git |

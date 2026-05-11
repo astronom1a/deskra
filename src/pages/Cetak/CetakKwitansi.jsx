@@ -221,8 +221,7 @@ function KwitansiDoc({ periode }) {
               <tr>
                 <td className="border border-black text-center align-top px-1 py-1"/>
                 <td className="border border-black align-top px-2 py-1">
-                  <p>Bantuan Transport</p>
-                  <p>Tenaga Bantu Mandor</p>
+                  <p className="font-bold">Bantuan Transport Tenaga Bantu Mandor</p>
                 </td>
                 <td className="border border-black"/>
                 <td className="border border-black"/>

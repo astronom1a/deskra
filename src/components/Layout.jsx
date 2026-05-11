@@ -218,12 +218,12 @@ export default function Layout() {
           <p className="text-primary-500 dark:text-gray-600 text-[10px] mt-2">
             © 2026{' '}
             <a
-              href="https://astrolabs.my.id"
+              href="https://astrolabs.site"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-primary-300 dark:hover:text-gray-400 transition-colors"
             >
-              AstroLabs
+              AstroLabs Studio
             </a>
           </p>
         </div>

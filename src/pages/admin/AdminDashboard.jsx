@@ -57,13 +57,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function load() {
       try {
-        const [{ data: tpkData, error: tpkErr }, { data: periodeData, error: periodeErr }] = await Promise.all([
+        const [
+          { data: tpkData, error: tpkErr },
+          { data: periodeData, error: periodeErr },
+          { data: profileData, error: profileErr },
+        ] = await Promise.all([
           supabase.from('tabel_tpk').select('id, namatpk, kode_tpk, aktif, created_at').order('created_at'),
           supabase.from('tabel_periode').select('id, tpk_id, periode, status'),
+          supabase.from('profiles').select('tpk_id').not('tpk_id', 'is', null),
         ])
 
         if (tpkErr) throw tpkErr
         if (periodeErr) throw periodeErr
+        if (profileErr) throw profileErr
 
         const periodeList = periodeData || []
         const liveTotals = await Promise.all(
@@ -77,10 +83,16 @@ export default function AdminDashboard() {
           return acc
         }, {})
 
+        const operatorByTpk = (profileData || []).reduce((acc, p) => {
+          acc[p.tpk_id] = (acc[p.tpk_id] || 0) + 1
+          return acc
+        }, {})
+
         const enriched = (tpkData || []).map(t => ({
           ...t,
           periodeCount: periodeByTpk[t.id]?.count || 0,
           totalUk: periodeByTpk[t.id]?.totalUk || 0,
+          operatorCount: operatorByTpk[t.id] || 0,
         })).sort((a, b) => b.totalUk - a.totalUk)
 
         setTpkList(enriched)
@@ -158,6 +170,7 @@ export default function AdminDashboard() {
                 <tr>
                   <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Lokasi TPK</th>
                   <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Kode</th>
+                  <th className="text-center px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Operator</th>
                   <th className="text-center px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Periode</th>
                   <th className="text-right px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Total UK</th>
                   <th className="text-center px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Status</th>
@@ -172,6 +185,7 @@ export default function AdminDashboard() {
                   >
                     <td className="px-5 py-3.5 font-medium text-gray-800 dark:text-gray-100">{t.namatpk}</td>
                     <td className="px-5 py-3.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{t.kode_tpk || '—'}</td>
+                    <td className="px-5 py-3.5 text-center text-gray-500 dark:text-gray-400">{t.operatorCount}</td>
                     <td className="px-5 py-3.5 text-center text-gray-500 dark:text-gray-400">{t.periodeCount}</td>
                     <td className="px-5 py-3.5 text-right font-semibold text-primary-700 dark:text-primary-400">
                       {fmt(t.totalUk)}
