@@ -77,16 +77,8 @@ export default function AdminTpkDetail() {
   useEffect(() => {
     if (tab === 'akun') {
       supabase
-        .from('profiles')
-        .select('id')
-        .eq('tpk_id', id)
-        .single()
-        .then(async ({ data: profile }) => {
-          if (!profile) return
-          // Ambil email via profiles join — admin bisa lihat auth.users via RPC atau ambil dari profiles
-          // Untuk sekarang kita cukup tampilkan bahwa ada akun terdaftar
-          setUserEmail('(email tersimpan di Supabase Auth)')
-        })
+        .rpc('get_tpk_user_email', { p_tpk_id: id })
+        .then(({ data }) => setUserEmail(data ?? '(tidak ada akun)'))
     }
   }, [tab, id])
 
