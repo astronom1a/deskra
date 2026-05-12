@@ -61,114 +61,118 @@ export default function DatabaseTarif() {
     fetchData()
   }
 
+  const INP = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#f0f0f0', borderRadius: 3, outline: 'none', fontFamily: 'monospace', fontSize: 12, padding: '7px 10px', width: '100%', boxSizing: 'border-box' }
+
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+      <style>{`
+        .dt-row:hover td { background: rgba(255,255,255,0.02) !important; }
+        .dt-inp:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
+        .dt-inp::placeholder { color: rgba(255,255,255,0.2); }
+        .dt-inp option { background: #1a1a1a; color: #f0f0f0; }
+        .dt-inp[type=number] { -moz-appearance: textfield; }
+        .dt-inp[type=number]::-webkit-inner-spin-button, .dt-inp[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .dt-cb { accent-color: #00ff88; }
+      `}</style>
+
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm text-white ${toast.type === 'error' ? 'bg-red-500' : 'bg-primary-600'}`}>
-          {toast.type === 'error' ? <AlertCircle size={15} /> : <CheckCircle2 size={15} />}
-          {toast.msg}
+        <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 50, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 3, fontSize: 12, fontFamily: 'monospace', background: toast.type === 'error' ? 'rgba(255,107,107,0.12)' : 'rgba(0,255,136,0.10)', border: `1px solid ${toast.type === 'error' ? 'rgba(255,107,107,0.3)' : 'rgba(0,255,136,0.3)'}`, color: toast.type === 'error' ? '#ff6b6b' : '#00ff88' }}>
+          {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>} {toast.msg}
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-6">
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Database Tarif</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Kelola tarif pekerjaan — digunakan sebagai referensi di Main Link</p>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>Database Tarif</h1>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>Kelola tarif pekerjaan — digunakan sebagai referensi di Main Link</p>
         </div>
-        <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors">
-          <Plus size={15} /> Tambah Tarif
-        </button>
+        <button onClick={openAdd}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700, flexShrink: 0 }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        ><Plus size={13}/> tambah tarif</button>
       </div>
 
+      {/* Form */}
       {showForm && (
-        <div className="bg-white dark:bg-gray-800 border border-primary-200 rounded-xl p-5 mb-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <p className="font-semibold text-gray-700 dark:text-gray-200">{editId ? 'Edit Tarif' : 'Tambah Tarif Baru'}</p>
-            <button onClick={() => setShowForm(false)}><X size={16} className="text-gray-400 dark:text-gray-500 hover:text-gray-600" /></button>
+        <div style={{ background: 'rgba(0,255,136,0.04)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 3, padding: 20, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <p style={{ fontFamily: 'monospace', fontSize: 12, color: '#00ff88', fontWeight: 600 }}>{editId ? 'edit tarif' : 'tambah tarif baru'}</p>
+            <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', lineHeight: 0 }}
+              onMouseEnter={e => e.currentTarget.style.color = '#f0f0f0'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+            ><X size={15}/></button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {[
+              { label: 'Uraian Pekerjaan', key: 'uraian', placeholder: 'PENOMORAN KAPLING' },
+              { label: 'Kode Rekening',    key: 'kode_rek', placeholder: '51.69.43' },
+              { label: 'Satuan',           key: 'satuan', placeholder: 'M3' },
+            ].map(({ label, key, placeholder }) => (
+              <div key={key}>
+                <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>{label}</label>
+                <input value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                  style={INP} className="dt-inp" placeholder={placeholder}/>
+              </div>
+            ))}
             <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Uraian Pekerjaan</label>
-              <input
-                value={form.uraian}
-                onChange={e => setForm(f => ({ ...f, uraian: e.target.value }))}
-                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
-                placeholder="Contoh: PENOMORAN KAPLING"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Kode Rekening</label>
-              <input
-                value={form.kode_rek}
-                onChange={e => setForm(f => ({ ...f, kode_rek: e.target.value }))}
-                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
-                placeholder="Contoh: 51.69.43"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Satuan</label>
-              <input
-                value={form.satuan}
-                onChange={e => setForm(f => ({ ...f, satuan: e.target.value }))}
-                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
-                placeholder="Contoh: M3"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Tarif (Rp)</label>
-              <input
-                type="number"
-                value={form.tarif}
-                onChange={e => setForm(f => ({ ...f, tarif: e.target.value }))}
-                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
-                placeholder="0"
-              />
+              <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Tarif (Rp)</label>
+              <input type="number" value={form.tarif} onChange={e => setForm(f => ({ ...f, tarif: e.target.value }))}
+                style={INP} className="dt-inp" placeholder="0"/>
             </div>
           </div>
-          <div className="flex items-center gap-2 mt-3">
-            <input type="checkbox" id="aktif-tarif" checked={form.aktif} onChange={e => setForm(f => ({ ...f, aktif: e.target.checked }))} className="accent-primary-600" />
-            <label htmlFor="aktif-tarif" className="text-sm text-gray-600 dark:text-gray-300">Aktif (muncul sebagai referensi di Main Link)</label>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <button onClick={handleSubmit} className="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700">
-              {editId ? 'Perbarui' : 'Simpan'}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.aktif} onChange={e => setForm(f => ({ ...f, aktif: e.target.checked }))} className="dt-cb"/>
+            <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Aktif (muncul sebagai referensi di Main Link)</span>
+          </label>
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <button onClick={handleSubmit} style={{ padding: '7px 16px', background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}>
+              {editId ? 'perbarui' : 'simpan'}
             </button>
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Batal</button>
+            <button onClick={() => setShowForm(false)} style={{ padding: '7px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>batal</button>
           </div>
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      {/* Tabel */}
+      <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
         {loading ? (
-          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Memuat...</div>
+          <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', fontSize: 11 }}>Memuat...</div>
         ) : data.length === 0 ? (
-          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Belum ada data tarif.</div>
+          <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', fontSize: 11, fontStyle: 'italic' }}>Belum ada data tarif.</div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+            <thead>
               <tr>
                 {['No','Uraian','Kode Rek','Satuan','Tarif','Status',''].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">{h}</th>
+                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.015)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody>
               {data.map((row, i) => (
-                <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="px-5 py-3.5 text-gray-400 dark:text-gray-500 text-xs">{i + 1}</td>
-                  <td className="px-5 py-3.5 font-medium text-gray-800 dark:text-gray-100">{row.uraian}</td>
-                  <td className="px-5 py-3.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{row.kode_rek || '—'}</td>
-                  <td className="px-5 py-3.5 text-gray-500 dark:text-gray-400">{row.satuan || '—'}</td>
-                  <td className="px-5 py-3.5 font-semibold text-primary-700">{formatRupiah(row.tarif)}</td>
-                  <td className="px-5 py-3.5">
-                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${row.aktif ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
-                      {row.aktif ? 'Aktif' : 'Nonaktif'}
+                <tr key={row.id} className="dt-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.25)', fontSize: 11, width: 40 }}>{i + 1}</td>
+                  <td style={{ padding: '10px 12px', color: '#f0f0f0', fontWeight: 500 }}>{row.uraian}</td>
+                  <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>{row.kode_rek || '—'}</td>
+                  <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.4)' }}>{row.satuan || '—'}</td>
+                  <td style={{ padding: '10px 12px', color: '#00ff88', fontWeight: 600 }}>{formatRupiah(row.tarif)}</td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 3, fontSize: 10, fontWeight: 600, background: row.aktif ? 'rgba(0,255,136,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${row.aktif ? 'rgba(0,255,136,0.25)' : 'rgba(255,255,255,0.08)'}`, color: row.aktif ? '#00ff88' : 'rgba(255,255,255,0.3)' }}>
+                      {row.aktif ? 'aktif' : 'nonaktif'}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2 justify-end">
-                      <button onClick={() => openEdit(row)} className="text-gray-400 dark:text-gray-500 hover:text-primary-600 transition-colors"><Pencil size={14} /></button>
-                      <button onClick={() => handleDelete(row.id)} className="text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                  <td style={{ padding: '10px 10px', width: 60 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
+                      <button onClick={() => openEdit(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                        onMouseEnter={e => e.currentTarget.style.color = '#00ff88'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                      ><Pencil size={13}/></button>
+                      <button onClick={() => handleDelete(row.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                        onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                      ><Trash2 size={13}/></button>
                     </div>
                   </td>
                 </tr>

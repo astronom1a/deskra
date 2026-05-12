@@ -172,6 +172,7 @@ export default function DkhpSkshhk() {
   const [lastUpdated, setLastUpdated] = useState(null)
   const [search, setSearch]   = useState('')
   const [searchCol, setSearchCol] = useState('all')
+  const [showColDropdown, setShowColDropdown] = useState(false)
   const [sorts, setSorts]     = useState([{ key: 'no_dkhp', dir: 'asc' }])
   const [showSortPanel, setShowSortPanel] = useState(false)
   const [draftSorts, setDraftSorts]       = useState([])
@@ -181,15 +182,17 @@ export default function DkhpSkshhk() {
   const [importing, setImporting] = useState(false)
   const [editRow, setEditRow] = useState(null)
   const [saving, setSaving]   = useState(false)
-  const [deleteRow, setDeleteRow] = useState(null)
-  const [deleting, setDeleting]   = useState(false)
-  const [toast, setToast]         = useState(null)
+  const [deleteRow, setDeleteRow]   = useState(null)
+  const [deleting, setDeleting]     = useState(false)
+  const [toast, setToast]           = useState(null)
+  const [contextMenu, setContextMenu] = useState(null)
   const [exportMonth, setExportMonth] = useState(() => {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
   })
   const [exporting, setExporting] = useState(false)
-  const fileRef = useRef(null)
+  const fileRef        = useRef(null)
+  const colDropdownRef = useRef(null)
 
   const showToast = (msg, kind = 'success') => {
     setToast({ msg, kind })
@@ -205,7 +208,7 @@ export default function DkhpSkshhk() {
       .order('tanggal', { ascending: true })
       .limit(2000)
     if (error) showToast(error.message, 'error')
-    else { setRows(data || []); setLastUpdated(new Date()) }
+    else { setRows(data || []) }
     setLoading(false)
   }
   useEffect(() => { fetchData() }, [])
@@ -253,6 +256,7 @@ export default function DkhpSkshhk() {
     if (error) { showToast(error.message, 'error'); return }
     showToast(`${dedup.length} SKSHHK baru berhasil diimport`)
     setPreview(null)
+    setLastUpdated(new Date())
     fetchData()
   }
 
@@ -282,6 +286,7 @@ export default function DkhpSkshhk() {
     if (error) { showToast(error.message, 'error'); return }
     showToast(editRow._new ? 'SKSHHK ditambahkan' : 'SKSHHK diperbarui')
     setEditRow(null)
+    setLastUpdated(new Date())
     fetchData()
   }
 
@@ -293,6 +298,7 @@ export default function DkhpSkshhk() {
     if (error) { showToast(error.message, 'error'); return }
     showToast(`SKSHHK ${deleteRow.no_skshhk} dihapus`)
     setDeleteRow(null)
+    setLastUpdated(new Date())
     fetchData()
   }
 
@@ -340,6 +346,29 @@ export default function DkhpSkshhk() {
   }
 
   useEffect(() => { setCurrentPage(1) }, [search, searchCol])
+
+  useEffect(() => {
+    if (!showColDropdown) return
+    function onClickOutside(e) {
+      if (colDropdownRef.current && !colDropdownRef.current.contains(e.target)) setShowColDropdown(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [showColDropdown])
+
+  useEffect(() => {
+    if (!contextMenu) return
+    function dismiss(e) {
+      if (e.type === 'keydown' && e.key !== 'Escape') return
+      setContextMenu(null)
+    }
+    document.addEventListener('mousedown', dismiss)
+    document.addEventListener('keydown', dismiss)
+    return () => {
+      document.removeEventListener('mousedown', dismiss)
+      document.removeEventListener('keydown', dismiss)
+    }
+  }, [contextMenu])
 
   const PAGE_SIZES = [
     { label: '50',    value: 50 },
@@ -528,6 +557,10 @@ export default function DkhpSkshhk() {
         .dk-input option { background: #1a1a1a; color: #f0f0f0; }
         .dk-row:hover td { background: rgba(255,255,255,0.025) !important; }
         .dk-th:hover { background: rgba(255,255,255,0.04) !important; }
+        .dk-fi:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
+        .dk-fi::placeholder { color: rgba(255,255,255,0.15); }
+        .dk-fi[type=number] { -moz-appearance: textfield; }
+        .dk-fi[type=number]::-webkit-inner-spin-button, .dk-fi[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
       `}</style>
 
       {/* Header */}
@@ -623,15 +656,29 @@ export default function DkhpSkshhk() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <select
-                value={searchCol}
-                onChange={e => setSearchCol(e.target.value)}
-                className="dk-input"
-                style={{ height: 28, padding: '0 6px' }}
-              >
-                <option value="all">Semua Kolom</option>
-                {COLS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
-              </select>
+              <div ref={colDropdownRef} style={{ position: 'relative' }}>
+                <button onClick={() => setShowColDropdown(v => !v)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, height: 28, padding: '0 8px', background: 'rgba(255,255,255,0.03)', border: `1px solid ${showColDropdown ? 'rgba(0,255,136,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 3, color: searchCol === 'all' ? 'rgba(255,255,255,0.4)' : '#00ff88', fontFamily: 'monospace', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', outline: 'none', boxShadow: showColDropdown ? '0 0 0 2px rgba(0,255,136,0.07)' : 'none' }}
+                >
+                  {searchCol === 'all' ? 'Semua Kolom' : (COLS.find(c => c.key === searchCol)?.label || searchCol)}
+                  <ChevronDown size={10} style={{ opacity: 0.4, flexShrink: 0 }}/>
+                </button>
+                {showColDropdown && (
+                  <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 200, background: '#111', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, overflow: 'hidden', minWidth: '100%', boxShadow: '0 8px 24px rgba(0,0,0,0.7)' }}>
+                    {[{ key: 'all', label: 'Semua Kolom' }, ...COLS].map(c => {
+                      const active = searchCol === c.key
+                      return (
+                        <div key={c.key}
+                          onClick={() => { setSearchCol(c.key); setShowColDropdown(false) }}
+                          onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+                          onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+                          style={{ padding: '6px 12px', fontSize: 11, fontFamily: 'monospace', cursor: 'pointer', whiteSpace: 'nowrap', color: active ? '#00ff88' : 'rgba(255,255,255,0.65)', background: active ? 'rgba(0,255,136,0.08)' : 'transparent', borderLeft: `2px solid ${active ? '#00ff88' : 'transparent'}` }}
+                        >{c.label}</div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <Search size={11} style={{ position: 'absolute', left: 7, color: 'rgba(255,255,255,0.25)', pointerEvents: 'none' }}/>
                 <input
@@ -729,7 +776,7 @@ export default function DkhpSkshhk() {
               </thead>
               <tbody>
                 {displayedRows.map((row) => (
-                  <tr key={row.id} className="dk-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <tr key={row.id} className="dk-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }} onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, row }) }}>
                     {COLS.map(c => {
                       const v = row[c.key]
                       let content
@@ -1017,6 +1064,31 @@ export default function DkhpSkshhk() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {/* Context menu */}
+      {contextMenu && (
+        <div
+          style={{ position: 'fixed', zIndex: 200, background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.6)', padding: '4px 0', minWidth: 160, top: contextMenu.y, left: contextMenu.x }}
+          onMouseDown={e => e.stopPropagation()}
+        >
+          <button
+            onClick={() => { openEdit(contextMenu.row); setContextMenu(null) }}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '7px 16px', fontSize: 12, color: 'rgba(255,255,255,0.65)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'monospace' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            <Pencil size={12} style={{ color: 'rgba(255,255,255,0.3)' }}/> edit
+          </button>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', margin: '3px 0' }}/>
+          <button
+            onClick={() => { setDeleteRow(contextMenu.row); setContextMenu(null) }}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '7px 16px', fontSize: 12, color: '#ff6b6b', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'monospace' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,107,107,0.07)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            <Trash2 size={12}/> hapus
+          </button>
         </div>
       )}
     </div>

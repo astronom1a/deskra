@@ -8,16 +8,18 @@ import {
 const DEFAULT_JENIS = ['JATI', 'RIMBA', 'MAHONI']
 const DEFAULT_JENIS_BARCODE = ['JATI', 'MAHONI', 'KEDAWUNG']
 
-// Header tints per section (literal classes so Tailwind picks up dark variants).
-const SECTION_TINT = {
-  emerald: { header: 'bg-emerald-50 dark:bg-emerald-950/40', icon: 'text-emerald-600 dark:text-emerald-300', total: 'text-emerald-700 dark:text-emerald-200' },
-  amber:   { header: 'bg-amber-50 dark:bg-amber-950/40',     icon: 'text-amber-600 dark:text-amber-300',     total: 'text-amber-700 dark:text-amber-200' },
-  violet:  { header: 'bg-violet-50 dark:bg-violet-950/40',   icon: 'text-violet-600 dark:text-violet-300',   total: 'text-violet-700 dark:text-violet-200' },
+const SECTION_ACCENT = {
+  emerald: '#34d399',
+  amber:   '#fbbf24',
+  violet:  '#a78bfa',
+  sky:     '#38bdf8',
+  orange:  '#fb923c',
+  yellow:  '#facc15',
+  rose:    '#fb7185',
 }
 
-const INPUT_CLS = 'w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm outline-none focus:border-primary-400 dark:focus:border-primary-500'
-const INPUT_CLS_RIGHT = INPUT_CLS + ' text-right'
-const INPUT_CLS_LG = 'w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-700 rounded px-3 py-2 text-sm outline-none focus:border-primary-400 dark:focus:border-primary-500'
+const dp_inputStyle = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#f0f0f0', borderRadius: 3, outline: 'none', fontFamily: 'monospace', fontSize: 12, padding: '6px 8px', width: '100%', boxSizing: 'border-box', MozAppearance: 'textfield' }
+const dp_inputStyleRight = { ...dp_inputStyle, textAlign: 'right' }
 
 function formatRupiah(val) {
   return new Intl.NumberFormat('id-ID', {
@@ -38,7 +40,7 @@ function parseHalf(periodeLabel) {
 function SectionPerJenis({
   title, icon: Icon, color, satuan, tarifDefault,
   volumeField, tableName, rows, setRows, jenisDefaults,
-  lockedJenis = null, // jika diisi: jenis tidak bisa diedit, kolom Jenis disembunyikan
+  lockedJenis = null,
 }) {
   const addRow = () => setRows(prev => [...prev, {
     _key: crypto.randomUUID(),
@@ -52,47 +54,51 @@ function SectionPerJenis({
   const total = rows.reduce(
     (s, r) => s + (parseFloat(r[volumeField]) || 0) * (parseFloat(r.tarif) || 0), 0
   )
+  const accent = SECTION_ACCENT[color] || '#00ff88'
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden`}>
-      <div className={`px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between ${SECTION_TINT[color]?.header || ''}`}>
-        <div className="flex items-center gap-2">
-          <Icon size={16} className={SECTION_TINT[color]?.icon || ''} />
-          <p className="font-semibold text-gray-700 dark:text-gray-100 text-sm">{title}</p>
+    <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+      <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.015)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Icon size={14} style={{ color: accent }}/>
+          <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: '#f0f0f0' }}>{title}</p>
         </div>
-        <p className={`text-sm font-semibold ${SECTION_TINT[color]?.total || ''}`}>{formatRupiah(total)}</p>
+        <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: accent }}>{formatRupiah(total)}</p>
       </div>
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 dark:bg-gray-900/40 border-b border-gray-100 dark:border-gray-700">
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+        <thead>
           <tr>
             {!lockedJenis && (
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Jenis</th>
+              <th style={{ padding: '7px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>Jenis</th>
             )}
-            <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-32">
+            <th style={{ padding: '7px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: 140 }}>
               {volumeField === 'jumlah' ? `Jumlah (${satuan})` : `Volume (${satuan})`}
             </th>
-            <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-32">Tarif</th>
-            <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-36">Nilai</th>
-            <th className="w-10"></th>
+            <th style={{ padding: '7px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: 140 }}>Tarif</th>
+            <th style={{ padding: '7px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: 140 }}>Nilai</th>
+            <th style={{ width: 36, borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+        <tbody>
           {rows.length === 0 && (
-            <tr><td colSpan={lockedJenis ? 4 : 5} className="px-4 py-4 text-center text-gray-400 dark:text-gray-500 text-xs italic">
+            <tr><td colSpan={lockedJenis ? 4 : 5} style={{ padding: 16, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic', fontSize: 11 }}>
               Belum ada baris. Tambah baris di bawah.
             </td></tr>
           )}
           {rows.map(r => {
             const nilai = (parseFloat(r[volumeField]) || 0) * (parseFloat(r.tarif) || 0)
             return (
-              <tr key={r._key} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
+              <tr key={r._key} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                onMouseEnter={e => { for (const td of e.currentTarget.children) td.style.background = 'rgba(255,255,255,0.02)' }}
+                onMouseLeave={e => { for (const td of e.currentTarget.children) td.style.background = '' }}
+              >
                 {!lockedJenis && (
-                  <td className="px-4 py-1.5">
+                  <td style={{ padding: '5px 12px' }}>
                     <input
                       value={r.jenis || ''}
                       onChange={e => updateRow(r._key, 'jenis', e.target.value)}
                       list={`jenis-${tableName}`}
-                      className={INPUT_CLS}
+                      style={dp_inputStyle}
                       placeholder="Jenis pohon..."
                     />
                     <datalist id={`jenis-${tableName}`}>
@@ -100,40 +106,41 @@ function SectionPerJenis({
                     </datalist>
                   </td>
                 )}
-                <td className="px-4 py-1.5">
+                <td style={{ padding: '5px 12px' }}>
                   <input
                     type="number" step="0.001"
                     value={r[volumeField] ?? ''}
                     onChange={e => updateRow(r._key, volumeField, e.target.value)}
-                    className={INPUT_CLS_RIGHT}
+                    style={dp_inputStyleRight}
                   />
                 </td>
-                <td className="px-4 py-1.5">
+                <td style={{ padding: '5px 12px' }}>
                   <input
                     type="number"
                     value={r.tarif ?? ''}
                     onChange={e => updateRow(r._key, 'tarif', e.target.value)}
-                    className={INPUT_CLS_RIGHT}
+                    style={dp_inputStyleRight}
                   />
                 </td>
-                <td className="px-4 py-2 text-right font-medium text-gray-700 dark:text-gray-100">{formatRupiah(nilai)}</td>
-                <td className="px-2">
-                  <button onClick={() => removeRow(r._key)} className="text-gray-300 dark:text-gray-500 hover:text-red-400">
-                    <Trash2 size={14} />
-                  </button>
+                <td style={{ padding: '7px 12px', textAlign: 'right', fontWeight: 600, color: nilai > 0 ? '#f0f0f0' : 'rgba(255,255,255,0.2)' }}>{formatRupiah(nilai)}</td>
+                <td style={{ padding: '7px 8px', textAlign: 'center' }}>
+                  <button onClick={() => removeRow(r._key)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                  ><Trash2 size={13}/></button>
                 </td>
               </tr>
             )
           })}
         </tbody>
       </table>
-      <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
-        <button
-          onClick={addRow}
-          className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-300"
-        >
-          <Plus size={12} /> Tambah Baris
-        </button>
+      <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
+        <button onClick={addRow}
+          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer' }}
+          onMouseEnter={e => e.currentTarget.style.color = '#00ff88'}
+          onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+        ><Plus size={11}/> Tambah Baris</button>
       </div>
     </div>
   )
@@ -331,141 +338,144 @@ export default function DetailPekerjaan() {
   const tenagaBantuNilai = (parseInt(tenagaBantu.jumlah_orang) || 0) * (parseFloat(tenagaBantu.tarif_per_orang) || 0)
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+      <style>{`
+        .dp-input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #f0f0f0; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; -moz-appearance: textfield; }
+        .dp-input:focus { border-color: rgba(0,255,136,0.5); box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
+        .dp-input::-webkit-inner-spin-button, .dp-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .dp-input option { background: #1a1a1a; color: #f0f0f0; }
+        .dp-input::placeholder { color: rgba(255,255,255,0.2); }
+      `}</style>
+
+      {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm text-white ${toast.type === 'error' ? 'bg-red-500' : 'bg-primary-600'}`}>
-          {toast.type === 'error' ? <AlertCircle size={15} /> : <CheckCircle2 size={15} />}
+        <div style={{
+          position: 'fixed', top: 20, right: 20, zIndex: 50,
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '10px 16px', borderRadius: 3, fontSize: 12, fontFamily: 'monospace',
+          background: toast.type === 'error' ? 'rgba(255,107,107,0.12)' : 'rgba(0,255,136,0.10)',
+          border: `1px solid ${toast.type === 'error' ? 'rgba(255,107,107,0.3)' : 'rgba(0,255,136,0.3)'}`,
+          color: toast.type === 'error' ? '#ff6b6b' : '#00ff88',
+        }}>
+          {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>}
           {toast.msg}
         </div>
       )}
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-          <Package size={22} className="text-primary-600" /> Detail Pekerjaan
+      {/* Header */}
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Package size={18} style={{ color: '#00ff88' }}/> Detail Pekerjaan
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>
           Tanda Laku, Tumpuk Brongkol, Pemasangan Barcode, Tenaga Bantu, Kebersihan, Listrik, dan Custom.
         </p>
       </div>
 
       {/* Periode selector */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-5 flex flex-wrap items-center gap-3">
-        <span className="text-sm font-medium text-gray-600 dark:text-gray-300 shrink-0">Periode:</span>
-        <div className="flex flex-wrap gap-2 flex-1">
+      <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '12px 16px', marginBottom: 16, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 12, fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>Periode:</span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, flex: 1 }}>
           {periodes.map(p => {
             const h = parseHalf(p.periode)
+            const isSelected = selectedPeriode?.id === p.id
             return (
               <button
                 key={p.id}
                 onClick={() => setSelectedPeriode(p)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  selectedPeriode?.id === p.id
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
+                style={{
+                  padding: '4px 10px', borderRadius: 3, fontSize: 11, fontFamily: 'monospace',
+                  fontWeight: isSelected ? 700 : 400,
+                  background: isSelected ? '#00ff88' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${isSelected ? '#00ff88' : 'rgba(255,255,255,0.08)'}`,
+                  color: isSelected ? '#0a0a0a' : 'rgba(255,255,255,0.65)',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                }}
               >
                 {p.periode}
-                <span className={`ml-1 text-[10px] px-1 rounded ${h === 'II' ? 'bg-orange-200 dark:bg-orange-900/60 text-orange-700 dark:text-orange-200' : 'bg-blue-200 dark:bg-blue-900/60 text-blue-700 dark:text-blue-200'}`}>
-                  {h}
-                </span>
+                <span style={{
+                  fontSize: 9, fontWeight: 700, padding: '1px 4px', borderRadius: 2,
+                  background: h === 'II'
+                    ? (isSelected ? 'rgba(0,0,0,0.2)' : 'rgba(251,146,60,0.2)')
+                    : (isSelected ? 'rgba(0,0,0,0.2)' : 'rgba(96,165,250,0.2)'),
+                  color: h === 'II'
+                    ? (isSelected ? 'rgba(0,0,0,0.7)' : '#fb923c')
+                    : (isSelected ? 'rgba(0,0,0,0.7)' : '#60a5fa'),
+                }}>{h}</span>
               </button>
             )
           })}
           {periodes.length === 0 && (
-            <span className="text-xs text-gray-400 dark:text-gray-500 italic">Belum ada periode. Buat di Main Link.</span>
+            <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>Belum ada periode. Buat di Main Link.</span>
           )}
         </div>
         {selectedPeriode && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
-            <CalendarDays size={12} />
+          <p style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <CalendarDays size={11}/>
             {formatTanggal(selectedPeriode.tgl_awal)} – {formatTanggal(selectedPeriode.tgl_akhir)}
           </p>
         )}
       </div>
 
       {selectedPeriode && (
-        <div className="space-y-5">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {/* Tanda Laku */}
           <SectionPerJenis
-            title="Tanda Laku"
-            icon={TreePine}
-            color="emerald"
-            satuan="M³"
-            tarifDefault={750}
-            volumeField="volume"
-            tableName="tanda_laku"
-            rows={tandaLaku}
-            setRows={setTandaLaku}
+            title="Tanda Laku" icon={TreePine} color="emerald" satuan="M³" tarifDefault={750}
+            volumeField="volume" tableName="tanda_laku" rows={tandaLaku} setRows={setTandaLaku}
             jenisDefaults={DEFAULT_JENIS}
           />
 
           {/* Tumpuk Brongkol */}
           <SectionPerJenis
-            title="Tumpuk Brongkol"
-            icon={TreePine}
-            color="amber"
-            satuan="SM"
-            tarifDefault={7000}
-            volumeField="volume"
-            tableName="brongkol"
-            rows={brongkol}
-            setRows={setBrongkol}
+            title="Tumpuk Brongkol" icon={TreePine} color="amber" satuan="SM" tarifDefault={7000}
+            volumeField="volume" tableName="brongkol" rows={brongkol} setRows={setBrongkol}
             jenisDefaults={DEFAULT_JENIS}
           />
 
-                    {/* Pemasangan Barcode */}
+          {/* Pemasangan Barcode */}
           <SectionPerJenis
-            title="Pemasangan Barcode"
-            icon={Barcode} color="violet" satuan="BTG" tarifDefault={350}
-            volumeField="jumlah" tableName="barcode"
-            rows={barcodeRows} setRows={setBarcodeRows}
+            title="Pemasangan Barcode" icon={Barcode} color="violet" satuan="BTG" tarifDefault={350}
+            volumeField="jumlah" tableName="barcode" rows={barcodeRows} setRows={setBarcodeRows}
             jenisDefaults={DEFAULT_JENIS_BARCODE}
           />
 
-          {/* Tenaga Bantu - hanya periode II */}
-          <div className={`rounded-xl border overflow-hidden ${isPeriodeII ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-70'}`}>
-            <div className={`px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between ${isPeriodeII ? 'bg-sky-50 dark:bg-sky-950/40' : 'bg-gray-100 dark:bg-gray-800'}`}>
-              <div className="flex items-center gap-2">
-                <Users size={16} className={isPeriodeII ? 'text-sky-600 dark:text-sky-300' : 'text-gray-400 dark:text-gray-500'} />
-                <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
-                  Tenaga Bantu
-                  {!isPeriodeII && <Lock size={12} className="inline ml-2 text-gray-400 dark:text-gray-500" />}
+          {/* Tenaga Bantu — hanya periode II */}
+          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden', opacity: isPeriodeII ? 1 : 0.5 }}>
+            <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.015)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Users size={14} style={{ color: isPeriodeII ? SECTION_ACCENT.sky : 'rgba(255,255,255,0.2)' }}/>
+                <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: '#f0f0f0' }}>
+                  Tenaga Bantu {!isPeriodeII && <Lock size={11} style={{ display: 'inline', color: 'rgba(255,255,255,0.2)', marginLeft: 4 }}/>}
                 </p>
               </div>
-              <p className={`text-sm font-semibold ${isPeriodeII ? 'text-sky-700 dark:text-sky-200' : 'text-gray-400 dark:text-gray-500'}`}>
+              <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: isPeriodeII ? SECTION_ACCENT.sky : 'rgba(255,255,255,0.2)' }}>
                 {formatRupiah(isPeriodeII ? tenagaBantuNilai : 0)}
               </p>
             </div>
-            <div className="p-5">
+            <div style={{ padding: '16px' }}>
               {isPeriodeII ? (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Jumlah Orang (otomatis dari Database Tenaga)</label>
-                    <input
-                      type="number"
-                      value={tenagaBantu.jumlah_orang}
-                      readOnly
-                      className="w-full border border-gray-200 dark:border-gray-700 rounded px-3 py-2 text-sm outline-none bg-gray-50 dark:bg-gray-900/60 text-gray-700 dark:text-gray-200"
-                    />
+                    <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: 6 }}>Jumlah Orang (otomatis dari Database Tenaga)</label>
+                    <input type="number" value={tenagaBantu.jumlah_orang} readOnly
+                      style={{ ...dp_inputStyle, background: 'rgba(255,255,255,0.01)', cursor: 'not-allowed' }}/>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Tarif per Orang</label>
-                    <input
-                      type="number"
-                      value={tenagaBantu.tarif_per_orang}
+                    <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: 6 }}>Tarif per Orang</label>
+                    <input type="number" value={tenagaBantu.tarif_per_orang}
                       onChange={e => setTenagaBantu(p => ({ ...p, tarif_per_orang: e.target.value }))}
-                      className={INPUT_CLS_LG}
-                    />
+                      style={dp_inputStyle}/>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Total</label>
-                    <p className="px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-100 bg-gray-50 dark:bg-gray-900/60 rounded border border-gray-200 dark:border-gray-700">
+                    <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: 6 }}>Total</label>
+                    <p style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: SECTION_ACCENT.sky, padding: '6px 8px', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3 }}>
                       {formatRupiah(tenagaBantuNilai)}
                     </p>
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                <p style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>
                   Hanya tersedia untuk periode II (misal II/1, II/2, ...). Periode saat ini: <strong>{half}</strong>
                 </p>
               )}
@@ -473,32 +483,28 @@ export default function DetailPekerjaan() {
           </div>
 
           {/* Kebersihan — hanya periode II */}
-          <div className={`rounded-xl border overflow-hidden ${isPeriodeII ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-70'}`}>
-            <div className={`px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between ${isPeriodeII ? 'bg-orange-50 dark:bg-orange-950/40' : 'bg-gray-100 dark:bg-gray-800'}`}>
-              <div className="flex items-center gap-2">
-                <Sparkles size={16} className={isPeriodeII ? 'text-orange-600 dark:text-orange-300' : 'text-gray-400 dark:text-gray-500'} />
-                <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
-                  Kebersihan
-                  {!isPeriodeII && <Lock size={12} className="inline ml-2 text-gray-400 dark:text-gray-500" />}
+          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden', opacity: isPeriodeII ? 1 : 0.5 }}>
+            <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.015)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Sparkles size={14} style={{ color: isPeriodeII ? SECTION_ACCENT.orange : 'rgba(255,255,255,0.2)' }}/>
+                <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: '#f0f0f0' }}>
+                  Kebersihan {!isPeriodeII && <Lock size={11} style={{ display: 'inline', color: 'rgba(255,255,255,0.2)', marginLeft: 4 }}/>}
                 </p>
               </div>
-              <p className={`text-sm font-semibold ${isPeriodeII ? 'text-orange-700 dark:text-orange-200' : 'text-gray-400 dark:text-gray-500'}`}>
+              <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: isPeriodeII ? SECTION_ACCENT.orange : 'rgba(255,255,255,0.2)' }}>
                 {formatRupiah(isPeriodeII ? kebersihan.nominal : 0)}
               </p>
             </div>
-            <div className="p-5">
+            <div style={{ padding: '16px' }}>
               {isPeriodeII ? (
-                <div className="max-w-xs">
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Nominal (otomatis periode II)</label>
-                  <input
-                    type="number"
-                    value={kebersihan.nominal}
+                <div style={{ maxWidth: 280 }}>
+                  <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: 6 }}>Nominal (otomatis periode II)</label>
+                  <input type="number" value={kebersihan.nominal}
                     onChange={e => setKebersihan(p => ({ ...p, nominal: e.target.value }))}
-                    className={INPUT_CLS_LG}
-                  />
+                    style={dp_inputStyle}/>
                 </div>
               ) : (
-                <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                <p style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>
                   Hanya tersedia untuk periode II (misal II/1, II/2, ...). Periode saat ini: <strong>{half}</strong>
                 </p>
               )}
@@ -506,43 +512,36 @@ export default function DetailPekerjaan() {
           </div>
 
           {/* Listrik — hanya periode I */}
-          <div className={`rounded-xl border overflow-hidden ${isPeriodeI ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-70'}`}>
-            <div className={`px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between ${isPeriodeI ? 'bg-yellow-50 dark:bg-yellow-950/40' : 'bg-gray-100 dark:bg-gray-800'}`}>
-              <div className="flex items-center gap-2">
-                <Zap size={16} className={isPeriodeI ? 'text-yellow-600 dark:text-yellow-300' : 'text-gray-400 dark:text-gray-500'} />
-                <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
-                  Listrik TPK
-                  {!isPeriodeI && <Lock size={12} className="inline ml-2 text-gray-400 dark:text-gray-500" />}
+          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden', opacity: isPeriodeI ? 1 : 0.5 }}>
+            <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.015)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Zap size={14} style={{ color: isPeriodeI ? SECTION_ACCENT.yellow : 'rgba(255,255,255,0.2)' }}/>
+                <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: '#f0f0f0' }}>
+                  Listrik TPK {!isPeriodeI && <Lock size={11} style={{ display: 'inline', color: 'rgba(255,255,255,0.2)', marginLeft: 4 }}/>}
                 </p>
               </div>
-              <p className={`text-sm font-semibold ${isPeriodeI ? 'text-yellow-700 dark:text-yellow-200' : 'text-gray-400 dark:text-gray-500'}`}>
+              <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: isPeriodeI ? SECTION_ACCENT.yellow : 'rgba(255,255,255,0.2)' }}>
                 {formatRupiah(isPeriodeI ? listrik.nominal : 0)}
               </p>
             </div>
-            <div className="p-5">
+            <div style={{ padding: '16px' }}>
               {isPeriodeI ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, maxWidth: 480 }}>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Nominal</label>
-                    <input
-                      type="number"
-                      value={listrik.nominal}
+                    <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: 6 }}>Nominal</label>
+                    <input type="number" value={listrik.nominal}
                       onChange={e => setListrik(p => ({ ...p, nominal: e.target.value }))}
-                      className={INPUT_CLS_LG}
-                    />
+                      style={dp_inputStyle}/>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">No. Meter</label>
-                    <input
-                      value={listrik.no_meter || ''}
+                    <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: 6 }}>No. Meter</label>
+                    <input value={listrik.no_meter || ''}
                       onChange={e => setListrik(p => ({ ...p, no_meter: e.target.value }))}
-                      className={INPUT_CLS_LG}
-                      placeholder="516740016889"
-                    />
+                      style={dp_inputStyle} placeholder="516740016889"/>
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                <p style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>
                   Hanya dapat diisi untuk periode I (misal I/1, I/2, ...). Periode saat ini: <strong>{half}</strong>
                 </p>
               )}
@@ -550,97 +549,80 @@ export default function DetailPekerjaan() {
           </div>
 
           {/* Custom Items */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-rose-50 dark:bg-rose-950/40">
-              <div className="flex items-center gap-2">
-                <Package size={16} className="text-rose-600 dark:text-rose-300" />
-                <p className="font-semibold text-gray-700 dark:text-gray-100 text-sm">Tabel Custom</p>
+          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.015)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Package size={14} style={{ color: SECTION_ACCENT.rose }}/>
+                <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: '#f0f0f0' }}>Tabel Custom</p>
               </div>
-              <p className="text-sm font-semibold text-rose-700 dark:text-rose-200">{formatRupiah(customTotal)}</p>
+              <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: SECTION_ACCENT.rose }}>{formatRupiah(customTotal)}</p>
             </div>
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-900/40 border-b border-gray-100 dark:border-gray-700">
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+              <thead>
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Uraian</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-24">Satuan</th>
-                  <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-28">Fisik</th>
-                  <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-32">Tarif</th>
-                  <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-36">Nilai</th>
-                  <th className="w-10"></th>
+                  {['Uraian','Satuan','Fisik','Tarif','Nilai',''].map((h, i) => (
+                    <th key={i} style={{ padding: '7px 12px', textAlign: i >= 2 && i <= 4 ? 'right' : 'left', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: i === 5 ? 36 : i >= 2 && i <= 4 ? 130 : 'auto' }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+              <tbody>
                 {customItems.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-4 text-center text-gray-400 dark:text-gray-500 text-xs italic">
+                  <tr><td colSpan={6} style={{ padding: 16, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic', fontSize: 11 }}>
                     Belum ada item custom.
                   </td></tr>
                 )}
                 {customItems.map(r => {
                   const nilai = (parseFloat(r.fisik) || 0) * (parseFloat(r.tarif) || 0)
                   return (
-                    <tr key={r._key} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
-                      <td className="px-4 py-1.5">
-                        <input
-                          value={r.label || ''}
-                          onChange={e => updateCustom(r._key, 'label', e.target.value)}
-                          className={INPUT_CLS}
-                          placeholder="Nama pekerjaan..."
-                        />
+                    <tr key={r._key} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                      onMouseEnter={e => { for (const td of e.currentTarget.children) td.style.background = 'rgba(255,255,255,0.02)' }}
+                      onMouseLeave={e => { for (const td of e.currentTarget.children) td.style.background = '' }}
+                    >
+                      <td style={{ padding: '5px 12px' }}>
+                        <input value={r.label || ''} onChange={e => updateCustom(r._key, 'label', e.target.value)}
+                          style={dp_inputStyle} placeholder="Nama pekerjaan..."/>
                       </td>
-                      <td className="px-4 py-1.5">
-                        <input
-                          value={r.satuan || ''}
-                          onChange={e => updateCustom(r._key, 'satuan', e.target.value)}
-                          className={INPUT_CLS}
-                          placeholder="KALI"
-                        />
+                      <td style={{ padding: '5px 12px', width: 100 }}>
+                        <input value={r.satuan || ''} onChange={e => updateCustom(r._key, 'satuan', e.target.value)}
+                          style={dp_inputStyle} placeholder="KALI"/>
                       </td>
-                      <td className="px-4 py-1.5">
-                        <input
-                          type="number" step="0.001"
-                          value={r.fisik ?? ''}
+                      <td style={{ padding: '5px 12px', width: 130 }}>
+                        <input type="number" step="0.001" value={r.fisik ?? ''}
                           onChange={e => updateCustom(r._key, 'fisik', e.target.value)}
-                          className={INPUT_CLS_RIGHT}
-                        />
+                          style={dp_inputStyleRight}/>
                       </td>
-                      <td className="px-4 py-1.5">
-                        <input
-                          type="number"
-                          value={r.tarif ?? ''}
+                      <td style={{ padding: '5px 12px', width: 130 }}>
+                        <input type="number" value={r.tarif ?? ''}
                           onChange={e => updateCustom(r._key, 'tarif', e.target.value)}
-                          className={INPUT_CLS_RIGHT}
-                        />
+                          style={dp_inputStyleRight}/>
                       </td>
-                      <td className="px-4 py-2 text-right font-medium text-gray-700 dark:text-gray-100">{formatRupiah(nilai)}</td>
-                      <td className="px-2">
-                        <button onClick={() => removeCustom(r._key)} className="text-gray-300 dark:text-gray-500 hover:text-red-400">
-                          <Trash2 size={14} />
-                        </button>
+                      <td style={{ padding: '7px 12px', textAlign: 'right', fontWeight: 600, color: nilai > 0 ? '#f0f0f0' : 'rgba(255,255,255,0.2)' }}>{formatRupiah(nilai)}</td>
+                      <td style={{ padding: '7px 8px', textAlign: 'center' }}>
+                        <button onClick={() => removeCustom(r._key)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                          onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
+                          onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                        ><Trash2 size={13}/></button>
                       </td>
                     </tr>
                   )
                 })}
               </tbody>
             </table>
-            <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
-              <button
-                onClick={addCustom}
-                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-300"
-              >
-                <Plus size={12} /> Tambah Item
-              </button>
+            <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
+              <button onClick={addCustom}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#00ff88'}
+                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+              ><Plus size={11}/> Tambah Item</button>
             </div>
           </div>
 
           {/* Save */}
-          <div className="flex justify-end pt-2">
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              className="flex items-center gap-2 px-5 py-2 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 disabled:opacity-50"
-            >
-              <Save size={15} /> {loading ? 'Menyimpan...' : 'Simpan Semua'}
-            </button>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 4 }}>
+            <button onClick={handleSave} disabled={loading}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: loading ? 'rgba(0,255,136,0.15)' : '#00ff88', color: loading ? 'rgba(0,255,136,0.4)' : '#0a0a0a', borderRadius: 3, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}
+            ><Save size={13}/> {loading ? 'Menyimpan...' : 'Simpan Semua'}</button>
           </div>
         </div>
       )}

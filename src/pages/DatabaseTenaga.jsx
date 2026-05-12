@@ -114,136 +114,152 @@ export default function DatabaseTenaga() {
     fetchData()
   }
 
+  const INP = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#f0f0f0', borderRadius: 3, outline: 'none', fontFamily: 'monospace', fontSize: 12, padding: '7px 10px', width: '100%', boxSizing: 'border-box' }
+
+  const POSISI_COLORS = {
+    TENAGA_BANTU:   { bg: 'rgba(96,165,250,0.12)',  border: 'rgba(96,165,250,0.3)',  color: '#60a5fa' },
+    TENAGA_KAPLING: { bg: 'rgba(52,211,153,0.12)',  border: 'rgba(52,211,153,0.3)',  color: '#34d399' },
+    KEBERSIHAN:     { bg: 'rgba(251,146,60,0.12)',  border: 'rgba(251,146,60,0.3)',  color: '#fb923c' },
+    SLAGHAMMER:     { bg: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.3)', color: '#a78bfa' },
+    BARCODE:        { bg: 'rgba(250,204,21,0.12)',  border: 'rgba(250,204,21,0.3)',  color: '#facc15' },
+  }
+
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+      <style>{`
+        .dtk-row:hover td { background: rgba(255,255,255,0.02) !important; }
+        .dtk-inp:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
+        .dtk-inp::placeholder { color: rgba(255,255,255,0.2); }
+        .dtk-cb { accent-color: #00ff88; }
+      `}</style>
+
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm text-white ${toast.type === 'error' ? 'bg-red-500' : 'bg-primary-600'}`}>
-          {toast.type === 'error' ? <AlertCircle size={15} /> : <CheckCircle2 size={15} />}
-          {toast.msg}
+        <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 50, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 3, fontSize: 12, fontFamily: 'monospace', background: toast.type === 'error' ? 'rgba(255,107,107,0.12)' : 'rgba(0,255,136,0.10)', border: `1px solid ${toast.type === 'error' ? 'rgba(255,107,107,0.3)' : 'rgba(0,255,136,0.3)'}`, color: toast.type === 'error' ? '#ff6b6b' : '#00ff88' }}>
+          {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>} {toast.msg}
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-6">
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Database Tenaga Kerja</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Kelola data tenaga bantu dan tenaga kapling</p>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>Database Tenaga Kerja</h1>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>Kelola data tenaga bantu dan tenaga kapling</p>
         </div>
-        <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors">
-          <Plus size={15} /> Tambah Tenaga
-        </button>
+        <button onClick={openAdd}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700, flexShrink: 0 }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        ><Plus size={13}/> tambah tenaga</button>
       </div>
 
+      {/* Form */}
       {showForm && (
-        <div className="bg-white dark:bg-gray-800 border border-primary-200 rounded-xl p-5 mb-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <p className="font-semibold text-gray-700 dark:text-gray-200">{editId ? 'Edit Tenaga Kerja' : 'Tambah Tenaga Kerja Baru'}</p>
-            <button onClick={() => setShowForm(false)}><X size={16} className="text-gray-400 dark:text-gray-500 hover:text-gray-600" /></button>
+        <div style={{ background: 'rgba(0,255,136,0.04)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 3, padding: 20, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <p style={{ fontFamily: 'monospace', fontSize: 12, color: '#00ff88', fontWeight: 600 }}>{editId ? 'edit tenaga kerja' : 'tambah tenaga kerja baru'}</p>
+            <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', lineHeight: 0 }}
+              onMouseEnter={e => e.currentTarget.style.color = '#f0f0f0'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+            ><X size={15}/></button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Nama</label>
-              <input
-                value={form.nama}
-                onChange={e => setForm(f => ({ ...f, nama: e.target.value }))}
-                className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
-                placeholder="Contoh: MISNOTO"
-              />
+              <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Nama</label>
+              <input value={form.nama} onChange={e => setForm(f => ({ ...f, nama: e.target.value }))}
+                style={INP} className="dtk-inp" placeholder="MISNOTO"/>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">NIK / Nomor Induk Kependudukan</label>
-              <input
-                value={form.nik}
-                onChange={e => setForm(f => ({ ...f, nik: e.target.value }))}
-                className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
-                placeholder="Contoh: 3510180508720007"
-              />
+              <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>NIK / Nomor Induk Kependudukan</label>
+              <input value={form.nik} onChange={e => setForm(f => ({ ...f, nik: e.target.value }))}
+                style={INP} className="dtk-inp" placeholder="3510180508720007"/>
             </div>
-            <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Alamat</label>
-              <textarea
-                value={form.alamat}
-                onChange={e => setForm(f => ({ ...f, alamat: e.target.value }))}
-                className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
-                rows={2}
-                placeholder="Contoh: Dusun Sumbermulyo, Wongsorejo, Banyuwangi"
-              />
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Alamat</label>
+              <textarea value={form.alamat} onChange={e => setForm(f => ({ ...f, alamat: e.target.value }))}
+                style={{ ...INP, resize: 'vertical', minHeight: 56 }} className="dtk-inp"
+                rows={2} placeholder="Dusun Sumbermulyo, Wongsorejo, Banyuwangi"/>
             </div>
-            <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 block">Posisi <span className="text-gray-400 dark:text-gray-500">(boleh pilih lebih dari satu)</span></label>
-              <div className="flex flex-wrap gap-x-5 gap-y-2">
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 8 }}>
+                Posisi <span style={{ color: 'rgba(255,255,255,0.25)' }}>(boleh pilih lebih dari satu)</span>
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 20px' }}>
                 {POSISI_OPTIONS.map(op => (
-                  <label key={op.value} className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={form.posisi.includes(op.value)}
+                  <label key={op.value} style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={form.posisi.includes(op.value)}
                       onChange={e => setForm(f => ({
                         ...f,
-                        posisi: e.target.checked
-                          ? [...f.posisi, op.value]
-                          : f.posisi.filter(p => p !== op.value),
+                        posisi: e.target.checked ? [...f.posisi, op.value] : f.posisi.filter(p => p !== op.value),
                       }))}
-                      className="accent-primary-600 w-4 h-4"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-200">{op.label}</span>
+                      className="dtk-cb"/>
+                    <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{op.label}</span>
                   </label>
                 ))}
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 mt-3">
-            <input type="checkbox" id="aktif-tenaga" checked={form.aktif}
-              onChange={e => setForm(f => ({ ...f, aktif: e.target.checked }))}
-              className="accent-primary-600" />
-            <label htmlFor="aktif-tenaga" className="text-sm text-gray-600 dark:text-gray-300">Aktif</label>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <button onClick={handleSubmit} className="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700">
-              {editId ? 'Perbarui' : 'Simpan'}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.aktif} onChange={e => setForm(f => ({ ...f, aktif: e.target.checked }))} className="dtk-cb"/>
+            <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Aktif</span>
+          </label>
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <button onClick={handleSubmit} style={{ padding: '7px 16px', background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}>
+              {editId ? 'perbarui' : 'simpan'}
             </button>
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Batal</button>
+            <button onClick={() => setShowForm(false)} style={{ padding: '7px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>batal</button>
           </div>
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      {/* Tabel */}
+      <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
         {loading ? (
-          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Memuat...</div>
+          <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', fontSize: 11 }}>Memuat...</div>
         ) : data.length === 0 ? (
-          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Belum ada data tenaga kerja.</div>
+          <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', fontSize: 11, fontStyle: 'italic' }}>Belum ada data tenaga kerja.</div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+            <thead>
               <tr>
-                {['No', 'Nama', 'NIK', 'Alamat', 'Posisi', 'Status', ''].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">{h}</th>
+                {['No','Nama','NIK','Alamat','Posisi','Status',''].map(h => (
+                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.015)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody>
               {data.map((row, i) => (
-                <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="px-5 py-3.5 text-gray-400 dark:text-gray-500 text-xs">{i + 1}</td>
-                  <td className="px-5 py-3.5 font-medium text-gray-800 dark:text-gray-100">{row.nama}</td>
-                  <td className="px-5 py-3.5 font-mono text-xs text-gray-500 dark:text-gray-400">{row.nik || '-'}</td>
-                  <td className="px-5 py-3.5 text-gray-600 dark:text-gray-300">{row.alamat || '-'}</td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex flex-wrap gap-1">
-                      {parsePosisi(row.posisi).map(p => (
-                        <span key={p} className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                          {POSISI_OPTIONS.find(x => x.value === p)?.label || p}
-                        </span>
-                      ))}
+                <tr key={row.id} className="dtk-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.25)', fontSize: 11, width: 40 }}>{i + 1}</td>
+                  <td style={{ padding: '10px 12px', color: '#f0f0f0', fontWeight: 500 }}>{row.nama}</td>
+                  <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>{row.nik || '—'}</td>
+                  <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.4)', maxWidth: 200 }}>{row.alamat || '—'}</td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {parsePosisi(row.posisi).map(p => {
+                        const c = POSISI_COLORS[p] || { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.5)' }
+                        return (
+                          <span key={p} style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 3, fontSize: 10, fontWeight: 600, background: c.bg, border: `1px solid ${c.border}`, color: c.color }}>
+                            {POSISI_OPTIONS.find(x => x.value === p)?.label || p}
+                          </span>
+                        )
+                      })}
                     </div>
                   </td>
-                  <td className="px-5 py-3.5">
-                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${row.aktif ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
-                      {row.aktif ? 'Aktif' : 'Nonaktif'}
+                  <td style={{ padding: '10px 12px' }}>
+                    <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 3, fontSize: 10, fontWeight: 600, background: row.aktif ? 'rgba(0,255,136,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${row.aktif ? 'rgba(0,255,136,0.25)' : 'rgba(255,255,255,0.08)'}`, color: row.aktif ? '#00ff88' : 'rgba(255,255,255,0.3)' }}>
+                      {row.aktif ? 'aktif' : 'nonaktif'}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2 justify-end">
-                      <button onClick={() => openEdit(row)} className="text-gray-400 dark:text-gray-500 hover:text-primary-600 transition-colors"><Pencil size={14} /></button>
-                      <button onClick={() => handleDelete(row.id)} className="text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                  <td style={{ padding: '10px 10px', width: 60 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
+                      <button onClick={() => openEdit(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                        onMouseEnter={e => e.currentTarget.style.color = '#00ff88'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                      ><Pencil size={13}/></button>
+                      <button onClick={() => handleDelete(row.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                        onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                      ><Trash2 size={13}/></button>
                     </div>
                   </td>
                 </tr>

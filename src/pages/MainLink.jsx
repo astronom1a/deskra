@@ -357,81 +357,99 @@ export default function MainLink() {
   const grandTotal = rows.reduce((s,r)=>s+(r.fisik||0)*(r.tarif||0),0)
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+      <style>{`
+        .ml-input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #f0f0f0; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; -moz-appearance: textfield; }
+        .ml-input:focus { border-color: rgba(0,255,136,0.5); box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
+        .ml-input::-webkit-inner-spin-button, .ml-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .ml-input option { background: #1a1a1a; color: #f0f0f0; }
+        .ml-row:hover td { background: rgba(255,255,255,0.02) !important; }
+      `}</style>
+
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm text-white
-          ${toast.type==='error'?'bg-red-500':'bg-primary-600'}`}>
-          {toast.type==='error'?<AlertCircle size={15}/>:<CheckCircle2 size={15}/>} {toast.msg}
+        <div style={{
+          position: 'fixed', top: 20, right: 20, zIndex: 50,
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '10px 16px', borderRadius: 3, fontSize: 12, fontFamily: 'monospace',
+          background: toast.type === 'error' ? 'rgba(255,107,107,0.12)' : 'rgba(0,255,136,0.10)',
+          border: `1px solid ${toast.type === 'error' ? 'rgba(255,107,107,0.3)' : 'rgba(0,255,136,0.3)'}`,
+          color: toast.type === 'error' ? '#ff6b6b' : '#00ff88',
+        }}>
+          {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>}
+          {toast.msg}
         </div>
       )}
 
       {/* Confirm delete modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
-                <Trash2 size={18} className="text-red-600"/>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)' }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,107,107,0.3)', borderRadius: 3, padding: 24, maxWidth: 360, width: '100%', margin: '0 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{ width: 36, height: 36, background: 'rgba(255,107,107,0.12)', border: '1px solid rgba(255,107,107,0.2)', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Trash2 size={16} style={{ color: '#ff6b6b' }}/>
               </div>
               <div>
-                <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Hapus Periode?</p>
-                <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">Semua data terkait periode ini akan terhapus permanen.</p>
+                <p style={{ fontFamily: 'monospace', fontSize: 13, color: '#f0f0f0', fontWeight: 600 }}>Hapus Periode?</p>
+                <p style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>Semua data terkait periode ini akan terhapus permanen.</p>
               </div>
             </div>
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 mb-5 text-center">
-              <p className="text-red-700 font-semibold text-sm">{confirmDelete.periode}</p>
-              <p className="text-red-500 text-xs">{formatTanggal(confirmDelete.tgl_awal)} – {formatTanggal(confirmDelete.tgl_akhir)}</p>
+            <div style={{ background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.2)', borderRadius: 3, padding: '8px 16px', marginBottom: 16, textAlign: 'center' }}>
+              <p style={{ fontFamily: 'monospace', color: '#ff6b6b', fontWeight: 700, fontSize: 13 }}>{confirmDelete.periode}</p>
+              <p style={{ fontFamily: 'monospace', color: 'rgba(255,107,107,0.6)', fontSize: 11 }}>{formatTanggal(confirmDelete.tgl_awal)} – {formatTanggal(confirmDelete.tgl_akhir)}</p>
             </div>
-            <div className="flex gap-2">
+            <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={()=>setConfirmDel(null)}
-                className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Batal</button>
+                style={{ flex: 1, padding: '8px 16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', fontSize: 12, fontFamily: 'monospace', cursor: 'pointer' }}>Batal</button>
               <button onClick={handleDeletePeriode}
-                className="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">Ya, Hapus</button>
+                style={{ flex: 1, padding: '8px 16px', background: 'rgba(255,107,107,0.15)', border: '1px solid rgba(255,107,107,0.3)', borderRadius: 3, color: '#ff6b6b', fontSize: 12, fontFamily: 'monospace', cursor: 'pointer', fontWeight: 700 }}>Ya, Hapus</button>
             </div>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Main Link</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Rekap uang kerja per periode — otomatis dari Tumpuk Kapling & Detail Pekerjaan</p>
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Wallet size={18} style={{ color: '#00ff88' }}/> Main Link
+        </h1>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>
+          Rekap uang kerja per periode — otomatis dari Tumpuk Kapling &amp; Detail Pekerjaan
+        </p>
       </div>
 
       {/* Periode selector */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-5 flex flex-wrap items-center gap-3">
-        <span className="text-sm font-medium text-gray-600 dark:text-gray-300 shrink-0">Periode:</span>
-        <div className="flex flex-wrap gap-2 flex-1">
+      <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '12px 16px', marginBottom: 16, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 12, fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>Periode:</span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, flex: 1 }}>
           {periodes.map(p => (
-            <div key={p.id} className="relative group flex items-center">
+            <div key={p.id} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <button
                 onClick={() => setSelected(p)}
-                className={`pl-3 pr-7 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  selectedPeriode?.id===p.id
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
+                style={{
+                  padding: '4px 24px 4px 10px', borderRadius: 3, fontSize: 11, fontFamily: 'monospace',
+                  fontWeight: selectedPeriode?.id === p.id ? 700 : 400,
+                  background: selectedPeriode?.id === p.id ? '#00ff88' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${selectedPeriode?.id === p.id ? '#00ff88' : 'rgba(255,255,255,0.08)'}`,
+                  color: selectedPeriode?.id === p.id ? '#0a0a0a' : 'rgba(255,255,255,0.65)',
+                  cursor: 'pointer',
+                }}
               >{p.periode}</button>
               <button
-                onClick={e=>{e.stopPropagation();setConfirmDel(p)}}
+                onClick={e => { e.stopPropagation(); setConfirmDel(p) }}
                 title={`Hapus ${p.periode}`}
-                className={`absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5
-                  opacity-0 group-hover:opacity-100 transition-opacity
-                  ${selectedPeriode?.id===p.id
-                    ?'text-white/70 hover:text-white hover:bg-white/20'
-                    :'text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50'}`}
-              ><X size={11}/></button>
+                style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: selectedPeriode?.id === p.id ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+              ><X size={10}/></button>
             </div>
           ))}
           <button
             onClick={()=>setShowForm(true)}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-dashed border-gray-300 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:border-primary-400 hover:text-primary-600 transition-colors flex items-center gap-1"
-          ><Plus size={14}/> Periode Baru</button>
+            style={{ padding: '4px 10px', borderRadius: 3, fontSize: 11, fontFamily: 'monospace', background: 'transparent', border: '1px dashed rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.35)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+          ><Plus size={11}/> Periode Baru</button>
         </div>
         {selectedPeriode && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
-            <CalendarDays size={12}/>
+          <p style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <CalendarDays size={11}/>
             {formatTanggal(selectedPeriode.tgl_awal)} – {formatTanggal(selectedPeriode.tgl_akhir)}
           </p>
         )}
@@ -439,15 +457,15 @@ export default function MainLink() {
 
       {/* Form periode baru */}
       {showPeriodeForm && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-5">
-          <p className="text-sm font-semibold text-blue-700 mb-4">Tambah Periode Baru</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
+        <div style={{ background: 'rgba(0,255,136,0.04)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 3, padding: 20, marginBottom: 16 }}>
+          <p style={{ fontFamily: 'monospace', fontSize: 12, color: '#00ff88', fontWeight: 600, marginBottom: 16 }}>Tambah Periode Baru</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, maxWidth: 400 }}>
             <div>
-              <label className="text-xs font-medium text-blue-600 mb-1 block">Periode</label>
+              <label style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Periode</label>
               <select
                 value={newPeriode.periodeOption.label}
                 onChange={e=>{const f=PERIODE_OPTIONS.find(o=>o.label===e.target.value);setNewPeriode(p=>({...p,periodeOption:f}))}}
-                className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800"
+                className="ml-input" style={{ width: '100%', padding: '6px 8px' }}
               >
                 {PERIODE_OPTIONS.map(o=>(
                   <option key={o.label} value={o.label}>{o.label} — {BULAN[o.bulan-1]}</option>
@@ -455,20 +473,20 @@ export default function MainLink() {
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-blue-600 mb-1 block">Tahun</label>
+              <label style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Tahun</label>
               <input type="number" value={newPeriode.tahun}
                 onChange={e=>setNewPeriode(p=>({...p,tahun:e.target.value}))}
-                className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800"
+                className="ml-input" style={{ width: '100%', padding: '6px 8px', boxSizing: 'border-box' }}
                 min={2000} max={2100}/>
             </div>
           </div>
-          <div className="mt-3 flex items-center gap-2 text-xs text-blue-600 bg-blue-100 px-3 py-2 rounded-lg w-fit">
-            <CalendarDays size={13}/>
+          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontFamily: 'monospace', color: 'rgba(0,255,136,0.7)', background: 'rgba(0,255,136,0.04)', border: '1px solid rgba(0,255,136,0.1)', borderRadius: 3, padding: '6px 10px', width: 'fit-content' }}>
+            <CalendarDays size={11}/>
             Tanggal otomatis: <strong>{formatTanggal(previewTanggal.tgl_awal)}</strong> – <strong>{formatTanggal(previewTanggal.tgl_akhir)}</strong>
           </div>
-          <div className="flex gap-2 mt-4">
-            <button onClick={handleCreatePeriode} className="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700">Buat Periode</button>
-            <button onClick={()=>setShowForm(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-300">Batal</button>
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <button onClick={handleCreatePeriode} style={{ padding: '7px 14px', background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}>Buat Periode</button>
+            <button onClick={()=>setShowForm(false)} style={{ padding: '7px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>Batal</button>
           </div>
         </div>
       )}
@@ -476,77 +494,57 @@ export default function MainLink() {
       {/* Tabel */}
       {selectedPeriode && (
         <>
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-4">
+          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden', marginBottom: 16 }}>
             {/* Table header */}
-            <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-wrap gap-2">
+            <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
               <div>
-                <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
-                  Daftar Pekerjaan — <span className="text-primary-600">{selectedPeriode.periode}</span>
+                <p style={{ fontFamily: 'monospace', fontSize: 12, color: '#f0f0f0' }}>
+                  Daftar Pekerjaan — <span style={{ color: '#00ff88' }}>{selectedPeriode.periode}</span>
                 </p>
-                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">Data otomatis dari Tumpuk Kapling & Detail Pekerjaan</p>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', marginTop: 2 }}>Data otomatis dari Tumpuk Kapling &amp; Detail Pekerjaan</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <button
                   onClick={()=>loadRows(selectedPeriode)}
                   disabled={loading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
-                >
-                  <RefreshCw size={12} className={loading?'animate-spin':''}/> Refresh
-                </button>
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 11, fontFamily: 'monospace', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', opacity: loading ? 0.5 : 1 }}
+                ><RefreshCw size={11}/> Refresh</button>
 
-                {/* Cetak buttons */}
-                <button
-                  onClick={()=>openCetak('biaya-tpk')}
-                  title="Cetak Biaya TPK"
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-primary-600 rounded-lg hover:bg-primary-700"
-                >
-                  <Receipt size={13}/> Biaya TPK
-                </button>
-                <button
-                  onClick={()=>openCetak('gabungan-pembayaran')}
-                  title="Cetak Gabungan Pembayaran"
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-primary-600 rounded-lg hover:bg-primary-700"
-                >
-                  <Wallet size={13}/> Gabungan Pembayaran
-                </button>
-                <button
-                  onClick={()=>openCetak('pj-uk')}
-                  title="Cetak PJ UK"
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-primary-600 rounded-lg hover:bg-primary-700"
-                >
-                  <ClipboardList size={13}/> PJ UK
-                </button>
-                <button
-                  onClick={()=>openCetak('permintaan-uk')}
-                  title="Cetak Permintaan UK"
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-primary-600 rounded-lg hover:bg-primary-700"
-                >
-                  <FileSpreadsheet size={13}/> Permintaan UK
-                </button>
-                <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                  <CalendarDays size={12}/>
+                {[
+                  { label: 'Biaya TPK',           icon: Receipt,       action: ()=>openCetak('biaya-tpk') },
+                  { label: 'Gabungan Pembayaran',  icon: Wallet,        action: ()=>openCetak('gabungan-pembayaran') },
+                  { label: 'PJ UK',                icon: ClipboardList, action: ()=>openCetak('pj-uk') },
+                  { label: 'Permintaan UK',        icon: FileSpreadsheet, action: ()=>openCetak('permintaan-uk') },
+                ].map(({ label, icon: Icon, action }) => (
+                  <button key={label} onClick={action}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 11, fontFamily: 'monospace', background: 'rgba(0,255,136,0.07)', border: '1px solid rgba(0,255,136,0.18)', borderRadius: 3, color: '#00ff88', cursor: 'pointer' }}
+                  ><Icon size={11}/> {label}</button>
+                ))}
+
+                <p style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <CalendarDays size={10}/>
                   {formatTanggal(selectedPeriode.tgl_awal)} – {formatTanggal(selectedPeriode.tgl_akhir)}
                 </p>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+                <thead>
                   <tr>
                     {['No','Kode Rek','Uraian','Sat','Fisik','Tarif','Nilai','Cetak'].map(h=>(
-                      <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">{h}</th>
+                      <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.015)' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody>
                   {loading ? (
-                    <tr><td colSpan={8} className="px-5 py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
-                      <RefreshCw size={16} className="animate-spin inline mr-2"/>Menghitung data...
+                    <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', fontSize: 11 }}>
+                      Menghitung data...
                     </td></tr>
                   ) : rows.length === 0 ? (
-                    <tr><td colSpan={8} className="px-5 py-8 text-center text-gray-400 dark:text-gray-500 text-sm italic">
-                      Belum ada data. Isi data di Tumpuk Kapling & Detail Pekerjaan.
+                    <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', fontSize: 11, fontStyle: 'italic' }}>
+                      Belum ada data. Isi data di Tumpuk Kapling &amp; Detail Pekerjaan.
                     </td></tr>
                   ) : displayRows.map(r => {
                     const nilai = (r.fisik||0)*(r.tarif||0)
@@ -554,70 +552,56 @@ export default function MainLink() {
                     const isEmpty = !isPointrow && nilai === 0 && r.fisik === 0
                     const isSubrow = r._viewType === 'sub' || r._noMode === 'none'
                     return (
-                      <tr key={r._key}
-                        className={`transition-colors ${
-                          isEmpty ? 'opacity-35' : 'hover:bg-gray-50/50'
-                        } ${isSubrow ? 'bg-gray-50/30' : ''}`}>
-                        <td className={`px-3 py-2 text-xs w-10 font-medium ${
-                          typeof r.no==='number' ? 'text-primary-600' : 'text-gray-300 dark:text-gray-600'
-                        }`}>{r.no}</td>
-                        <td className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500 w-24">{r.kode_rek}</td>
-                        <td className={`px-3 py-2 ${isSubrow ? 'pl-6 text-gray-500 dark:text-gray-400 italic text-xs' : 'font-medium text-gray-700 dark:text-gray-200'}`}>
+                      <tr key={r._key} className="ml-row"
+                        style={{ opacity: isEmpty ? 0.3 : 1, background: isSubrow ? 'rgba(255,255,255,0.01)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ padding: '7px 10px', fontSize: 11, color: typeof r.no==='number' ? '#00ff88' : 'rgba(255,255,255,0.18)', width: 40 }}>{r.no}</td>
+                        <td style={{ padding: '7px 10px', fontSize: 10, color: 'rgba(255,255,255,0.25)', width: 88 }}>{r.kode_rek}</td>
+                        <td style={{ padding: '7px 10px', paddingLeft: isSubrow ? 24 : 10, fontWeight: isSubrow ? 400 : 500, color: isSubrow ? 'rgba(255,255,255,0.35)' : '#f0f0f0', fontStyle: isSubrow ? 'italic' : 'normal' }}>
                           {r.uraian}
                         </td>
-                        <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 w-16">{r.satuan}</td>
-                        <td className="px-3 py-2 text-right text-sm text-gray-600 dark:text-gray-300 w-28">
-                          {r.fisik > 0 ? formatNum(r.fisik) : <span className={isPointrow ? 'text-gray-500 dark:text-gray-400' : 'text-gray-300 dark:text-gray-600'}>—</span>}
+                        <td style={{ padding: '7px 10px', fontSize: 10, color: 'rgba(255,255,255,0.3)', width: 48 }}>{r.satuan}</td>
+                        <td style={{ padding: '7px 10px', textAlign: 'right', color: 'rgba(255,255,255,0.5)', width: 100 }}>
+                          {r.fisik > 0 ? formatNum(r.fisik) : <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>}
                         </td>
-                        <td className="px-3 py-2 text-right text-sm text-gray-600 dark:text-gray-300 w-32">
-                          {r.tarif > 0 ? formatRupiah(r.tarif) : <span className={isPointrow ? 'text-gray-500 dark:text-gray-400' : 'text-gray-300 dark:text-gray-600'}>—</span>}
+                        <td style={{ padding: '7px 10px', textAlign: 'right', color: 'rgba(255,255,255,0.5)', width: 120 }}>
+                          {r.tarif > 0 ? formatRupiah(r.tarif) : <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>}
                         </td>
-                        <td className={`px-3 py-2 text-right font-medium w-36 ${nilai>0?'text-gray-800 dark:text-gray-100':(isPointrow?'text-gray-500 dark:text-gray-400':'text-gray-300 dark:text-gray-600')}`}>
-                          {nilai>0 ? formatRupiah(nilai) : '—'}
+                        <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: nilai > 0 ? 600 : 400, color: nilai > 0 ? '#f0f0f0' : 'rgba(255,255,255,0.18)', width: 140 }}>
+                          {nilai > 0 ? formatRupiah(nilai) : '—'}
                         </td>
-                        <td className="px-2 py-2 w-24 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            {canShowQuickPrint(r) ? (
-                              <button
-                                onClick={()=>openKwitansi(r._printKey)}
-                                title="Cetak kwitansi item ini"
-                                className="text-gray-300 dark:text-gray-600 hover:text-primary-600 transition-colors"
-                              >
-                                <Printer size={14}/>
-                              </button>
-                            ) : null}
-                            {canShowQuickPrint(r) && isLampiran31Available({ _key: r._printKey }) ? (
-                              <button
-                                onClick={()=>openLampiran31(r._printKey)}
-                                title="Cetak Lampiran 3.1 item ini"
-                                className="text-gray-300 dark:text-gray-600 hover:text-indigo-600 transition-colors"
-                              >
-                                <FileText size={14}/>
-                              </button>
-                            ) : null}
-                            {canShowQuickPrint(r) && isAbsenAvailable({ _key: r._printKey }) ? (
-                              <button
-                                onClick={()=>openAbsen(r._printKey)}
-                                title="Cetak Absen item ini"
-                                className="text-gray-300 dark:text-gray-600 hover:text-emerald-600 transition-colors"
-                              >
-                                <ClipboardCheck size={14}/>
-                              </button>
-                            ) : null}
+                        <td style={{ padding: '7px 8px', width: 80 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                            {canShowQuickPrint(r) && (
+                              <button onClick={()=>openKwitansi(r._printKey)} title="Cetak kwitansi"
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                                onMouseEnter={e=>e.currentTarget.style.color='#00ff88'}
+                                onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.2)'}
+                              ><Printer size={13}/></button>
+                            )}
+                            {canShowQuickPrint(r) && isLampiran31Available({ _key: r._printKey }) && (
+                              <button onClick={()=>openLampiran31(r._printKey)} title="Cetak Lampiran 3.1"
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                                onMouseEnter={e=>e.currentTarget.style.color='#a78bfa'}
+                                onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.2)'}
+                              ><FileText size={13}/></button>
+                            )}
+                            {canShowQuickPrint(r) && isAbsenAvailable({ _key: r._printKey }) && (
+                              <button onClick={()=>openAbsen(r._printKey)} title="Cetak Absen"
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                                onMouseEnter={e=>e.currentTarget.style.color='#00ff88'}
+                                onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.2)'}
+                              ><ClipboardCheck size={13}/></button>
+                            )}
                           </div>
                         </td>
                       </tr>
                     )
                   })}
                 </tbody>
-                <tfoot className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-200 dark:border-gray-700">
-                  <tr>
-                    <td colSpan={6} className="px-5 py-3 text-sm font-semibold text-gray-600 dark:text-gray-300 text-right">
-                      Total Uang Kerja
-                    </td>
-                    <td className="px-3 py-3 text-right font-bold text-primary-700 text-base">
-                      {formatRupiah(grandTotal)}
-                    </td>
+                <tfoot>
+                  <tr style={{ borderTop: '2px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.015)' }}>
+                    <td colSpan={6} style={{ padding: '10px 10px', textAlign: 'right', fontFamily: 'monospace', fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>Total Uang Kerja</td>
+                    <td style={{ padding: '10px 10px', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#00ff88' }}>{formatRupiah(grandTotal)}</td>
                     <td/>
                   </tr>
                 </tfoot>
@@ -626,63 +610,56 @@ export default function MainLink() {
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end mb-6">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 px-5 py-2 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 disabled:opacity-50 transition-colors"
-            >
-              <Save size={15}/> {saving?'Menyimpan...':'Simpan Data'}
-            </button>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: saving ? 'rgba(0,255,136,0.15)' : '#00ff88', color: saving ? 'rgba(0,255,136,0.4)' : '#0a0a0a', borderRadius: 3, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}
+            ><Save size={13}/> {saving?'Menyimpan...':'Simpan Data'}</button>
           </div>
 
-          {/* ── Tarif Periode ── */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          {/* Tarif Periode */}
+          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
             <button
               onClick={() => setShowTarif(v => !v)}
-              className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'transparent', border: 'none', cursor: 'pointer' }}
             >
-              <div className="flex items-center gap-2">
-                <Settings2 size={15} className="text-gray-400 dark:text-gray-500"/>
-                <p className="font-semibold text-gray-700 dark:text-gray-200 text-sm">Tarif Periode</p>
-                <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
-                  {selectedPeriode.periode}
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Settings2 size={13} style={{ color: 'rgba(255,255,255,0.3)' }}/>
+                <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#f0f0f0', fontWeight: 600 }}>Tarif Periode</span>
+                <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, padding: '1px 6px' }}>{selectedPeriode.periode}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 dark:text-gray-500">
-                  {showTarif ? 'Sembunyikan' : 'Tampilkan & Edit'}
-                </span>
-                {showTarif ? <ChevronUp size={14} className="text-gray-400 dark:text-gray-500"/> : <ChevronDown size={14} className="text-gray-400 dark:text-gray-500"/>}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>{showTarif ? 'Sembunyikan' : 'Tampilkan & Edit'}</span>
+                {showTarif ? <ChevronUp size={13} style={{ color: 'rgba(255,255,255,0.3)' }}/> : <ChevronDown size={13} style={{ color: 'rgba(255,255,255,0.3)' }}/>}
               </div>
             </button>
 
             {showTarif && (
               <>
-                <div className="border-t border-gray-100 dark:border-gray-700 overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 dark:bg-gray-900/40 border-b border-gray-100 dark:border-gray-700">
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+                    <thead>
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Kode Rek</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Uraian</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-16">Sat</th>
-                        <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-40">Tarif (Rp)</th>
+                        {['Kode Rek','Uraian','Sat','Tarif (Rp)'].map(h => (
+                          <th key={h} style={{ padding: '7px 10px', textAlign: h === 'Tarif (Rp)' ? 'right' : 'left', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.015)' }}>{h}</th>
+                        ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                    <tbody>
                       {tarifRows.map((r, i) => (
-                        <tr key={r.kode} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
-                          <td className="px-4 py-2 text-xs text-gray-400 dark:text-gray-500">{r.kode_rek}</td>
-                          <td className="px-4 py-2 text-gray-700 dark:text-gray-100 font-medium">{r.uraian}</td>
-                          <td className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400">{r.satuan}</td>
-                          <td className="px-4 py-1.5">
+                        <tr key={r.kode} className="ml-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                          <td style={{ padding: '6px 10px', fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{r.kode_rek}</td>
+                          <td style={{ padding: '6px 10px', color: '#f0f0f0' }}>{r.uraian}</td>
+                          <td style={{ padding: '6px 10px', fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{r.satuan}</td>
+                          <td style={{ padding: '4px 10px', width: 160 }}>
                             <input
                               type="number"
                               value={r.tarif}
                               onChange={e => setTarifRows(prev => prev.map((t,j) =>
                                 j === i ? { ...t, tarif: e.target.value } : t
                               ))}
-                              className="w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right tabular-nums outline-none focus:border-primary-400 dark:focus:border-primary-500"
+                              className="ml-input" style={{ width: '100%', padding: '5px 8px', textAlign: 'right', boxSizing: 'border-box' }}
                             />
                           </td>
                         </tr>
@@ -690,17 +667,15 @@ export default function MainLink() {
                     </tbody>
                   </table>
                 </div>
-                <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 flex items-center justify-between">
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
-                    Perubahan tarif akan langsung tercermin di tabel di atas setelah disimpan.
+                <div style={{ padding: '10px 16px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.015)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <p style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>
+                    Perubahan tarif akan tercermin di tabel di atas setelah disimpan.
                   </p>
                   <button
                     onClick={handleSaveTarif}
                     disabled={savingTarif}
-                    className="flex items-center gap-2 px-4 py-1.5 bg-primary-600 text-white rounded-lg text-xs hover:bg-primary-700 disabled:opacity-50"
-                  >
-                    <Save size={13}/> {savingTarif ? 'Menyimpan...' : 'Simpan Tarif'}
-                  </button>
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: savingTarif ? 'rgba(0,255,136,0.15)' : '#00ff88', color: savingTarif ? 'rgba(0,255,136,0.4)' : '#0a0a0a', borderRadius: 3, border: 'none', cursor: savingTarif ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontSize: 11, fontWeight: 700 }}
+                  ><Save size={11}/> {savingTarif ? 'Menyimpan...' : 'Simpan Tarif'}</button>
                 </div>
               </>
             )}

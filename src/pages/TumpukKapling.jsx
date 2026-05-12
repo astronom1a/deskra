@@ -188,50 +188,67 @@ export default function TumpukKapling() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+      <style>{`
+        .tk-input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #f0f0f0; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; -moz-appearance: textfield; }
+        .tk-input:focus { border-color: rgba(0,255,136,0.5); box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
+        .tk-input::-webkit-inner-spin-button, .tk-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .tk-row:hover td { background: rgba(255,255,255,0.02) !important; }
+      `}</style>
+
+      {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm text-white ${toast.type === 'error' ? 'bg-red-500' : 'bg-primary-600'}`}>
-          {toast.type === 'error' ? <AlertCircle size={15} /> : <CheckCircle2 size={15} />}
+        <div style={{
+          position: 'fixed', top: 20, right: 20, zIndex: 50,
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '10px 16px', borderRadius: 3, fontSize: 12, fontFamily: 'monospace',
+          background: toast.type === 'error' ? 'rgba(255,107,107,0.12)' : 'rgba(0,255,136,0.10)',
+          border: `1px solid ${toast.type === 'error' ? 'rgba(255,107,107,0.3)' : 'rgba(0,255,136,0.3)'}`,
+          color: toast.type === 'error' ? '#ff6b6b' : '#00ff88',
+        }}>
+          {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>}
           {toast.msg}
         </div>
       )}
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-          <Layers size={22} className="text-primary-600" /> Tumpuk Kapling
+      {/* Header */}
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Layers size={18} style={{ color: '#00ff88' }}/> Tumpuk Kapling
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-          Input volume per jenis & sortimen. Penomoran, Sabuk, dan Slaghammer otomatis terhitung.
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>
+          Input volume per jenis &amp; sortimen. Penomoran, Sabuk, dan Slaghammer otomatis terhitung.
         </p>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
-          <Lock size={11} /> Tarif sortimen dikelola di <span className="font-medium">Main Link → Tarif Periode</span>.
+        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 3, fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Lock size={10}/> Tarif sortimen dikelola di <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}>Main Link → Tarif Periode</span>.
         </p>
       </div>
 
       {/* Periode selector */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-5 flex flex-wrap items-center gap-3">
-        <span className="text-sm font-medium text-gray-600 dark:text-gray-300 shrink-0">Periode:</span>
-        <div className="flex flex-wrap gap-2 flex-1">
+      <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '12px 16px', marginBottom: 16, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 12, fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>Periode:</span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, flex: 1 }}>
           {periodes.map(p => (
             <button
               key={p.id}
               onClick={() => setSelectedPeriode(p)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                selectedPeriode?.id === p.id
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              {p.periode}
-            </button>
+              style={{
+                padding: '4px 10px', borderRadius: 3, fontSize: 11, fontFamily: 'monospace',
+                fontWeight: selectedPeriode?.id === p.id ? 700 : 400,
+                background: selectedPeriode?.id === p.id ? '#00ff88' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${selectedPeriode?.id === p.id ? '#00ff88' : 'rgba(255,255,255,0.08)'}`,
+                color: selectedPeriode?.id === p.id ? '#0a0a0a' : 'rgba(255,255,255,0.65)',
+                cursor: 'pointer',
+              }}
+            >{p.periode}</button>
           ))}
           {periodes.length === 0 && (
-            <span className="text-xs text-gray-400 dark:text-gray-500 italic">Belum ada periode. Buat di Main Link.</span>
+            <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>Belum ada periode. Buat di Main Link.</span>
           )}
         </div>
         {selectedPeriode && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
-            <CalendarDays size={12} />
+          <p style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <CalendarDays size={11}/>
             {formatTanggal(selectedPeriode.tgl_awal)} – {formatTanggal(selectedPeriode.tgl_akhir)}
           </p>
         )}
@@ -239,67 +256,64 @@ export default function TumpukKapling() {
 
       {selectedPeriode && (
         <>
-          {/* Info kalau belum ada data */}
+          {/* Info belum ada data */}
           {!hasData && !loading && (
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-5 flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 text-sm">
-                <Sparkles size={16} />
+            <div style={{ background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 3, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'monospace', fontSize: 12, color: '#ffaa00' }}>
+                <Sparkles size={14}/>
                 <span>Belum ada data untuk periode ini. Gunakan grid di bawah atau generate 9 baris default.</span>
               </div>
               <button
                 onClick={handleSeed}
-                className="px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded-lg hover:bg-amber-700"
-              >
-                Generate Default
-              </button>
+                style={{ padding: '5px 12px', background: 'rgba(255,170,0,0.15)', border: '1px solid rgba(255,170,0,0.3)', borderRadius: 3, color: '#ffaa00', fontSize: 11, fontFamily: 'monospace', cursor: 'pointer', fontWeight: 700 }}
+              >Generate Default</button>
             </div>
           )}
 
           {/* Grid input per jenis */}
-          <div className="space-y-4 mb-5">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
             {JENIS_LIST.map(j => (
-              <div key={j.key} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900/40">
-                  <p className="font-semibold text-gray-700 dark:text-gray-100 text-sm">{j.label}</p>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 flex gap-4">
-                    <span>Total: <strong className="text-gray-700 dark:text-gray-100">{formatNum(totalPerJenis(j.key))} M³</strong></span>
-                    <span className="text-primary-600 dark:text-primary-300 font-medium">{formatRupiah(nilaiPerJenis(j.key))}</span>
+              <div key={j.key} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.015)' }}>
+                  <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: '#f0f0f0' }}>{j.label}</p>
+                  <div style={{ display: 'flex', gap: 16, fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
+                    <span>Total: <strong style={{ color: '#f0f0f0' }}>{formatNum(totalPerJenis(j.key))} M³</strong></span>
+                    <span style={{ color: '#00ff88', fontWeight: 600 }}>{formatRupiah(nilaiPerJenis(j.key))}</span>
                   </div>
                 </div>
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-gray-900/40 border-b border-gray-100 dark:border-gray-700">
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+                  <thead>
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 w-24">Sortimen</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-32">Volume (M³)</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 w-36">
-                        <span className="inline-flex items-center gap-1">
-                          Tarif <Lock size={11} className="text-gray-400 dark:text-gray-500" />
-                        </span>
+                      <th style={{ padding: '7px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: 80 }}>Sortimen</th>
+                      <th style={{ padding: '7px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: 140 }}>Volume (M³)</th>
+                      <th style={{ padding: '7px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: 140 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>Tarif <Lock size={10}/></span>
                       </th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Nilai</th>
+                      <th style={{ padding: '7px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>Nilai</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                  <tbody>
                     {SORTIMEN_LIST.map(s => {
                       const r = grid.find(x => x.jenis === j.key && x.sortimen === s)
                       const vol = parseFloat(r?.volume) || 0
                       const trf = tarifSortimen[s] ?? DEFAULT_TARIF[s]
                       return (
-                        <tr key={s} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
-                          <td className="px-4 py-2 font-medium text-gray-600 dark:text-gray-200">{s}</td>
-                          <td className="px-4 py-1.5">
+                        <tr key={s} className="tk-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                          <td style={{ padding: '7px 12px', fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>{s}</td>
+                          <td style={{ padding: '5px 12px' }}>
                             <input
                               type="number" step="0.001"
                               value={r?.volume ?? ''}
                               onChange={e => updateVolume(j.key, s, e.target.value)}
-                              className="w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm text-right tabular-nums outline-none focus:border-primary-400 dark:focus:border-primary-500"
+                              className="tk-input"
+                              style={{ width: '100%', padding: '5px 8px', textAlign: 'right', boxSizing: 'border-box' }}
                               placeholder="0"
                             />
                           </td>
-                          <td className="px-4 py-2 text-right text-gray-500 dark:text-gray-400 tabular-nums">
+                          <td style={{ padding: '7px 12px', textAlign: 'right', color: 'rgba(255,255,255,0.35)' }}>
                             {formatRupiah(trf)}
                           </td>
-                          <td className="px-4 py-2 text-right font-medium text-gray-700 dark:text-gray-100 tabular-nums">
+                          <td style={{ padding: '7px 12px', textAlign: 'right', fontWeight: 600, color: vol > 0 ? '#f0f0f0' : 'rgba(255,255,255,0.2)' }}>
                             {formatRupiah(vol * trf)}
                           </td>
                         </tr>
@@ -312,54 +326,28 @@ export default function TumpukKapling() {
           </div>
 
           {/* Summary turunan */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
             {[
-              {
-                label: 'Penomoran Kapling', data: summary.penomoran, note: 'Semua jenis',
-                cls: {
-                  card:  'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900',
-                  title: 'text-blue-600 dark:text-blue-300',
-                  note:  'text-blue-500 dark:text-blue-400',
-                  nilai: 'text-blue-700 dark:text-blue-200',
-                },
-              },
-              {
-                label: 'Sabuk Kapling', data: summary.sabuk, note: '= Penomoran',
-                cls: {
-                  card:  'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900',
-                  title: 'text-emerald-600 dark:text-emerald-300',
-                  note:  'text-emerald-500 dark:text-emerald-400',
-                  nilai: 'text-emerald-700 dark:text-emerald-200',
-                },
-              },
-              {
-                label: 'Slaghammer', data: summary.slaghammer, note: 'JATI + Mahoni',
-                cls: {
-                  card:  'bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-900',
-                  title: 'text-orange-600 dark:text-orange-300',
-                  note:  'text-orange-500 dark:text-orange-400',
-                  nilai: 'text-orange-700 dark:text-orange-200',
-                },
-              },
+              { label: 'Penomoran Kapling', data: summary.penomoran, note: 'Semua jenis',   accent: '#60a5fa' },
+              { label: 'Sabuk Kapling',     data: summary.sabuk,     note: '= Penomoran',   accent: '#34d399' },
+              { label: 'Slaghammer',        data: summary.slaghammer, note: 'JATI + Mahoni', accent: '#fb923c' },
             ].map(c => (
-              <div key={c.label} className={`${c.cls.card} border rounded-xl p-4`}>
-                <p className={`text-xs font-medium uppercase tracking-wide ${c.cls.title}`}>{c.label}</p>
-                <p className={`text-xs mb-2 ${c.cls.note}`}>{c.note}</p>
-                <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{formatNum(c.data.fisik)} M³</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">× {formatRupiah(c.data.tarif)}</p>
-                <p className={`text-sm font-semibold mt-1 ${c.cls.nilai}`}>{formatRupiah(c.data.nilai)}</p>
+              <div key={c.label} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '14px 16px' }}>
+                <p style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: c.accent, marginBottom: 2 }}>{c.label}</p>
+                <p style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 8 }}>{c.note}</p>
+                <p style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 700, color: '#f0f0f0' }}>{formatNum(c.data.fisik)} M³</p>
+                <p style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>× {formatRupiah(c.data.tarif)}</p>
+                <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, marginTop: 4, color: c.accent }}>{formatRupiah(c.data.nilai)}</p>
               </div>
             ))}
           </div>
 
-          <div className="flex justify-end">
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
               onClick={handleSave}
               disabled={loading}
-              className="flex items-center gap-2 px-5 py-2 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 disabled:opacity-50"
-            >
-              <Save size={15} /> {loading ? 'Menyimpan...' : 'Simpan Data'}
-            </button>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: loading ? 'rgba(0,255,136,0.15)' : '#00ff88', color: loading ? 'rgba(0,255,136,0.4)' : '#0a0a0a', borderRadius: 3, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}
+            ><Save size={13}/> {loading ? 'Menyimpan...' : 'Simpan Data'}</button>
           </div>
         </>
       )}
