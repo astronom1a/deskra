@@ -9,6 +9,8 @@ import {
 import { useAccount } from '../lib/useAccount'
 import { useAuth } from '../lib/AuthProvider'
 
+const SORTIMENS = ['AI', 'AII', 'AIII']
+
 const shortcuts = [
   { label: 'Main Link',        desc: 'Rekap uang kerja otomatis per periode',          icon: Link2,    path: '/main-link' },
   { label: 'Tumpuk Kapling',   desc: 'Input volume per jenis & sortimen kapling',       icon: Layers,   path: '/tumpuk-kapling' },
@@ -43,6 +45,11 @@ export default function Dashboard() {
   const [periodes,    setPeriodes]    = useState([])
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState(null)
+  const [statsLoading,  setStatsLoading]  = useState(true)
+  const [lastDkhpNo,   setLastDkhpNo]   = useState(null)
+  const [lastDkhpPerni,setLastDkhpPerni] = useState(null)
+  const [lastKapling,  setLastKapling]  = useState(null)
+  const [kaplingRows,  setKaplingRows]  = useState([])
   const [hideAmount,  setHideAmount]  = useState(() => {
     try { return localStorage.getItem('deskra_dashboard_hide_amount') === '1' } catch { return false }
   })
@@ -79,6 +86,73 @@ export default function Dashboard() {
     }
     fetchPeriodes()
   }, [tpk?.id])
+
+  useEffect(() => {
+    if (!tpk?.id) { setStatsLoading(false); return }
+    async function fetchStats() {
+      try {
+        const PAGE = 1000
+        const all = []
+        for (let from = 0; ; from += PAGE) {
+          const { data } = await supabase
+            .from('tabel_register_kapling')
+            .select('no_kapling, sortimen, batang, volume, no_invois')
+            .eq('tpk_id', tpk.id)
+            .order('no_kapling', { ascending: true })
+            .range(from, from + PAGE - 1)
+          if (!data || data.length === 0) break
+          all.push(...data)
+          if (data.length < PAGE) break
+        }
+        setKaplingRows(all)
+        if (all.length > 0) {
+          const sorted = [...all].sort((a, b) => {
+            const an = parseInt(a.no_kapling) || 0
+            const bn = parseInt(b.no_kapling) || 0
+            return bn - an
+          })
+          setLastKapling(sorted[0].no_kapling)
+        }
+
+        const [dkhpNoRes, dkhpPerniRes] = await Promise.all([
+          supabase
+            .from('tabel_dkhp_skshhk')
+            .select('no_dkhp, tanggal')
+            .eq('tpk_id', tpk.id)
+            .not('no_dkhp', 'ilike', '%perni%')
+            .order('tanggal', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('tabel_dkhp_skshhk')
+            .select('no_dkhp, tanggal')
+            .eq('tpk_id', tpk.id)
+            .ilike('no_dkhp', '%perni%')
+            .order('tanggal', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ])
+        if (dkhpNoRes.data) setLastDkhpNo(dkhpNoRes.data)
+        if (dkhpPerniRes.data) setLastDkhpPerni(dkhpPerniRes.data)
+      } finally {
+        setStatsLoading(false)
+      }
+    }
+    fetchStats()
+  }, [tpk?.id])
+
+  const totalKapling = kaplingRows.length
+  const totalBatang  = kaplingRows.reduce((s, r) => s + (r.batang || 0), 0)
+  const totalVolume  = kaplingRows.reduce((s, r) => s + Number(r.volume || 0), 0)
+  const sortBatang   = Object.fromEntries(SORTIMENS.map(m => [m, kaplingRows.filter(r => (r.sortimen || '').toUpperCase() === m).reduce((s, r) => s + (r.batang || 0), 0)]))
+  const sortVolume   = Object.fromEntries(SORTIMENS.map(m => [m, kaplingRows.filter(r => (r.sortimen || '').toUpperCase() === m).reduce((s, r) => s + Number(r.volume || 0), 0)]))
+  const unsoldRows        = kaplingRows.filter(r => !r.no_invois)
+  const unsoldBatang      = unsoldRows.reduce((s, r) => s + (r.batang || 0), 0)
+  const unsoldVolume      = unsoldRows.reduce((s, r) => s + Number(r.volume || 0), 0)
+  const unsoldSortBatang  = Object.fromEntries(SORTIMENS.map(m => [m, unsoldRows.filter(r => (r.sortimen || '').toUpperCase() === m).reduce((s, r) => s + (r.batang || 0), 0)]))
+  const unsoldSortVolume  = Object.fromEntries(SORTIMENS.map(m => [m, unsoldRows.filter(r => (r.sortimen || '').toUpperCase() === m).reduce((s, r) => s + Number(r.volume || 0), 0)]))
 
   const totalAll = periodes.reduce((sum, p) => sum + (p.total_uk || 0), 0)
 
@@ -224,6 +298,92 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
+        </section>
+
+        {/* Ringkasan Kapling */}
+        <section className="mb-10">
+          <p className="text-xs font-mono tracking-widest uppercase mb-4" style={{ color: '#00ff88' }}>
+            — ringkasan kapling
+          </p>
+          {statsLoading ? (
+            <div className="text-xs font-mono py-4" style={{ color: '#3a3a3a' }}>memuat...</div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, alignItems: 'stretch' }}>
+
+              {/* DKHP */}
+              <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, flex: 1 }}>
+                  <div>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>DKHP TERAKHIR</p>
+                    <p style={{ fontSize: 22, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', lineHeight: 1 }}>
+                      {lastDkhpNo?.no_dkhp ?? <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>}
+                    </p>
+                  </div>
+                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: 12 }}>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>PERNI TERAKHIR</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.75)', fontFamily: 'monospace', lineHeight: 1.3 }}>
+                      {lastDkhpPerni?.no_dkhp ?? <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>}
+                    </p>
+                  </div>
+                </div>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', fontFamily: 'monospace', marginTop: 12 }}>
+                  {lastDkhpNo?.tanggal
+                    ? new Date(lastDkhpNo.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+                    : ' '}
+                </p>
+              </div>
+
+              {/* Total Kapling */}
+              <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '16px 20px', display: 'flex', gap: 16 }}>
+                <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>TOTAL KAPLING</p>
+                  <div>
+                    <p style={{ fontSize: 22, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', lineHeight: 1 }}>{totalVolume.toFixed(3)} <span style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.3)' }}>m³</span></p>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', marginTop: 4 }}>{totalBatang.toLocaleString('id')} btg</p>
+                  </div>
+                  <div style={{ marginTop: 12 }}>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em' }}>KAPLING TERAKHIR</p>
+                    {lastKapling && <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace', marginTop: 2 }}>{lastKapling}</p>}
+                  </div>
+                </div>
+                <div style={{ flex: 1, borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center' }}>
+                  {SORTIMENS.map(m => (
+                    <div key={m} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', minWidth: 24, paddingTop: 1 }}>{m}</span>
+                      <div>
+                        <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.65)', fontFamily: 'monospace', lineHeight: 1 }}>{sortVolume[m].toFixed(3)} <span style={{ fontSize: 9, fontWeight: 400, color: 'rgba(255,255,255,0.25)' }}>m³</span></p>
+                        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', marginTop: 2 }}>{sortBatang[m].toLocaleString('id')} btg</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sisa Persediaan */}
+              <div style={{ background: 'rgba(255,170,0,0.04)', border: '1px solid rgba(255,170,0,0.15)', borderRadius: 4, padding: '16px 20px', display: 'flex', gap: 16 }}>
+                <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.55)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>SISA PERSEDIAAN</p>
+                  <div>
+                    <p style={{ fontSize: 22, fontWeight: 700, color: '#ffaa00', fontFamily: 'monospace', lineHeight: 1 }}>{unsoldVolume.toFixed(3)} <span style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,170,0,0.45)' }}>m³</span></p>
+                    <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.45)', fontFamily: 'monospace', marginTop: 4 }}>{unsoldBatang.toLocaleString('id')} btg</p>
+                  </div>
+                  <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.2)', fontFamily: 'monospace', marginTop: 12 }}>&nbsp;</p>
+                </div>
+                <div style={{ flex: 1, borderLeft: '1px solid rgba(255,170,0,0.12)', paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center' }}>
+                  {SORTIMENS.map(m => (
+                    <div key={m} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,170,0,0.4)', fontFamily: 'monospace', minWidth: 24, paddingTop: 1 }}>{m}</span>
+                      <div>
+                        <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,170,0,0.75)', fontFamily: 'monospace', lineHeight: 1 }}>{unsoldSortVolume[m].toFixed(3)} <span style={{ fontSize: 9, fontWeight: 400, color: 'rgba(255,170,0,0.35)' }}>m³</span></p>
+                        <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.45)', fontFamily: 'monospace', marginTop: 2 }}>{unsoldSortBatang[m].toLocaleString('id')} btg</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          )}
         </section>
 
         {/* History Uang Kerja */}

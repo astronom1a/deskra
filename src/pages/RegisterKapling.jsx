@@ -314,11 +314,13 @@ export default function RegisterKapling() {
   const [draftSorts, setDraftSorts]     = useState([])
   const [searchTerm, setSearchTerm]     = useState('')
   const [searchCol, setSearchCol]       = useState('all')
+  const [showColDropdown, setShowColDropdown] = useState(false)
   const [realtimeStatus, setRealtimeStatus] = useState('connecting')
 
-  const fileRef      = useRef()
-  const invoisRef    = useRef()
-  const selectAllRef = useRef()
+  const fileRef         = useRef()
+  const invoisRef       = useRef()
+  const selectAllRef    = useRef()
+  const colDropdownRef  = useRef()
 
   useEffect(() => {
     fetchData()
@@ -632,8 +634,16 @@ export default function RegisterKapling() {
       : 0
   , [kaplingInfo])
 
+  const SORTIMENS = ['AI', 'AII', 'AIII']
+
   const totalBatang = rows.reduce((s, r) => s + (r.batang || 0), 0)
   const totalVolume = rows.reduce((s, r) => s + Number(r.volume || 0), 0)
+
+  const unsoldRows = rows.filter(r => !r.no_invois)
+  const unsoldBatang = unsoldRows.reduce((s, r) => s + (r.batang || 0), 0)
+  const unsoldVolume = unsoldRows.reduce((s, r) => s + Number(r.volume || 0), 0)
+  const unsoldSortBatang = Object.fromEntries(SORTIMENS.map(m => [m, unsoldRows.filter(r => (r.sortimen || '').trim().toUpperCase() === m).reduce((s, r) => s + (r.batang || 0), 0)]))
+  const unsoldSortVolume = Object.fromEntries(SORTIMENS.map(m => [m, unsoldRows.filter(r => (r.sortimen || '').trim().toUpperCase() === m).reduce((s, r) => s + Number(r.volume || 0), 0)]))
 
   function toggleSort(key) {
     setSorts(prev => {
@@ -686,6 +696,9 @@ export default function RegisterKapling() {
       })
     : sortedRows
 
+  const filteredBatang = searchedRows.reduce((s, r) => s + (r.batang || 0), 0)
+  const filteredVolume = searchedRows.reduce((s, r) => s + Number(r.volume || 0), 0)
+
   const totalPages   = pageSize === 0 ? 1 : Math.ceil(searchedRows.length / pageSize)
   const safePage     = Math.min(currentPage, totalPages || 1)
   const displayedRows = pageSize === 0
@@ -701,6 +714,15 @@ export default function RegisterKapling() {
   }, [someSelected, allSelected])
 
   useEffect(() => { setCurrentPage(1) }, [searchTerm, searchCol])
+
+  useEffect(() => {
+    if (!showColDropdown) return
+    function onClickOutside(e) {
+      if (colDropdownRef.current && !colDropdownRef.current.contains(e.target)) setShowColDropdown(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [showColDropdown])
 
   function toggleSelectRow(id) {
     setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
@@ -723,16 +745,16 @@ export default function RegisterKapling() {
     { label: 'Semua', value: 0 },
   ]
 
-  const SORTIMENS = ['AI', 'AII', 'AIII']
   const sortBatang = Object.fromEntries(SORTIMENS.map(m => [m, rows.filter(r => (r.sortimen || '').trim().toUpperCase() === m).reduce((s, r) => s + (r.batang || 0), 0)]))
   const sortVolume = Object.fromEntries(SORTIMENS.map(m => [m, rows.filter(r => (r.sortimen || '').trim().toUpperCase() === m).reduce((s, r) => s + Number(r.volume || 0), 0)]))
 
   return (
     <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
       <style>{`
-        .rk-input { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #f0f0f0 !important; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; }
+        .rk-input { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #f0f0f0 !important; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; color-scheme: dark; }
         .rk-input:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
-        .rk-input option { background: #1a1a1a; color: #f0f0f0; }
+        .rk-input option { background: #111; color: #f0f0f0; }
+        .rk-input option:hover, .rk-input option:checked { background: #00ff88; color: #0a0a0a; }
         .rk-input::placeholder { color: rgba(255,255,255,0.2) !important; }
         .rk-row:hover td { background: rgba(255,255,255,0.025) !important; }
         .rk-row-sel td { background: rgba(0,255,136,0.05) !important; }
@@ -800,7 +822,7 @@ export default function RegisterKapling() {
 
       {/* Summary cards */}
       {rows.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '16px 20px', display: 'flex', gap: 16 }}>
             <div style={{ flexShrink: 0 }}>
               <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>total kapling</p>
@@ -847,6 +869,23 @@ export default function RegisterKapling() {
                 <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>{m}</span>
                   <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{sortVolume[m].toFixed(3)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ background: 'rgba(255,170,0,0.04)', border: '1px solid rgba(255,170,0,0.15)', borderRadius: 3, padding: '16px 20px', display: 'flex', gap: 16, alignItems: 'center' }}>
+            <div style={{ flexShrink: 0 }}>
+              <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.55)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>persediaan belum laku</p>
+              <p style={{ fontSize: 22, fontWeight: 700, color: '#ffaa00', fontFamily: 'monospace', lineHeight: 1 }}>{unsoldBatang.toLocaleString('id')}</p>
+              <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.5)', fontFamily: 'monospace', marginTop: 4 }}>{unsoldVolume.toFixed(3)} m³</p>
+            </div>
+            <div style={{ flex: 1, borderLeft: '1px solid rgba(255,170,0,0.12)', paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {SORTIMENS.map(m => (
+                <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,170,0,0.4)', fontFamily: 'monospace', minWidth: 24 }}>{m}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,170,0,0.7)', fontFamily: 'monospace' }}>{unsoldSortBatang[m].toLocaleString('id')}</span>
+                  <span style={{ fontSize: 9, color: 'rgba(255,170,0,0.25)', fontFamily: 'monospace' }}>·</span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,170,0,0.5)', fontFamily: 'monospace' }}>{unsoldSortVolume[m].toFixed(3)}</span>
                 </div>
               ))}
             </div>
@@ -1372,10 +1411,29 @@ export default function RegisterKapling() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <select value={searchCol} onChange={e => setSearchCol(e.target.value)} className="rk-input" style={{ height: 28, padding: '0 6px', fontSize: 11 }}>
-                <option value="all">Semua Kolom</option>
-                {COLS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
-              </select>
+              <div ref={colDropdownRef} style={{ position: 'relative' }}>
+                <button onClick={() => setShowColDropdown(v => !v)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, height: 28, padding: '0 8px', background: 'rgba(255,255,255,0.03)', border: `1px solid ${showColDropdown ? 'rgba(0,255,136,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 3, color: searchCol === 'all' ? 'rgba(255,255,255,0.4)' : '#00ff88', fontFamily: 'monospace', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', outline: 'none', boxShadow: showColDropdown ? '0 0 0 2px rgba(0,255,136,0.07)' : 'none' }}
+                >
+                  {searchCol === 'all' ? 'Semua Kolom' : (COLS.find(c => c.key === searchCol)?.label || searchCol)}
+                  <ChevronDown size={10} style={{ opacity: 0.4, flexShrink: 0 }}/>
+                </button>
+                {showColDropdown && (
+                  <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 200, background: '#111', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, overflow: 'hidden', minWidth: '100%', boxShadow: '0 8px 24px rgba(0,0,0,0.7)' }}>
+                    {[{ key: 'all', label: 'Semua Kolom' }, ...COLS].map(c => {
+                      const active = searchCol === c.key
+                      return (
+                        <div key={c.key}
+                          onClick={() => { setSearchCol(c.key); setShowColDropdown(false) }}
+                          onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+                          onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+                          style={{ padding: '6px 12px', fontSize: 11, fontFamily: 'monospace', cursor: 'pointer', whiteSpace: 'nowrap', color: active ? '#00ff88' : 'rgba(255,255,255,0.65)', background: active ? 'rgba(0,255,136,0.08)' : 'transparent', borderLeft: `2px solid ${active ? '#00ff88' : 'transparent'}` }}
+                        >{c.label}</div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <Search size={11} style={{ position: 'absolute', left: 7, color: 'rgba(255,255,255,0.3)', pointerEvents: 'none' }}/>
                 <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="cari..." className="rk-input" style={{ height: 28, paddingLeft: 22, paddingRight: searchTerm ? 22 : 8, width: 140, fontSize: 11 }}/>
@@ -1493,8 +1551,8 @@ export default function RegisterKapling() {
               <tfoot style={{ borderTop: '2px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
                 <tr style={{ fontWeight: 700, color: 'rgba(255,255,255,0.65)', fontFamily: 'monospace' }}>
                   <td style={{ padding: '7px 8px', position: 'sticky', left: 0, background: 'rgba(13,13,13,0.98)', zIndex: 10 }} colSpan={12}>TOTAL</td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right' }}>{totalBatang.toLocaleString('id')}</td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right' }}>{totalVolume.toFixed(3)}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right' }}>{filteredBatang.toLocaleString('id')}</td>
+                  <td style={{ padding: '7px 8px', textAlign: 'right' }}>{filteredVolume.toFixed(3)}</td>
                   <td colSpan={5}></td>
                 </tr>
               </tfoot>

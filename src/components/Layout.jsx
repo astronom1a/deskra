@@ -1,4 +1,5 @@
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import PageTransition from './PageTransition'
 import {
   LayoutDashboard, Link2, Users, Users2, Layers, Package,
   ChevronDown, ChevronRight, ClipboardList, Wallet, ScrollText,
@@ -343,7 +344,9 @@ export default function Layout() {
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto" style={{ background: '#0a0a0a' }}>
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
     </div>
   )

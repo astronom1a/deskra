@@ -1,7 +1,6 @@
 import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/AuthProvider'
-import PageTransition from './components/PageTransition'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -119,7 +118,6 @@ function AppRoutes() {
   return (
     <>
       <TitleUpdater />
-      <PageTransition>
         <Routes>
       <Route
         path="/login"
@@ -179,7 +177,6 @@ function AppRoutes() {
 
       <Route path="*" element={<SmartRedirect />} />
         </Routes>
-      </PageTransition>
     </>
   )
 }
