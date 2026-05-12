@@ -303,7 +303,7 @@ export default function Dashboard() {
         {/* Ringkasan Kapling */}
         <section className="mb-10">
           <p className="text-xs font-mono tracking-widest uppercase mb-4" style={{ color: '#00ff88' }}>
-            — ringkasan kapling
+            — statistik
           </p>
           {statsLoading ? (
             <div className="text-xs font-mono py-4" style={{ color: '#3a3a3a' }}>memuat...</div>
