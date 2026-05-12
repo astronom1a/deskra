@@ -300,7 +300,7 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* Ringkasan Kapling */}
+        {/* statistik */}
         <section className="mb-10">
           <p className="text-xs font-mono tracking-widest uppercase mb-4" style={{ color: '#00ff88' }}>
             — statistik
