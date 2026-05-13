@@ -225,7 +225,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Content ───────────────────────────────────────────────────────── */}
-      <div className="relative z-10 p-6 max-w-5xl mx-auto">
+      <div className="relative z-10 p-6 mx-auto" style={{ width: '100%', maxWidth: 'min(96vw, 1440px)' }}>
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-10">
@@ -246,12 +246,34 @@ export default function Dashboard() {
             background: 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: 4,
-            padding: '14px 20px',
+            padding: '14px 18px',
           }} className="shrink-0 sm:text-right">
-            <p className="text-2xl font-bold font-mono tabular-nums" style={{ color: '#00ff88' }}>
-              {h}:{mm}:{ss} <span style={{ color: 'rgba(0,255,136,0.5)', fontSize: 14 }}>{ampm}</span>
-            </p>
-            <p className="text-xs font-mono mt-1" style={{ color: '#4a4a4a' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
+              <p className="font-bold font-mono tabular-nums" style={{ color: '#00ff88', lineHeight: 1, fontSize: 26 }}>
+                {h}:{mm}:{ss}
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center', lineHeight: 1 }}>
+                {['AM', 'PM'].map(label => {
+                  const active = ampm === label
+                  return (
+                    <span key={label} style={{
+                      minWidth: 22,
+                      padding: '1px 2px',
+                      borderRadius: 2,
+                      textAlign: 'center',
+                      fontFamily: 'monospace',
+                      fontSize: 13,
+                      fontWeight: active ? 800 : 600,
+                      color: active ? '#00ff88' : 'rgba(255,255,255,0.22)',
+                      background: 'transparent',
+                    }}>
+                      {label}
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+            <p className="font-mono" style={{ color: '#4a4a4a', marginTop: 7, fontSize: 12 }}>
               {now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>
@@ -308,7 +330,7 @@ export default function Dashboard() {
           {statsLoading ? (
             <div className="text-xs font-mono py-4" style={{ color: '#3a3a3a' }}>memuat...</div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, alignItems: 'stretch' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 12, alignItems: 'stretch' }}>
 
               {/* DKHP */}
               <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>

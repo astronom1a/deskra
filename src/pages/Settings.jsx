@@ -1,10 +1,8 @@
 import { useState } from 'react'
-import { Sun, Moon, Monitor, UserCog, Save, Check } from 'lucide-react'
-import { useTheme } from '../lib/useTheme'
+import { UserCog, Save, Check, AlertCircle } from 'lucide-react'
 import { useAuth } from '../lib/AuthProvider'
 
 export default function Settings() {
-  const { theme, setTheme } = useTheme()
   const { profile, tpk, updateProfile } = useAuth()
 
   const [namaOperator, setNamaOperator] = useState(profile?.nama_operator || '')
@@ -28,112 +26,123 @@ export default function Settings() {
     setSaving(false)
   }
 
-  const options = [
-    { value: 'light', label: 'Light', icon: Sun },
-    { value: 'dark',  label: 'Dark',  icon: Moon },
-  ]
+  const inputStyle = {
+    width: '100%',
+    boxSizing: 'border-box',
+    padding: '8px 10px',
+    borderRadius: 3,
+    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.03)',
+    color: '#f0f0f0',
+    outline: 'none',
+    fontFamily: 'monospace',
+    fontSize: 12,
+  }
 
-  const inputCls = 'w-full px-3 py-2 rounded-lg border bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
+  const disabledInputStyle = {
+    ...inputStyle,
+    background: 'rgba(255,255,255,0.025)',
+    color: 'rgba(255,255,255,0.42)',
+    cursor: 'not-allowed',
+  }
 
   return (
-    <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-1">Settings</h1>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Atur preferensi aplikasi dan data akun.</p>
+    <div style={{ padding: 24, maxWidth: 760, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+      <style>{`
+        .settings-input:focus {
+          border-color: rgba(0,255,136,0.5) !important;
+          box-shadow: 0 0 0 2px rgba(0,255,136,0.07);
+        }
+        .settings-input::placeholder {
+          color: rgba(255,255,255,0.22);
+        }
+      `}</style>
 
-      <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 mb-5">
-        <div className="flex items-center gap-3 mb-4">
-          <UserCog size={18} className="text-primary-600 dark:text-primary-300" />
-          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">Akun</h2>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', margin: 0 }}>Settings</h1>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 4, fontFamily: 'monospace' }}>Atur identitas operator dan data akun.</p>
+      </div>
+
+      <section style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 3, background: 'rgba(0,255,136,0.08)', border: '1px solid rgba(0,255,136,0.16)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <UserCog size={15} style={{ color: '#00ff88' }} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', margin: 0 }}>Akun</h2>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.32)', marginTop: 3, fontFamily: 'monospace' }}>Identitas operator dan TPK.</p>
+          </div>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Identitas operator dan TPK.</p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Nama Operator</label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14 }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,0.55)', marginBottom: 6, fontFamily: 'monospace', fontWeight: 600 }}>Nama Operator</label>
             <input
               type="text"
               value={namaOperator}
               onChange={e => { setNamaOperator(e.target.value); setSaved(false) }}
               placeholder="cth. Budi Santoso"
-              className={`${inputCls} border-gray-200 dark:border-gray-600`}
+              className="settings-input"
+              style={inputStyle}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Lokasi TPK</label>
+            <label style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,0.55)', marginBottom: 6, fontFamily: 'monospace', fontWeight: 600 }}>Lokasi TPK</label>
             <input
               type="text"
               value={tpk?.namatpk || '—'}
               disabled
-              className={`${inputCls} border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed`}
+              style={disabledInputStyle}
             />
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Dikelola oleh admin.</p>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 6, fontFamily: 'monospace' }}>Dikelola oleh admin.</p>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Kode TPK</label>
+            <label style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,0.55)', marginBottom: 6, fontFamily: 'monospace', fontWeight: 600 }}>Kode TPK</label>
             <input
               type="text"
               value={tpk?.kode_tpk || '—'}
               disabled
-              className={`${inputCls} border-gray-200 dark:border-gray-600 opacity-60 cursor-not-allowed`}
+              style={disabledInputStyle}
             />
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Dikelola oleh admin.</p>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 6, fontFamily: 'monospace' }}>Dikelola oleh admin.</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 mt-5 pt-4 border-t border-gray-100 dark:border-gray-700">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 20, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap' }}>
           <button
             onClick={handleSave}
             disabled={!canSave}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 disabled:bg-gray-300 disabled:dark:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              padding: '8px 14px',
+              borderRadius: 3,
+              border: 'none',
+              background: canSave ? '#00ff88' : 'rgba(255,255,255,0.08)',
+              color: canSave ? '#0a0a0a' : 'rgba(255,255,255,0.32)',
+              cursor: canSave ? 'pointer' : 'not-allowed',
+              fontFamily: 'monospace',
+              fontSize: 12,
+              fontWeight: 700,
+            }}
           >
             {saving
-              ? <span className="inline-block w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ? <span style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.25)', borderTopColor: '#0a0a0a', display: 'inline-block' }} className="animate-spin" />
               : <Save size={15} />}
             Simpan
           </button>
           {saved && !dirty && (
-            <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#00ff88', fontFamily: 'monospace' }}>
               <Check size={14} /> Tersimpan di sistem
             </span>
           )}
           {dirty && !saving && (
-            <span className="text-xs text-amber-600 dark:text-amber-400">Perubahan belum disimpan</span>
+            <span style={{ fontSize: 11, color: '#ffaa00', fontFamily: 'monospace' }}>Perubahan belum disimpan</span>
           )}
           {error && (
-            <span className="text-xs text-red-500">{error}</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#ff6b6b', fontFamily: 'monospace' }}><AlertCircle size={13} />{error}</span>
           )}
-        </div>
-      </section>
-
-      <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-        <div className="flex items-center gap-3 mb-4">
-          <Monitor size={18} className="text-primary-600 dark:text-primary-300" />
-          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">Tampilan</h2>
-        </div>
-
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">Mode Tema</p>
-        <div className="relative inline-flex p-1 rounded-xl bg-gray-100 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700">
-          <span
-            aria-hidden
-            className="absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-lg bg-primary-600 shadow-sm transition-transform duration-300 ease-out"
-            style={{ transform: `translateX(${theme === 'dark' ? '100%' : '0%'})` }}
-          />
-          {options.map(opt => {
-            const Icon = opt.icon
-            const active = theme === opt.value
-            return (
-              <button
-                key={opt.value}
-                onClick={() => setTheme(opt.value)}
-                className={`relative z-10 flex items-center justify-center gap-2 w-28 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
-                  active ? 'text-white' : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
-                }`}
-              >
-                <Icon size={16} className={`transition-transform duration-300 ${active ? 'rotate-0 scale-100' : 'scale-90'}`} />
-                {opt.label}
-              </button>
-            )
-          })}
         </div>
       </section>
     </div>

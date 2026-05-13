@@ -80,6 +80,15 @@ export default function DatabaseTenaga() {
     return (v || '').trim().toUpperCase()
   }
 
+  function togglePosisi(value) {
+    setForm(f => ({
+      ...f,
+      posisi: f.posisi.includes(value)
+        ? f.posisi.filter(p => p !== value)
+        : [...f.posisi, value],
+    }))
+  }
+
   async function handleSubmit() {
     if (!form.nama.trim()) return showToast('Nama wajib diisi', 'error')
     if (!form.posisi.length) return showToast('Posisi wajib dipilih minimal satu', 'error')
@@ -131,6 +140,7 @@ export default function DatabaseTenaga() {
         .dtk-inp:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
         .dtk-inp::placeholder { color: rgba(255,255,255,0.2); }
         .dtk-cb { accent-color: #00ff88; }
+        .dtk-pos-card:hover { transform: translateY(-1px); }
       `}</style>
 
       {toast && (
@@ -183,25 +193,96 @@ export default function DatabaseTenaga() {
               <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 8 }}>
                 Posisi <span style={{ color: 'rgba(255,255,255,0.25)' }}>(boleh pilih lebih dari satu)</span>
               </label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 20px' }}>
-                {POSISI_OPTIONS.map(op => (
-                  <label key={op.value} style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={form.posisi.includes(op.value)}
-                      onChange={e => setForm(f => ({
-                        ...f,
-                        posisi: e.target.checked ? [...f.posisi, op.value] : f.posisi.filter(p => p !== op.value),
-                      }))}
-                      className="dtk-cb"/>
-                    <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{op.label}</span>
-                  </label>
-                ))}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 8 }}>
+                {POSISI_OPTIONS.map(op => {
+                  const active = form.posisi.includes(op.value)
+                  const c = POSISI_COLORS[op.value] || { bg: 'rgba(0,255,136,0.1)', border: 'rgba(0,255,136,0.25)', color: '#00ff88' }
+                  return (
+                    <button
+                      key={op.value}
+                      type="button"
+                      onClick={() => togglePosisi(op.value)}
+                      className="dtk-pos-card"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 10,
+                        padding: '8px 10px',
+                        borderRadius: 3,
+                        border: `1px solid ${active ? c.border : 'rgba(255,255,255,0.08)'}`,
+                        background: active ? c.bg : 'rgba(255,255,255,0.025)',
+                        color: active ? c.color : 'rgba(255,255,255,0.48)',
+                        cursor: 'pointer',
+                        fontFamily: 'monospace',
+                        fontSize: 11,
+                        fontWeight: active ? 700 : 500,
+                        transition: 'transform 120ms ease, border-color 120ms ease, background 120ms ease, color 120ms ease',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={e => {
+                        if (!active) {
+                          e.currentTarget.style.borderColor = 'rgba(0,255,136,0.22)'
+                          e.currentTarget.style.background = 'rgba(0,255,136,0.045)'
+                          e.currentTarget.style.color = 'rgba(255,255,255,0.72)'
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (!active) {
+                          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                          e.currentTarget.style.background = 'rgba(255,255,255,0.025)'
+                          e.currentTarget.style.color = 'rgba(255,255,255,0.48)'
+                        }
+                      }}
+                    >
+                      <span>{op.label}</span>
+                      <span style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: 3,
+                        border: `1px solid ${active ? c.color : 'rgba(255,255,255,0.18)'}`,
+                        background: active ? c.color : 'rgba(255,255,255,0.025)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>
+                        {active && <CheckCircle2 size={10} style={{ color: '#0a0a0a' }}/>}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, cursor: 'pointer' }}>
-            <input type="checkbox" checked={form.aktif} onChange={e => setForm(f => ({ ...f, aktif: e.target.checked }))} className="dtk-cb"/>
-            <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Aktif</span>
-          </label>
+          <button
+            type="button"
+            onClick={() => setForm(f => ({ ...f, aktif: !f.aktif }))}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: 12,
+              padding: '6px 10px',
+              borderRadius: 3,
+              border: `1px solid ${form.aktif ? 'rgba(0,255,136,0.25)' : 'rgba(255,255,255,0.08)'}`,
+              background: form.aktif ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.025)',
+              color: form.aktif ? '#00ff88' : 'rgba(255,255,255,0.42)',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              fontSize: 11,
+              fontWeight: 700,
+            }}
+          >
+            <span style={{
+              width: 10,
+              height: 10,
+              borderRadius: 2,
+              background: form.aktif ? '#00ff88' : 'rgba(255,255,255,0.1)',
+              boxShadow: form.aktif ? '0 0 10px rgba(0,255,136,0.45)' : 'none',
+            }}/>
+            Aktif
+          </button>
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
             <button onClick={handleSubmit} style={{ padding: '7px 16px', background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}>
               {editId ? 'perbarui' : 'simpan'}

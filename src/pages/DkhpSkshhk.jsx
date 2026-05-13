@@ -8,14 +8,15 @@ import {
 import { supabase } from '../lib/supabase'
 import { getNamaTpk } from '../lib/useAccount'
 import { useAuth } from '../lib/AuthProvider'
+import ThemedSelect from '../components/ThemedSelect'
 
 const MONTH_FULL_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 const MONTH_SHORT_ID = ['JAN','FEB','MAR','APR','MEI','JUN','JUL','AGS','SEP','OKT','NOV','DES']
 
-function fmtMDYY(iso) {
+function fmtDDMMYYYY(iso) {
   const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/)
   if (!m) return iso || ''
-  return `${+m[2]}/${+m[3]}/${m[1].slice(-2)}`
+  return `${m[3]}/${m[2]}/${m[1]}`
 }
 
 function tpkAbbr(nama) {
@@ -41,6 +42,7 @@ const COL_MAP = {
   tujuan:        'TUJUAN',
   kota_tujuan:   'KOTA TUJUAN',
   pembeli:       'PEMBELI',
+  tanggal_dimatikan: 'TANGGAL DIMATIKAN',
 }
 
 const COLS = [
@@ -62,11 +64,12 @@ const COLS = [
   { key: 'tujuan',        label: 'Tujuan',     w: 'w-[280px]' },
   { key: 'kota_tujuan',   label: 'Kota Tujuan', w: 'w-[120px]' },
   { key: 'pembeli',       label: 'Pembeli',    w: 'w-[160px]' },
+  { key: 'tanggal_dimatikan', label: 'Tanggal Dimatikan', w: 'w-[120px]' },
 ]
 
 const KLAS_STYLE = {
   JATI:  { background: 'rgba(0,255,136,0.12)', color: '#00ff88', border: '1px solid rgba(0,255,136,0.25)' },
-  RIMBA: { background: 'rgba(255,107,107,0.12)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.25)' },
+  RIMBA: { background: 'rgba(255,170,0,0.12)', color: '#ffaa00', border: '1px solid rgba(255,170,0,0.25)' },
 }
 const BADGE_DEF = { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.1)' }
 const BADGE_BASE = { display: 'inline-block', padding: '2px 6px', borderRadius: 3, fontSize: 10, fontWeight: 600, fontFamily: 'monospace' }
@@ -89,6 +92,35 @@ const JENIS_BY_KLAS = {
 
 const NUMERIC_FIELDS = ['ai_bt','ai_m3','aii_bt','aii_m3','aiii_bt','aiii_m3','jml_bt','jml_m3']
 const INT_FIELDS = ['ai_bt','aii_bt','aiii_bt','jml_bt']
+
+function dkhpNumber(val) {
+  const n = Number(String(val ?? '').replace(/\D/g, ''))
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+
+function withDkhpGaps(items, enabled) {
+  if (!enabled || !items.length) return items
+  const byNo = new Map()
+  const passthrough = []
+  for (const row of items) {
+    const n = dkhpNumber(row.no_dkhp)
+    if (!n) {
+      passthrough.push(row)
+      continue
+    }
+    if (!byNo.has(n)) byNo.set(n, [])
+    byNo.get(n).push(row)
+  }
+  if (byNo.size < 2) return items
+
+  const nums = [...byNo.keys()].sort((a, b) => a - b)
+  const out = []
+  for (let n = nums[0]; n <= nums[nums.length - 1]; n++) {
+    if (byNo.has(n)) out.push(...byNo.get(n))
+    else out.push({ id: `missing-dkhp-${n}`, no_dkhp: String(n), _missingDkhp: true })
+  }
+  return [...out, ...passthrough]
+}
 
 function parseExcelDate(val) {
   if (val == null || val === '') return null
@@ -119,6 +151,34 @@ function displayDate(iso) {
   return m ? `${m[3]}/${m[2]}/${m[1]}` : iso
 }
 
+function dateYear(val) {
+  const m = String(val || '').match(/^(\d{4})-/)
+  return m ? Number(m[1]) : null
+}
+
+function normalizeDateInput(val, fallbackYear = new Date().getFullYear()) {
+  if (val == null || String(val).trim() === '') return null
+  const s = String(val).trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+
+  const m = s.replace(/[.\-\s]+/g, '/').match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/)
+  if (!m) return null
+
+  let [, d, mo, y] = m
+  d = Number(d)
+  mo = Number(mo)
+  y = y ? Number(y) : Number(fallbackYear)
+  if (y < 100) y += 2000
+  const date = new Date(y, mo - 1, d)
+  if (date.getFullYear() !== y || date.getMonth() !== mo - 1 || date.getDate() !== d) return null
+  return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+}
+
+function displayMonth(ym) {
+  const m = String(ym || '').match(/^(\d{4})-(\d{2})$/)
+  return m ? `${m[2]}/${m[1]}` : ym || ''
+}
+
 function num(v, isInt = false) {
   if (v == null || v === '') return 0
   const n = Number(String(v).replace(/[^\d.,-]/g,'').replace(',','.'))
@@ -137,6 +197,13 @@ function parseRows(rawRows) {
     const idx = headerRow.findIndex(h => h.toLowerCase() === headerName.toLowerCase())
     if (idx !== -1) idxMap[field] = idx
   }
+  if (idxMap.tanggal_dimatikan == null) {
+    const idx = headerRow.findIndex(h => {
+      const norm = h.toLowerCase()
+      return norm.includes('dimatikan') && !norm.includes('belum')
+    })
+    if (idx !== -1) idxMap.tanggal_dimatikan = idx
+  }
   return rawRows.slice(headerIdx + 1)
     .filter(r => idxMap.no_skshhk != null && r[idxMap.no_skshhk] != null && String(r[idxMap.no_skshhk]).trim() !== '')
     .map(r => {
@@ -152,6 +219,7 @@ function parseRows(rawRows) {
         tujuan:        String(get('tujuan') ?? '').trim() || null,
         kota_tujuan:   String(get('kota_tujuan') ?? '').trim() || null,
         pembeli:       String(get('pembeli') ?? '').trim() || null,
+        tanggal_dimatikan: parseExcelDate(get('tanggal_dimatikan')),
       }
       for (const f of NUMERIC_FIELDS) row[f] = num(get(f), INT_FIELDS.includes(f))
       return row
@@ -163,6 +231,7 @@ const EMPTY_FORM = {
   ai_bt: 0, ai_m3: 0, aii_bt: 0, aii_m3: 0, aiii_bt: 0, aiii_m3: 0,
   jml_bt: 0, jml_m3: 0,
   nopol: '', pemohon_sopir: '', tujuan: '', kota_tujuan: '', pembeli: '',
+  tanggal_dimatikan: '',
 }
 
 export default function DkhpSkshhk() {
@@ -172,6 +241,8 @@ export default function DkhpSkshhk() {
   const [lastUpdated, setLastUpdated] = useState(null)
   const [search, setSearch]   = useState('')
   const [searchCol, setSearchCol] = useState('all')
+  const [tanggalFilter, setTanggalFilter] = useState('all')
+  const [skshhkFilter, setSkshhkFilter] = useState('all')
   const [showColDropdown, setShowColDropdown] = useState(false)
   const [sorts, setSorts]     = useState([{ key: 'no_dkhp', dir: 'asc' }])
   const [showSortPanel, setShowSortPanel] = useState(false)
@@ -201,17 +272,62 @@ export default function DkhpSkshhk() {
 
   async function fetchData() {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('tabel_dkhp_skshhk')
-      .select('*')
-      .order('no_dkhp', { ascending: true })
-      .order('tanggal', { ascending: true })
-      .limit(2000)
+    const PAGE = 1000
+    const all = []
+    let error = null
+    for (let from = 0; ; from += PAGE) {
+      const { data, error: pageError } = await supabase
+        .from('tabel_dkhp_skshhk')
+        .select('*')
+        .order('no_dkhp', { ascending: true })
+        .order('tanggal', { ascending: true })
+        .range(from, from + PAGE - 1)
+      if (pageError) { error = pageError; break }
+      if (!data || data.length === 0) break
+      all.push(...data)
+      if (data.length < PAGE) break
+    }
     if (error) showToast(error.message, 'error')
-    else { setRows(data || []) }
+    else { setRows(all) }
     setLoading(false)
   }
   useEffect(() => { fetchData() }, [])
+
+  const exportMonthOptions = useMemo(() => {
+    const months = [...new Set(
+      rows
+        .map(r => String(r.tanggal || '').slice(0, 7))
+        .filter(v => /^\d{4}-\d{2}$/.test(v))
+    )].sort((a, b) => b.localeCompare(a))
+
+    return months.map(value => ({ value, label: displayMonth(value) }))
+  }, [rows])
+
+  useEffect(() => {
+    if (!exportMonthOptions.length) return
+    if (!exportMonthOptions.some(opt => opt.value === exportMonth)) {
+      setExportMonth(exportMonthOptions[0].value)
+    }
+  }, [exportMonth, exportMonthOptions])
+
+  const tanggalFilterOptions = useMemo(() => {
+    const months = [...new Set(
+      rows
+        .map(r => String(r.tanggal || '').slice(0, 7))
+        .filter(v => /^\d{4}-\d{2}$/.test(v))
+    )].sort((a, b) => b.localeCompare(a))
+
+    return [
+      { value: 'all', label: 'Semua Tanggal' },
+      { value: 'null', label: 'Tanggal Kosong' },
+      ...months.map(value => ({ value, label: displayMonth(value) })),
+    ]
+  }, [rows])
+
+  const skshhkFilterOptions = [
+    { value: 'all', label: 'Semua SKSHHK' },
+    { value: 'null', label: 'SKSHHK Kosong' },
+  ]
 
   function handleFileChange(e) {
     const file = e.target.files[0]
@@ -227,8 +343,20 @@ export default function DkhpSkshhk() {
         showToast('Tidak ada data SKSHHK terbaca dari file ini.', 'error')
         return
       }
-      const existing = new Set(rows.map(r => r.no_skshhk))
-      const newCount  = parsed.filter(r => !existing.has(r.no_skshhk)).length
+      const bySkshhk = parsed.reduce((acc, r) => {
+        const key = String(r.no_skshhk || '').trim()
+        if (!key) return acc
+        acc[key] = (acc[key] || 0) + 1
+        return acc
+      }, {})
+      const duplicates = Object.entries(bySkshhk).filter(([, count]) => count > 1)
+      if (duplicates.length) {
+        showToast(`No. SKSHHK duplikat: ${duplicates.slice(0, 3).map(([no]) => no).join(', ')}${duplicates.length > 3 ? '…' : ''}`, 'error')
+        setPreview(null)
+        return
+      }
+      const existing = new Set(rows.map(r => String(r.no_skshhk || '').trim()).filter(Boolean))
+      const newCount  = parsed.filter(r => !existing.has(String(r.no_skshhk || '').trim())).length
       const skipCount = parsed.length - newCount
       setPreview({ rows: parsed, fileName: file.name, newCount, skipCount })
     }
@@ -238,11 +366,11 @@ export default function DkhpSkshhk() {
   async function handleImport() {
     if (!preview) return
     setImporting(true)
-    const existing = new Set(rows.map(r => r.no_skshhk))
+    const existing = new Set(rows.map(r => String(r.no_skshhk || '').trim()).filter(Boolean))
     const dedup = Object.values(
       preview.rows
-        .filter(r => !existing.has(r.no_skshhk))
-        .reduce((acc, r) => { acc[r.no_skshhk] = r; return acc }, {})
+        .filter(r => !existing.has(String(r.no_skshhk || '').trim()))
+        .reduce((acc, r) => { acc[String(r.no_skshhk || '').trim()] = r; return acc }, {})
     )
     if (!dedup.length) {
       setImporting(false)
@@ -260,18 +388,25 @@ export default function DkhpSkshhk() {
     fetchData()
   }
 
-  function openAdd()      { setEditRow({ ...EMPTY_FORM, _new: true }) }
-  function openEdit(row)  { setEditRow({ ...row }) }
+  function openAdd()      { setEditRow({ ...EMPTY_FORM, _new: true, _dateYear: new Date().getFullYear() }) }
+  function openEdit(row)  { setEditRow({ ...row, _dateYear: dateYear(row.tanggal) || dateYear(row.tanggal_dimatikan) || new Date().getFullYear() }) }
 
   async function handleSave() {
     if (!editRow) return
     if (!editRow.no_skshhk?.trim()) { showToast('Nomor SKSHHK wajib diisi.', 'error'); return }
-    setSaving(true)
     const payload = { ...editRow }
     delete payload._new
+    const fallbackYear = payload._dateYear || dateYear(payload.tanggal) || dateYear(payload.tanggal_dimatikan) || new Date().getFullYear()
+    delete payload._dateYear
     delete payload.id
     delete payload.created_at
-    payload.tanggal = payload.tanggal || null
+    const tanggal = normalizeDateInput(payload.tanggal, fallbackYear)
+    const tanggalDimatikan = normalizeDateInput(payload.tanggal_dimatikan, fallbackYear)
+    if (payload.tanggal && !tanggal) { showToast('Format tanggal tidak valid. Gunakan dd/mm/yyyy atau dd/mm.', 'error'); return }
+    if (payload.tanggal_dimatikan && !tanggalDimatikan) { showToast('Format tanggal dimatikan tidak valid. Gunakan dd/mm/yyyy atau dd/mm.', 'error'); return }
+    setSaving(true)
+    payload.tanggal = tanggal
+    payload.tanggal_dimatikan = tanggalDimatikan
     for (const f of NUMERIC_FIELDS) payload[f] = num(payload[f], INT_FIELDS.includes(f))
     payload.jml_bt = payload.ai_bt + payload.aii_bt + payload.aiii_bt
     payload.jml_m3 = +(payload.ai_m3 + payload.aii_m3 + payload.aiii_m3).toFixed(3)
@@ -302,21 +437,35 @@ export default function DkhpSkshhk() {
     fetchData()
   }
 
+  const baseFiltered = useMemo(() => rows.filter(r => {
+    const tanggal = String(r.tanggal || '')
+    const skshhk = String(r.no_skshhk || '').trim()
+    const passTanggal = tanggalFilter === 'all'
+      ? true
+      : tanggalFilter === 'null'
+        ? !tanggal
+        : tanggal.slice(0, 7) === tanggalFilter
+    const passSkshhk = skshhkFilter === 'all'
+      ? true
+      : !skshhk
+    return passTanggal && passSkshhk
+  }), [rows, tanggalFilter, skshhkFilter])
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return rows
+    if (!q) return baseFiltered
     if (searchCol === 'all') {
-      return rows.filter(r =>
-        [r.no_dkhp, r.no_skshhk, r.klas, r.jenis, r.nopol, r.pemohon_sopir, r.kota_tujuan, r.pembeli, r.tujuan]
+      return baseFiltered.filter(r =>
+        [r.no_dkhp, r.no_skshhk, r.klas, r.jenis, r.nopol, r.pemohon_sopir, r.kota_tujuan, r.pembeli, r.tujuan, displayDate(r.tanggal_dimatikan)]
           .some(v => v && String(v).toLowerCase().includes(q))
       )
     }
-    return rows.filter(r => {
+    return baseFiltered.filter(r => {
       let v = r[searchCol]
-      if (searchCol === 'tanggal') v = displayDate(r.tanggal) || ''
+      if (searchCol === 'tanggal' || searchCol === 'tanggal_dimatikan') v = displayDate(v) || ''
       return String(v ?? '').toLowerCase().includes(q)
     })
-  }, [rows, search, searchCol])
+  }, [baseFiltered, search, searchCol])
 
   const sorted = useMemo(() => {
     if (!sorts.length) return filtered
@@ -334,6 +483,12 @@ export default function DkhpSkshhk() {
     })
   }, [filtered, sorts])
 
+  const hasActiveFilters = tanggalFilter !== 'all' || skshhkFilter !== 'all'
+  const showDkhpGaps = !search.trim() && !hasActiveFilters && (sorts.length === 0 || (sorts[0]?.key === 'no_dkhp' && sorts[0]?.dir === 'asc'))
+  const tableRows = useMemo(() => withDkhpGaps(sorted, showDkhpGaps), [sorted, showDkhpGaps])
+  const missingDkhpNumbers = useMemo(() => tableRows.filter(row => row._missingDkhp).map(row => row.no_dkhp), [tableRows])
+  const missingDkhpCount = missingDkhpNumbers.length
+
   function toggleSort(key) {
     setSorts(prev => {
       if (prev[0]?.key === key) {
@@ -345,7 +500,7 @@ export default function DkhpSkshhk() {
     setCurrentPage(1)
   }
 
-  useEffect(() => { setCurrentPage(1) }, [search, searchCol])
+  useEffect(() => { setCurrentPage(1) }, [search, searchCol, tanggalFilter, skshhkFilter])
 
   useEffect(() => {
     if (!showColDropdown) return
@@ -371,18 +526,20 @@ export default function DkhpSkshhk() {
   }, [contextMenu])
 
   const PAGE_SIZES = [
+    { label: '10',    value: 10 },
+    { label: '20',    value: 20 },
     { label: '50',    value: 50 },
+    { label: '100',   value: 100 },
     { label: '500',   value: 500 },
     { label: '1.000', value: 1000 },
-    { label: '5.000', value: 5000 },
     { label: 'Semua', value: 0 },
   ]
 
-  const totalPages    = pageSize === 0 ? 1 : Math.ceil(sorted.length / pageSize)
+  const totalPages    = pageSize === 0 ? 1 : Math.ceil(tableRows.length / pageSize)
   const safePage      = Math.min(currentPage, totalPages || 1)
   const displayedRows = pageSize === 0
-    ? sorted
-    : sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
+    ? tableRows
+    : tableRows.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   const totals = useMemo(() => sorted.reduce((acc, r) => {
     acc.jml_bt += Number(r.jml_bt) || 0
@@ -430,83 +587,130 @@ export default function DkhpSkshhk() {
       const dash = (v, decimals) => {
         const n = Number(v) || 0
         if (!n) return ' - '
-        return decimals != null ? n.toFixed(decimals) : String(n)
+        return decimals != null ? Number(n.toFixed(decimals)) : n
       }
 
       const aoa = []
-      // Header
-      aoa.push([null,'LAPORAN BULANAN PENERBITAN SURAT KETERANGAN SAH HASIL HUTAN KAYU (SKSHHK)',null,null,null,null,null,null,null,null,null,null,null,null,null,'Lampiran : 6'])
-      aoa.push([null,'DIVISI REGIONAL',null,':  JAWA TIMUR'])
-      aoa.push([null,'KPH',null,':  BANYUWANGI UTARA',null,null,null,null,null,null,null,null,' BULAN : ', monthLabel])
-      aoa.push([null,'TPK',null,`:  ${tpkUpper}`,null,null,null,null,null,null,null,null,' TAHUN : ', String(y)])
-      aoa.push([])
-      // Column header rows
-      const HDR1_R = aoa.length
-      aoa.push(['KETERANGAN SURAT BUKTI PENGIRIMAN',null,null,null,null,'KETERANGAN  JUMLAH FISIK  PENERIMAAN',null,null,null,null,null,null,null,null,null,'KETERANGAN  STATUS  PENERIMAAN'])
-      const HDR2_R = aoa.length
-      aoa.push(['NO','TGL PENERBITAN','KAYU BULAT/ OLAHAN',null,null,'TUJUAN KIRIM',null,'LOG AIII',null,' LOG AII ',null,' LOG AI ',null,'JUMLAH',null,'SKSHH DI TUJUAN'])
-      const HDR3_R = aoa.length
-      aoa.push([null,'SKSHHK','NO SKSHHK','DKHP','JENIS KAYU','INDUSTRI','TPK',' BTG ',' M3 ',' BTG ',' M3 ',' BTG ',' M3 ','BTG','M3','BELUM DIMATIKAN','DIMATIKAN TGL'])
-      aoa.push(['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17'])
-
-      // Data rows
-      const totals = { ai_bt:0, ai_m3:0, aii_bt:0, aii_m3:0, aiii_bt:0, aiii_m3:0, jml_bt:0, jml_m3:0 }
-      monthRows.forEach((r, i) => {
-        aoa.push([
-          String(i + 1),
-          fmtMDYY(r.tanggal),
-          r.no_skshhk || '',
-          r.no_dkhp || '',
-          r.klas || '',
-          r.tujuan || '',
-          tpkCode,
-          dash(r.aiii_bt),
-          dash(r.aiii_m3, 3),
-          dash(r.aii_bt),
-          dash(r.aii_m3, 3),
-          dash(r.ai_bt),
-          dash(r.ai_m3, 3),
-          (Number(r.jml_bt) || 0).toString(),
-          (Number(r.jml_m3) || 0).toFixed(3),
-          '',
-          '',
-        ])
-        totals.ai_bt   += Number(r.ai_bt)   || 0
-        totals.ai_m3   += Number(r.ai_m3)   || 0
-        totals.aii_bt  += Number(r.aii_bt)  || 0
-        totals.aii_m3  += Number(r.aii_m3)  || 0
-        totals.aiii_bt += Number(r.aiii_bt) || 0
-        totals.aiii_m3 += Number(r.aiii_m3) || 0
-        totals.jml_bt  += Number(r.jml_bt)  || 0
-        totals.jml_m3  += Number(r.jml_m3)  || 0
-      })
-
-      aoa.push([])
-      const TOTAL_R = aoa.length
-      aoa.push([
-        'TOTAL', null, null, null, null, null, null,
-        totals.aiii_bt.toLocaleString('en-US'),
-        totals.aiii_m3.toFixed(3),
-        totals.aii_bt.toLocaleString('en-US'),
-        totals.aii_m3.toFixed(3),
-        totals.ai_bt.toLocaleString('en-US'),
-        totals.ai_m3.toFixed(3),
-        totals.jml_bt.toLocaleString('en-US'),
-        totals.jml_m3.toFixed(3),
-      ])
-      aoa.push([])
-
-      // Signature block
-      const sigCol = (label, idxL, idxR) => {
-        const r = new Array(17).fill(null)
-        if (idxL != null) r[idxL] = label
-        return r
+      const merges = []
+      const pageBreakRows = []
+      const emptyTotal = () => ({ ai_bt:0, ai_m3:0, aii_bt:0, aii_m3:0, aiii_bt:0, aiii_m3:0, jml_bt:0, jml_m3:0 })
+      const addToTotal = (acc, r) => {
+        acc.ai_bt   += Number(r.ai_bt)   || 0
+        acc.ai_m3   += Number(r.ai_m3)   || 0
+        acc.aii_bt  += Number(r.aii_bt)  || 0
+        acc.aii_m3  += Number(r.aii_m3)  || 0
+        acc.aiii_bt += Number(r.aiii_bt) || 0
+        acc.aiii_m3 += Number(r.aiii_m3) || 0
+        acc.jml_bt  += Number(r.jml_bt)  || 0
+        acc.jml_m3  += Number(r.jml_m3)  || 0
       }
-      const dateRow = new Array(17).fill(null); dateRow[14] = dateLine
+      const totalRow = (label, total) => [
+        label, null, null, null, null, null, null,
+        total.aiii_bt,
+        Number(total.aiii_m3.toFixed(3)),
+        total.aii_bt,
+        Number(total.aii_m3.toFixed(3)),
+        total.ai_bt,
+        Number(total.ai_m3.toFixed(3)),
+        total.jml_bt,
+        Number(total.jml_m3.toFixed(3)),
+        '',
+        '',
+      ]
+      const dataRow = (r, no) => [
+        no,
+        fmtDDMMYYYY(r.tanggal),
+        r.no_skshhk || '',
+        r.no_dkhp || '',
+        r.klas || '',
+        r.tujuan || '',
+        tpkCode,
+        dash(r.aiii_bt),
+        dash(r.aiii_m3, 3),
+        dash(r.aii_bt),
+        dash(r.aii_m3, 3),
+        dash(r.ai_bt),
+        dash(r.ai_m3, 3),
+        Number(r.jml_bt) || 0,
+        Number((Number(r.jml_m3) || 0).toFixed(3)),
+        r.tanggal_dimatikan ? '' : 'V',
+        r.tanggal_dimatikan ? fmtDDMMYYYY(r.tanggal_dimatikan) : '',
+      ]
+
+      const pushReportHeader = () => {
+        const titleR = aoa.length
+        aoa.push([null,'LAPORAN BULANAN PENERBITAN SURAT KETERANGAN SAH HASIL HUTAN KAYU (SKSHHK)',null,null,null,null,null,null,null,null,null,null,null,null,null,'Lampiran : 6'])
+        const divR = aoa.length
+        aoa.push([null,'DIVISI REGIONAL',null,':  JAWA TIMUR'])
+        const kphR = aoa.length
+        aoa.push([null,'KPH',null,':  BANYUWANGI UTARA',null,null,null,null,null,null,null,null,' BULAN : ', monthLabel])
+        const tpkR = aoa.length
+        aoa.push([null,'TPK',null,`:  ${tpkUpper}`,null,null,null,null,null,null,null,null,' TAHUN : ', String(y)])
+        aoa.push([])
+        merges.push(
+          { s: { r: titleR, c: 1 }, e: { r: titleR, c: 13 } },
+          { s: { r: divR, c: 1 }, e: { r: divR, c: 2 } },
+          { s: { r: kphR, c: 1 }, e: { r: kphR, c: 2 } },
+          { s: { r: tpkR, c: 1 }, e: { r: tpkR, c: 2 } },
+        )
+      }
+
+      const pushTableHeader = () => {
+        const hdr1 = aoa.length
+        aoa.push(['KETERANGAN SURAT BUKTI PENGIRIMAN',null,null,null,null,'KETERANGAN  JUMLAH FISIK  PENERIMAAN',null,null,null,null,null,null,null,null,null,'KETERANGAN  STATUS  PENERIMAAN SKSHH DI TUJUAN'])
+        const hdr2 = aoa.length
+        aoa.push(['NO','TGL SKSHHK','KAYU BULAT/ OLAHAN',null,null,'TUJUAN KIRIM',null,'LOG AIII',null,' LOG AII ',null,' LOG AI ',null,'JUMLAH',null,'',''])
+        const hdr3 = aoa.length
+        aoa.push([null,'','NO SKSHHK','DKHP','JENIS','INDUSTRI','TPK','BTG','M3','BTG','M3','BTG','M3','BTG','M3','BELUM DIMATIKAN','DIMATIKAN'])
+        merges.push(
+          { s: { r: hdr1, c: 0 },  e: { r: hdr1, c: 4 } },
+          { s: { r: hdr1, c: 5 },  e: { r: hdr1, c: 14 } },
+          { s: { r: hdr1, c: 15 }, e: { r: hdr2, c: 16 } },
+          { s: { r: hdr2, c: 0 },  e: { r: hdr3, c: 0 } },
+          { s: { r: hdr2, c: 1 },  e: { r: hdr3, c: 1 } },
+          { s: { r: hdr2, c: 2 },  e: { r: hdr2, c: 4 } },
+          { s: { r: hdr2, c: 5 },  e: { r: hdr2, c: 6 } },
+          { s: { r: hdr2, c: 7 },  e: { r: hdr2, c: 8 } },
+          { s: { r: hdr2, c: 9 },  e: { r: hdr2, c: 10 } },
+          { s: { r: hdr2, c: 11 }, e: { r: hdr2, c: 12 } },
+          { s: { r: hdr2, c: 13 }, e: { r: hdr2, c: 14 } },
+        )
+      }
+
+      const grandTotal = emptyTotal()
+      for (let start = 0; start < monthRows.length; start += 30) {
+        const chunk = monthRows.slice(start, start + 30)
+        const subtotal = emptyTotal()
+        const isLast = start + 30 >= monthRows.length
+
+        pushReportHeader()
+        pushTableHeader()
+        for (let i = 0; i < 30; i++) {
+          const row = chunk[i]
+          if (row) {
+            aoa.push(dataRow(row, start + i + 1))
+            addToTotal(subtotal, row)
+            addToTotal(grandTotal, row)
+          } else {
+            aoa.push(new Array(17).fill(null))
+          }
+        }
+        const subtotalR = aoa.length
+        aoa.push(totalRow('JUMLAH', subtotal))
+        merges.push({ s: { r: subtotalR, c: 0 }, e: { r: subtotalR, c: 6 } })
+
+        if (!isLast) {
+          pageBreakRows.push(aoa.length)
+          for (let i = 0; i < 8; i++) aoa.push([])
+        }
+      }
+
+      aoa.push([])
+      const dateRow = new Array(17).fill(null); dateRow[14] = dateLine.toUpperCase()
       aoa.push(dateRow)
-      const titleRow = new Array(17).fill(null); titleRow[8] = 'Pejabat Penerbit'; titleRow[14] = `Kepala ${tpkName}`
+      const titleRow = new Array(17).fill(null); titleRow[8] = 'Pejabat Penerbit'; titleRow[14] = `Kepala TPK ${tpkName}`
       aoa.push(titleRow)
-      aoa.push([]); aoa.push([])  // ttd space
+      aoa.push([]); aoa.push([])
       const nameRow = new Array(17).fill(null)
       nameRow[8] = (penerbit.nama || '').toUpperCase()
       nameRow[14] = (kepala.nama || '').toUpperCase()
@@ -515,22 +719,13 @@ export default function DkhpSkshhk() {
       idRow[8] = penerbit.npk ? `NO.REG. ${penerbit.npk}` : ''
       idRow[14] = kepala.npk ? `NPK.${kepala.npk}` : ''
       aoa.push(idRow)
+      const grandTotalR = aoa.length
+      aoa.push(totalRow('TOTAL', grandTotal))
+      merges.push({ s: { r: grandTotalR, c: 0 }, e: { r: grandTotalR, c: 6 } })
 
       const ws = XLSX.utils.aoa_to_sheet(aoa)
-      ws['!merges'] = [
-        { s: { r: HDR1_R, c: 0 },  e: { r: HDR1_R, c: 4 } },
-        { s: { r: HDR1_R, c: 5 },  e: { r: HDR1_R, c: 14 } },
-        { s: { r: HDR1_R, c: 15 }, e: { r: HDR1_R, c: 16 } },
-        { s: { r: HDR2_R, c: 0 },  e: { r: HDR3_R, c: 0 } },
-        { s: { r: HDR2_R, c: 2 },  e: { r: HDR2_R, c: 4 } },
-        { s: { r: HDR2_R, c: 5 },  e: { r: HDR2_R, c: 6 } },
-        { s: { r: HDR2_R, c: 7 },  e: { r: HDR2_R, c: 8 } },
-        { s: { r: HDR2_R, c: 9 },  e: { r: HDR2_R, c: 10 } },
-        { s: { r: HDR2_R, c: 11 }, e: { r: HDR2_R, c: 12 } },
-        { s: { r: HDR2_R, c: 13 }, e: { r: HDR2_R, c: 14 } },
-        { s: { r: HDR2_R, c: 15 }, e: { r: HDR2_R, c: 16 } },
-        { s: { r: TOTAL_R, c: 0 }, e: { r: TOTAL_R, c: 6 } },
-      ]
+      ws['!merges'] = merges
+      ws['!rowBreaks'] = pageBreakRows.map(r => ({ id: r }))
       ws['!cols'] = [
         { wch: 4 }, { wch: 11 }, { wch: 11 }, { wch: 6 }, { wch: 8 },
         { wch: 50 }, { wch: 5 }, { wch: 6 }, { wch: 7 }, { wch: 6 }, { wch: 7 },
@@ -554,13 +749,23 @@ export default function DkhpSkshhk() {
       <style>{`
         .dk-input { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #f0f0f0 !important; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; }
         .dk-input:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
-        .dk-input option { background: #1a1a1a; color: #f0f0f0; }
+        .dk-input option { background: #111; color: #f0f0f0; font-family: monospace; }
+        .dk-input option:hover,
+        .dk-input option:focus,
+        .dk-input option:checked {
+          background: linear-gradient(0deg, rgba(0,255,136,0.18), rgba(0,255,136,0.18)), #111;
+          color: #00ff88;
+        }
+        .dk-input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+        .dk-input[type=number]::-webkit-inner-spin-button, .dk-input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .dk-row:hover td { background: rgba(255,255,255,0.025) !important; }
         .dk-th:hover { background: rgba(255,255,255,0.04) !important; }
         .dk-fi:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
         .dk-fi::placeholder { color: rgba(255,255,255,0.15); }
         .dk-fi[type=number] { -moz-appearance: textfield; }
         .dk-fi[type=number]::-webkit-inner-spin-button, .dk-fi[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .dk-missing-dkhp > summary::-webkit-details-marker { display: none; }
+        .dk-missing-dkhp > summary { list-style: none; }
       `}</style>
 
       {/* Header */}
@@ -575,18 +780,48 @@ export default function DkhpSkshhk() {
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {missingDkhpCount > 0 && (
+            <details className="dk-missing-dkhp" style={{ position: 'relative' }}>
+              <summary style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 9px', fontSize: 11, fontFamily: 'monospace', color: '#ffaa00', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none', background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.28)', borderRadius: 3 }}>
+                <span>{missingDkhpCount.toLocaleString('id')} nomor DKHP kosong</span>
+                <ChevronDown size={12}/>
+              </summary>
+              <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 30, width: 260, maxHeight: 190, overflowY: 'auto', padding: 10, background: '#111', border: '1px solid rgba(255,170,0,0.22)', borderRadius: 4, boxShadow: '0 12px 32px rgba(0,0,0,0.45)' }}>
+                <div style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,170,0,0.7)', marginBottom: 8 }}>
+                  detail nomor kosong
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {missingDkhpNumbers.map(no => (
+                    <span key={no} style={{ minWidth: 34, padding: '3px 6px', borderRadius: 3, background: 'rgba(255,170,0,0.09)', border: '1px solid rgba(255,170,0,0.18)', color: '#ffaa00', fontSize: 11, fontFamily: 'monospace', textAlign: 'center' }}>
+                      {no}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </details>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3 }}>
-            <input
-              type="month"
+            <ThemedSelect
               value={exportMonth}
-              onChange={e => setExportMonth(e.target.value)}
-              className="dk-input"
-              style={{ padding: '3px 6px', colorScheme: 'dark' }}
+              onChange={setExportMonth}
+              options={exportMonthOptions}
+              placeholder="bulan"
+              disabled={!exportMonthOptions.length || exporting}
+              style={{
+                flex: '0 0 154px',
+                width: 154,
+                minWidth: 154,
+                minHeight: 28,
+                padding: '4px 8px',
+                background: 'rgba(255,255,255,0.035)',
+                borderColor: 'rgba(255,255,255,0.1)',
+                color: '#f0f0f0',
+              }}
             />
             <button
               onClick={handleExport}
-              disabled={exporting || !exportMonth}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 11, background: (exporting || !exportMonth) ? 'rgba(0,255,136,0.15)' : '#00ff88', color: (exporting || !exportMonth) ? 'rgba(0,255,136,0.4)' : '#0a0a0a', borderRadius: 3, border: 'none', cursor: (exporting || !exportMonth) ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700 }}
+              disabled={exporting || !exportMonth || !exportMonthOptions.length}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 11, background: (exporting || !exportMonth || !exportMonthOptions.length) ? 'rgba(0,255,136,0.15)' : '#00ff88', color: (exporting || !exportMonth || !exportMonthOptions.length) ? 'rgba(0,255,136,0.4)' : '#0a0a0a', borderRadius: 3, border: 'none', cursor: (exporting || !exportMonth || !exportMonthOptions.length) ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700 }}
             >
               {exporting ? <Loader2 size={11} className="animate-spin"/> : <Download size={11}/>}
               arus kayu
@@ -655,6 +890,38 @@ export default function DkhpSkshhk() {
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ThemedSelect
+              value={tanggalFilter}
+              onChange={setTanggalFilter}
+              options={tanggalFilterOptions}
+              style={{
+                flex: '0 0 138px',
+                width: 138,
+                minWidth: 138,
+                minHeight: 28,
+                padding: '4px 8px',
+                background: tanggalFilter === 'all' ? 'rgba(255,255,255,0.03)' : 'rgba(0,255,136,0.06)',
+                borderColor: tanggalFilter === 'all' ? 'rgba(255,255,255,0.1)' : 'rgba(0,255,136,0.3)',
+                color: tanggalFilter === 'all' ? 'rgba(255,255,255,0.55)' : '#00ff88',
+                fontSize: 11,
+              }}
+            />
+            <ThemedSelect
+              value={skshhkFilter}
+              onChange={setSkshhkFilter}
+              options={skshhkFilterOptions}
+              style={{
+                flex: '0 0 132px',
+                width: 132,
+                minWidth: 132,
+                minHeight: 28,
+                padding: '4px 8px',
+                background: skshhkFilter === 'all' ? 'rgba(255,255,255,0.03)' : 'rgba(0,255,136,0.06)',
+                borderColor: skshhkFilter === 'all' ? 'rgba(255,255,255,0.1)' : 'rgba(0,255,136,0.3)',
+                color: skshhkFilter === 'all' ? 'rgba(255,255,255,0.55)' : '#00ff88',
+                fontSize: 11,
+              }}
+            />
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <div ref={colDropdownRef} style={{ position: 'relative' }}>
                 <button onClick={() => setShowColDropdown(v => !v)}
@@ -744,7 +1011,7 @@ export default function DkhpSkshhk() {
             belum ada data — klik <span style={{ color: '#00ff88' }}>import excel</span> atau <span style={{ color: '#00ff88' }}>tambah</span> untuk mulai
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflow: 'auto', maxHeight: 'max(360px, calc(100vh - 280px))', scrollbarGutter: 'stable both-edges' }}>
             <table style={{ minWidth: '100%', fontSize: 11, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -775,12 +1042,21 @@ export default function DkhpSkshhk() {
                 </tr>
               </thead>
               <tbody>
-                {displayedRows.map((row) => (
+                {displayedRows.map((row) => row._missingDkhp ? (
+                  <tr key={row.id} style={{ borderBottom: '1px solid rgba(255,170,0,0.08)', background: 'rgba(255,170,0,0.035)' }}>
+                    <td style={{ padding: '7px 8px', fontFamily: 'monospace', color: '#ffaa00', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                      {row.no_dkhp}
+                    </td>
+                    <td colSpan={COLS.length} style={{ padding: '7px 8px', fontFamily: 'monospace', color: 'rgba(255,170,0,0.58)', fontSize: 10, letterSpacing: '0.02em' }}>
+                      nomor DKHP tidak ada di database
+                    </td>
+                  </tr>
+                ) : (
                   <tr key={row.id} className="dk-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }} onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, row }) }}>
                     {COLS.map(c => {
                       const v = row[c.key]
                       let content
-                      if (c.key === 'tanggal') content = displayDate(v)
+                      if (c.key === 'tanggal' || c.key === 'tanggal_dimatikan') content = displayDate(v)
                       else if (c.key === 'klas') content = <KlasBadge val={v}/>
                       else if (c.key === 'jenis') content = <JenisBadge val={v} klas={row.klas}/>
                       else if (c.num) {
@@ -834,7 +1110,7 @@ export default function DkhpSkshhk() {
                   <td style={{ padding: '8px', fontFamily: 'monospace', fontWeight: 700, color: '#f0f0f0', fontSize: 11 }} colSpan={11}>TOTAL</td>
                   <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: '#f0f0f0', fontSize: 11 }}>{totals.jml_bt.toLocaleString('id')}</td>
                   <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: '#f0f0f0', fontSize: 11 }}>{totals.jml_m3.toFixed(3)}</td>
-                  <td colSpan={6}/>
+                  <td colSpan={7}/>
                 </tr>
               </tfoot>
             </table>
@@ -880,9 +1156,12 @@ export default function DkhpSkshhk() {
               {draftSorts.map((s, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', width: 14, textAlign: 'center', fontFamily: 'monospace' }}>{i + 1}</span>
-                  <select value={s.key} onChange={e => setDraftSorts(prev => prev.map((x, j) => j === i ? { ...x, key: e.target.value } : x))} className="dk-input" style={{ flex: 1, padding: '5px 6px' }}>
-                    {COLS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
-                  </select>
+                  <ThemedSelect
+                    value={s.key}
+                    onChange={next => setDraftSorts(prev => prev.map((x, j) => j === i ? { ...x, key: next } : x))}
+                    options={COLS.map(c => ({ value: c.key, label: c.label }))}
+                    style={{ flex: 1, minHeight: 29, padding: '5px 6px', fontSize: 11 }}
+                  />
                   <button
                     onClick={() => setDraftSorts(prev => prev.map((x, j) => j === i ? { ...x, dir: x.dir === 'asc' ? 'desc' : 'asc' } : x))}
                     style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '5px 8px', fontSize: 10, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', minWidth: 52, justifyContent: 'center', fontFamily: 'monospace' }}
@@ -962,7 +1241,7 @@ export default function DkhpSkshhk() {
 
       {editRow && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 700, padding: 24, maxHeight: '90vh', overflowY: 'auto' }}>
+          <form onSubmit={e => { e.preventDefault(); if (!saving) handleSave() }} style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 700, padding: 24, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ padding: 8, background: 'rgba(0,255,136,0.08)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 3 }}>
@@ -970,19 +1249,37 @@ export default function DkhpSkshhk() {
                 </div>
                 <p style={{ fontWeight: 600, color: '#f0f0f0', fontFamily: 'monospace', fontSize: 13 }}>{editRow._new ? 'tambah skshhk' : 'edit skshhk'}</p>
               </div>
-              <button onClick={() => setEditRow(null)} disabled={saving} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
+              <button type="button" onClick={() => setEditRow(null)} disabled={saving} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
               {(() => {
                 const klasNorm = (editRow.klas || '').toUpperCase()
                 const jenisOptions = JENIS_BY_KLAS[klasNorm] || []
-                const iStyle = { width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '7px 10px', fontSize: 12, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }
+                const iStyle = { width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '7px 10px', fontSize: 12, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', colorScheme: 'dark' }
+                const selectStyle = { ...iStyle, backgroundColor: '#101a14', borderColor: 'rgba(0,255,136,0.28)' }
                 const computedBt = num(editRow.ai_bt, true) + num(editRow.aii_bt, true) + num(editRow.aiii_bt, true)
                 const computedM3 = +(num(editRow.ai_m3) + num(editRow.aii_m3) + num(editRow.aiii_m3)).toFixed(3)
+                const handleNumberKey = (e, key) => {
+                  if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
+                  e.preventDefault()
+                  const isM3 = key.endsWith('_m3')
+                  const step = isM3 ? 0.001 : 1
+                  const decimals = isM3 ? 3 : 0
+                  const current = Number(editRow[key]) || 0
+                  const next = Math.max(0, current + (e.key === 'ArrowUp' ? step : -step))
+                  setEditRow(p => ({ ...p, [key]: isM3 ? next.toFixed(decimals) : String(Math.round(next)) }))
+                }
+                const handleDateBlur = key => {
+                  setEditRow(p => {
+                    const normalized = normalizeDateInput(p[key], p._dateYear || new Date().getFullYear())
+                    return normalized || !p[key] ? { ...p, [key]: normalized || '' } : p
+                  })
+                }
                 const fields = [
                   { label: 'No. DKHP',      key: 'no_dkhp' },
                   { label: 'Tanggal',       key: 'tanggal',   type: 'date' },
                   { label: 'No. SKSHHK *',  key: 'no_skshhk' },
+                  { label: 'Tanggal Dimatikan', key: 'tanggal_dimatikan', type: 'date' },
                   { label: 'Klas',          key: 'klas',      kind: 'klas' },
                   { label: 'Jenis',         key: 'jenis',     kind: 'jenis' },
                   { label: 'Nopol',         key: 'nopol' },
@@ -1000,19 +1297,37 @@ export default function DkhpSkshhk() {
                   <div key={f.key}>
                     <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 4, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{f.label}</label>
                     {f.kind === 'klas' ? (
-                      <select value={editRow.klas ?? ''} onChange={e => { const next = e.target.value; setEditRow(p => { const allowed = JENIS_BY_KLAS[next] || []; const keepJenis = allowed.includes((p.jenis || '').toUpperCase()); return { ...p, klas: next, jenis: keepJenis ? p.jenis : (allowed.length === 1 ? allowed[0] : '') } }) }} style={{ ...iStyle, cursor: 'pointer' }}>
-                        <option value="">— pilih klas —</option>
-                        {KLAS_OPTIONS.map(k => <option key={k} value={k}>{k}</option>)}
-                      </select>
+                      <ThemedSelect
+                        value={editRow.klas ?? ''}
+                        onChange={next => setEditRow(p => { const allowed = JENIS_BY_KLAS[next] || []; const keepJenis = allowed.includes((p.jenis || '').toUpperCase()); return { ...p, klas: next, jenis: keepJenis ? p.jenis : (allowed.length === 1 ? allowed[0] : '') } })}
+                        options={[{ value: '', label: '— pilih klas —' }, ...KLAS_OPTIONS]}
+                        style={selectStyle}
+                      />
                     ) : f.kind === 'computed' ? (
                       <input type="text" value={f.display} readOnly tabIndex={-1} style={{ ...iStyle, textAlign: 'right', opacity: 0.5, cursor: 'not-allowed' }}/>
                     ) : f.kind === 'jenis' ? (
-                      <select value={editRow.jenis ?? ''} onChange={e => setEditRow(p => ({ ...p, jenis: e.target.value }))} disabled={!klasNorm} style={{ ...iStyle, cursor: klasNorm ? 'pointer' : 'not-allowed', opacity: klasNorm ? 1 : 0.5 }}>
-                        <option value="">{klasNorm ? '— pilih jenis —' : 'Pilih klas dulu'}</option>
-                        {jenisOptions.map(j => <option key={j} value={j}>{j}</option>)}
-                      </select>
+                      <ThemedSelect
+                        value={editRow.jenis ?? ''}
+                        onChange={next => setEditRow(p => ({ ...p, jenis: next }))}
+                        disabled={!klasNorm}
+                        placeholder={klasNorm ? '— pilih jenis —' : 'Pilih klas dulu'}
+                        options={[{ value: '', label: klasNorm ? '— pilih jenis —' : 'Pilih klas dulu' }, ...jenisOptions]}
+                        style={selectStyle}
+                      />
                     ) : (
-                      <input type={f.type || 'text'} value={editRow[f.key] ?? ''} onChange={e => setEditRow(p => ({ ...p, [f.key]: e.target.value }))} step={f.type === 'number' ? 'any' : undefined} style={iStyle}/>
+                      <input
+                        type={f.type === 'date' ? 'text' : (f.type || 'text')}
+                        value={f.type === 'date' ? (displayDate(editRow[f.key]) || '') : (editRow[f.key] ?? '')}
+                        onChange={e => setEditRow(p => ({ ...p, [f.key]: e.target.value }))}
+                        onBlur={f.type === 'date' ? () => handleDateBlur(f.key) : undefined}
+                        onKeyDown={f.type === 'number' ? e => handleNumberKey(e, f.key) : undefined}
+                        placeholder={f.type === 'date' ? 'dd/mm/yyyy' : undefined}
+                        inputMode={f.type === 'date' ? 'numeric' : undefined}
+                        step={f.type === 'number' ? (f.key.endsWith('_m3') ? '0.001' : '1') : undefined}
+                        min={f.type === 'number' ? '0' : undefined}
+                        className="dk-input"
+                        style={iStyle}
+                      />
                     )}
                   </div>
                 ))
@@ -1033,13 +1348,13 @@ export default function DkhpSkshhk() {
               </div>
             ))}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-              <button onClick={() => setEditRow(null)} disabled={saving} style={{ padding: '8px 16px', fontSize: 12, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
-              <button onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 12, borderRadius: 3, background: saving ? 'rgba(0,255,136,0.3)' : '#00ff88', color: '#0a0a0a', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700, opacity: saving ? 0.7 : 1 }}>
+              <button type="button" onClick={() => setEditRow(null)} disabled={saving} style={{ padding: '8px 16px', fontSize: 12, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
+              <button type="submit" disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 12, borderRadius: 3, background: saving ? 'rgba(0,255,136,0.3)' : '#00ff88', color: '#0a0a0a', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700, opacity: saving ? 0.7 : 1 }}>
                 {saving && <Loader2 size={12} className="animate-spin"/>}
                 {saving ? 'menyimpan…' : 'simpan'}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 

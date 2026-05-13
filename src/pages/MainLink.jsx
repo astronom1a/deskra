@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { buildRows, DEFAULT_TARIF_PERIODE } from '../lib/rekapPekerjaan'
+import { useAuth } from '../lib/AuthProvider'
+import ThemedSelect from '../components/ThemedSelect'
 import { Plus, Save, AlertCircle, CheckCircle2, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, Printer, FileText, ClipboardCheck, Receipt, Wallet, ClipboardList, FileSpreadsheet } from 'lucide-react'
 
 // ─── helpers ────────────────────────────────────────────────
@@ -54,6 +56,7 @@ function formatNum(n,dec=3) {
 
 // ─── Component ───────────────────────────────────────────────
 export default function MainLink() {
+  const { profile } = useAuth()
   const [periodes, setPeriodes]         = useState([])
   const [selectedPeriode, setSelected]  = useState(null)
   const [rows, setRows]                 = useState([])
@@ -234,10 +237,14 @@ export default function MainLink() {
   }
 
   // ── fetch periods ──
-  useEffect(() => { fetchPeriodes() }, [])
+  useEffect(() => {
+    if (profile) fetchPeriodes()
+  }, [profile?.tpk_id])
 
   async function fetchPeriodes() {
-    const { data } = await supabase.from('tabel_periode').select('*').order('created_at',{ascending:false})
+    let query = supabase.from('tabel_periode').select('*').order('created_at',{ascending:false})
+    if (profile?.tpk_id) query = query.eq('tpk_id', profile.tpk_id)
+    const { data } = await query
     setPeriodes(data||[])
     if (data?.length && !selectedPeriode) setSelected(data[0])
   }
@@ -246,7 +253,9 @@ export default function MainLink() {
   async function fetchTarif(periodeId) {
     const { data } = await supabase
       .from('tabel_tarif_periode').select('*')
-      .eq('periode_id', periodeId).order('created_at')
+      .eq('periode_id', periodeId)
+      .eq('tpk_id', selectedPeriode?.tpk_id || profile?.tpk_id)
+      .order('created_at')
     const dbByKode = Object.fromEntries((data || []).map(r => [r.kode, r]))
     // Gabung metadata + DB: tampilkan SEMUA baris (termasuk yang belum di-seed di DB)
     setTarifRows(TARIF_META.map(meta => {
@@ -281,15 +290,28 @@ export default function MainLink() {
   // ── create periode ──
   async function handleCreatePeriode() {
     const { periodeOption, tahun } = newPeriode
+    const tpkId = profile?.tpk_id
+    if (!tpkId) return showToast('Profil TPK tidak ditemukan. Coba login ulang.', 'error')
     const tahunNum = Number(tahun)
     if (!tahun || tahunNum<2000 || tahunNum>2100) return showToast('Tahun tidak valid','error')
     const label = `${periodeOption.label} / ${tahun}`
     const { tgl_awal, tgl_akhir } = generateTanggal(periodeOption.half, periodeOption.bulan, tahunNum)
     const { data, error } = await supabase.from('tabel_periode')
-      .insert({ periode:label, tgl_awal, tgl_akhir, status:'aktif' }).select().single()
+      .insert({ periode:label, tgl_awal, tgl_akhir, status:'aktif', tpk_id: tpkId }).select().single()
     if (error) return showToast(error.message,'error')
-    // Seed tarif default untuk periode baru
-    await supabase.rpc('seed_tarif_periode', { p_periode_id: data.id })
+    const seedPayload = TARIF_META.map(meta => ({
+      periode_id: data.id,
+      tpk_id: tpkId,
+      kode: meta.kode,
+      kode_rek: meta.kode_rek,
+      uraian: meta.uraian,
+      satuan: meta.satuan,
+      tarif: DEFAULT_TARIF_PERIODE[meta.kode] ?? 0,
+    }))
+    const { error: seedError } = await supabase
+      .from('tabel_tarif_periode')
+      .upsert(seedPayload, { onConflict: 'periode_id,kode' })
+    if (seedError) return showToast(seedError.message, 'error')
     setShowForm(false)
     await fetchPeriodes()
     setSelected(data)
@@ -299,9 +321,12 @@ export default function MainLink() {
   // ── save tarif per periode ──
   async function handleSaveTarif() {
     if (!selectedPeriode) return
+    const tpkId = selectedPeriode.tpk_id || profile?.tpk_id
+    if (!tpkId) return showToast('Profil TPK tidak ditemukan. Coba login ulang.', 'error')
     setSavingTarif(true)
     const payload = tarifRows.map(r => ({
       periode_id: selectedPeriode.id,
+      tpk_id: tpkId,
       kode: r.kode,
       kode_rek: r.kode_rek,
       uraian: r.uraian,
@@ -335,12 +360,15 @@ export default function MainLink() {
   // ── save to tabel_pekerjaan (untuk cetak) ──
   async function handleSave() {
     if (!selectedPeriode) return
+    const tpkId = selectedPeriode.tpk_id || profile?.tpk_id
+    if (!tpkId) return showToast('Profil TPK tidak ditemukan. Coba login ulang.', 'error')
     setSaving(true)
     await supabase.from('tabel_pekerjaan').delete().eq('periode_id', selectedPeriode.id)
     const toInsert = rows
       .filter(r => (r.fisik||0)*(r.tarif||0) > 0 || r.no !== '-')
       .map((r, i) => ({
         periode_id: selectedPeriode.id,
+        tpk_id: tpkId,
         no: typeof r.no === 'number' ? r.no : null,
         kode_rek: r.kode_rek||null,
         uraian: r.uraian||'',
@@ -359,10 +387,18 @@ export default function MainLink() {
   return (
     <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
       <style>{`
-        .ml-input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #f0f0f0; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; -moz-appearance: textfield; }
+        .ml-input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #f0f0f0; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; color-scheme: dark; -moz-appearance: textfield; }
         .ml-input:focus { border-color: rgba(0,255,136,0.5); box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
+        select.ml-input { background-color: #101a14; border-color: rgba(0,255,136,0.35); cursor: pointer; }
+        select.ml-input:focus { background-color: #0d1912; border-color: #00ff88; }
         .ml-input::-webkit-inner-spin-button, .ml-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        .ml-input option { background: #1a1a1a; color: #f0f0f0; }
+        .ml-input option { background: #111; color: #f0f0f0; font-family: monospace; }
+        .ml-input option:hover,
+        .ml-input option:focus,
+        .ml-input option:checked {
+          background: linear-gradient(0deg, rgba(0,255,136,0.18), rgba(0,255,136,0.18)), #111;
+          color: #00ff88;
+        }
         .ml-row:hover td { background: rgba(255,255,255,0.02) !important; }
       `}</style>
 
@@ -462,15 +498,15 @@ export default function MainLink() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, maxWidth: 400 }}>
             <div>
               <label style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Periode</label>
-              <select
+              <ThemedSelect
                 value={newPeriode.periodeOption.label}
-                onChange={e=>{const f=PERIODE_OPTIONS.find(o=>o.label===e.target.value);setNewPeriode(p=>({...p,periodeOption:f}))}}
-                className="ml-input" style={{ width: '100%', padding: '6px 8px' }}
-              >
-                {PERIODE_OPTIONS.map(o=>(
-                  <option key={o.label} value={o.label}>{o.label} — {BULAN[o.bulan-1]}</option>
-                ))}
-              </select>
+                onChange={next => {
+                  const f = PERIODE_OPTIONS.find(o => o.label === next)
+                  if (f) setNewPeriode(p => ({ ...p, periodeOption: f }))
+                }}
+                options={PERIODE_OPTIONS.map(o => ({ value: o.label, label: `${o.label} — ${BULAN[o.bulan - 1]}` }))}
+                style={{ minHeight: 31, padding: '6px 8px' }}
+              />
             </div>
             <div>
               <label style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Tahun</label>

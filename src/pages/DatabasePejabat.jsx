@@ -64,7 +64,6 @@ export default function DatabasePejabat() {
         .dp-row:hover td { background: rgba(255,255,255,0.02) !important; }
         .dp-inp:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
         .dp-inp::placeholder { color: rgba(255,255,255,0.2); }
-        .dp-cb { accent-color: #00ff88; }
       `}</style>
 
       {toast && (
@@ -109,10 +108,34 @@ export default function DatabasePejabat() {
               </div>
             ))}
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, cursor: 'pointer' }}>
-            <input type="checkbox" checked={form.aktif} onChange={e => setForm(f => ({ ...f, aktif: e.target.checked }))} className="dp-cb"/>
-            <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Aktif</span>
-          </label>
+          <button
+            type="button"
+            onClick={() => setForm(f => ({ ...f, aktif: !f.aktif }))}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: 12,
+              padding: '6px 10px',
+              borderRadius: 3,
+              border: `1px solid ${form.aktif ? 'rgba(0,255,136,0.25)' : 'rgba(255,255,255,0.08)'}`,
+              background: form.aktif ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.025)',
+              color: form.aktif ? '#00ff88' : 'rgba(255,255,255,0.42)',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              fontSize: 11,
+              fontWeight: 700,
+            }}
+          >
+            <span style={{
+              width: 10,
+              height: 10,
+              borderRadius: 2,
+              background: form.aktif ? '#00ff88' : 'rgba(255,255,255,0.1)',
+              boxShadow: form.aktif ? '0 0 10px rgba(0,255,136,0.45)' : 'none',
+            }}/>
+            Aktif
+          </button>
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
             <button onClick={handleSubmit} style={{ padding: '7px 16px', background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}>
               {editId ? 'perbarui' : 'simpan'}
