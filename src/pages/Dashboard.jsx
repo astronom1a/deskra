@@ -9,6 +9,7 @@ import {
 import { useAccount } from '../lib/useAccount'
 import { useAuth } from '../lib/AuthProvider'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
+import TpkRequiredState from '../components/TpkRequiredState'
 
 const SORTIMENS = ['AI', 'AII', 'AIII']
 
@@ -177,6 +178,8 @@ export default function Dashboard() {
   const mm   = String(now.getMinutes()).padStart(2, '0')
   const ss   = String(now.getSeconds()).padStart(2, '0')
   const ampm = now.getHours() >= 12 ? 'PM' : 'AM'
+
+  if (!tpkId) return <TpkRequiredState />
 
   return (
     <div style={{ minHeight: '100%', background: '#0a0a0a', position: 'relative', overflow: 'hidden' }}>

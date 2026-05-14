@@ -73,7 +73,7 @@ export default function AdminDashboard() {
 
         const periodeList = periodeData || []
         const liveTotals = await Promise.all(
-          periodeList.map(p => computeTotalUK(p.id, p.periode))
+          periodeList.map(p => computeTotalUK(p.id, p.periode, { tpkId: p.tpk_id }))
         )
 
         const periodeByTpk = periodeList.reduce((acc, p, i) => {

@@ -10,6 +10,7 @@ import { useAuth } from '../lib/AuthProvider'
 import { requireTpkId } from '../lib/tenantScope'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import ThemedSelect from '../components/ThemedSelect'
+import TpkRequiredState from '../components/TpkRequiredState'
 
 const MONTH_FULL_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 const MONTH_SHORT_ID = ['JAN','FEB','MAR','APR','MEI','JUN','JUL','AGS','SEP','OKT','NOV','DES']
@@ -799,6 +800,8 @@ export default function DkhpSkshhk() {
       setExporting(false)
     }
   }
+
+  if (!tpkId) return <TpkRequiredState />
 
   return (
     <div style={{ padding: 24, height: '100vh', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0a0a0a', color: '#f0f0f0' }}>

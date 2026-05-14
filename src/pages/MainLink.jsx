@@ -6,6 +6,7 @@ import { requireTpkId } from '../lib/tenantScope'
 import { fetchActivePejabatSnapshot, refreshPeriodePejabatSnapshot } from '../lib/pejabatSnapshot'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import ThemedSelect from '../components/ThemedSelect'
+import TpkRequiredState from '../components/TpkRequiredState'
 import { Plus, Save, AlertCircle, CheckCircle2, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, Printer, FileText, ClipboardCheck, Receipt, Wallet, ClipboardList, FileSpreadsheet } from 'lucide-react'
 
 // ─── helpers ────────────────────────────────────────────────
@@ -434,6 +435,8 @@ export default function MainLink() {
   }
 
   const grandTotal = rows.reduce((s,r)=>s+(r.fisik||0)*(r.tarif||0),0)
+
+  if (!tpkId) return <TpkRequiredState />
 
   return (
     <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>

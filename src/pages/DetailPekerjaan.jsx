@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
 import { requireTpkId } from '../lib/tenantScope'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
+import TpkRequiredState from '../components/TpkRequiredState'
 import {
   Save, AlertCircle, CheckCircle2, CalendarDays, Plus, Trash2,
   TreePine, Barcode, Users, Sparkles, Zap, Package, Lock
@@ -363,6 +364,8 @@ export default function DetailPekerjaan() {
     (s, r) => s + (parseFloat(r.fisik) || 0) * (parseFloat(r.tarif) || 0), 0
   )
   const tenagaBantuNilai = (parseInt(tenagaBantu.jumlah_orang) || 0) * (parseFloat(tenagaBantu.tarif_per_orang) || 0)
+
+  if (!tpkId) return <TpkRequiredState />
 
   return (
     <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>

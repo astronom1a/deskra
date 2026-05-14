@@ -6,7 +6,9 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
 import { buildInvoiceKaplingUpdates } from '../lib/tenantScope'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
+import { getTpkScopedStorageKey } from '../lib/tpkScopedStorage'
 import ThemedSelect from '../components/ThemedSelect'
+import TpkRequiredState from '../components/TpkRequiredState'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -56,6 +58,9 @@ const DEFAULT_COL_MAP = {
   dkhp:           'DKHP',
   skshhk:         'SKSHHK',
 }
+
+const COL_MAP_STORAGE_KEY = 'deskra_kapling_col_map'
+const EXCEL_HEADERS_STORAGE_KEY = 'deskra_kapling_excel_headers'
 
 const COLS = [
   { key: 'no_kapling',     label: 'No. Kapling',   w: 'w-[128px]' },
@@ -282,6 +287,8 @@ function SertBadge({ val }) {
 export default function RegisterKapling() {
   const { profile, activeTpkId } = useAuth()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
+  const colMapStorageKey = getTpkScopedStorageKey(COL_MAP_STORAGE_KEY, tpkId)
+  const excelHeadersStorageKey = getTpkScopedStorageKey(EXCEL_HEADERS_STORAGE_KEY, tpkId)
   const [rows, setRows]             = useState([])
   const [loading, setLoading]       = useState(true)
   const [importing, setImporting]   = useState(false)
@@ -302,11 +309,11 @@ export default function RegisterKapling() {
   const [toast, setToast]           = useState(null)
 
   const [colMap, setColMap] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('deskra_kapling_col_map')) || DEFAULT_COL_MAP }
+    try { return JSON.parse(localStorage.getItem(colMapStorageKey)) || DEFAULT_COL_MAP }
     catch { return DEFAULT_COL_MAP }
   })
   const [excelHeaders, setExcelHeaders] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('deskra_kapling_excel_headers')) || [] }
+    try { return JSON.parse(localStorage.getItem(excelHeadersStorageKey)) || [] }
     catch { return [] }
   })
   const [showSettings, setShowSettings] = useState(false)
@@ -325,6 +332,13 @@ export default function RegisterKapling() {
   const invoisRef       = useRef()
   const selectAllRef    = useRef()
   const colDropdownRef  = useRef()
+
+  useEffect(() => {
+    try { setColMap(JSON.parse(localStorage.getItem(colMapStorageKey)) || DEFAULT_COL_MAP) }
+    catch { setColMap(DEFAULT_COL_MAP) }
+    try { setExcelHeaders(JSON.parse(localStorage.getItem(excelHeadersStorageKey)) || []) }
+    catch { setExcelHeaders([]) }
+  }, [colMapStorageKey, excelHeadersStorageKey])
 
   useEffect(() => {
     if (!tpkId) {
@@ -399,7 +413,7 @@ export default function RegisterKapling() {
 
   function saveColMap(newMap) {
     setColMap(newMap)
-    localStorage.setItem('deskra_kapling_col_map', JSON.stringify(newMap))
+    localStorage.setItem(colMapStorageKey, JSON.stringify(newMap))
   }
 
   // ── Excel import ──────────────────────────────────────────────────────────
@@ -416,7 +430,7 @@ export default function RegisterKapling() {
 
       if (headers.length) {
         setExcelHeaders(headers)
-        localStorage.setItem('deskra_kapling_excel_headers', JSON.stringify(headers))
+        localStorage.setItem(excelHeadersStorageKey, JSON.stringify(headers))
       }
 
       if (!parsed.length) {
@@ -819,6 +833,8 @@ export default function RegisterKapling() {
 
   const sortBatang = Object.fromEntries(SORTIMENS.map(m => [m, rows.filter(r => (r.sortimen || '').trim().toUpperCase() === m).reduce((s, r) => s + (r.batang || 0), 0)]))
   const sortVolume = Object.fromEntries(SORTIMENS.map(m => [m, rows.filter(r => (r.sortimen || '').trim().toUpperCase() === m).reduce((s, r) => s + Number(r.volume || 0), 0)]))
+
+  if (!tpkId) return <TpkRequiredState />
 
   return (
     <div style={{ padding: 24, height: '100vh', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0a0a0a', color: '#f0f0f0' }}>

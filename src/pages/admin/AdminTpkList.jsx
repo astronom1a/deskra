@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { computeTotalUK } from '../../lib/rekapPekerjaan'
 import { Plus, CheckCircle2, XCircle, Search, ChevronRight } from 'lucide-react'
 
 export default function AdminTpkList() {
@@ -19,17 +20,22 @@ export default function AdminTpkList() {
           { data: profileData, error: profileErr },
         ] = await Promise.all([
           supabase.from('tabel_tpk').select('*').order('namatpk'),
-          supabase.from('tabel_periode').select('id, tpk_id, total_uk'),
+          supabase.from('tabel_periode').select('id, tpk_id, periode'),
           supabase.from('profiles').select('tpk_id').not('tpk_id', 'is', null),
         ])
         if (tpkErr) throw tpkErr
         if (periodeErr) throw periodeErr
         if (profileErr) throw profileErr
 
-        const byTpk = (periodeData || []).reduce((acc, p) => {
+        const periodeList = periodeData || []
+        const liveTotals = await Promise.all(
+          periodeList.map(p => computeTotalUK(p.id, p.periode, { tpkId: p.tpk_id }))
+        )
+
+        const byTpk = periodeList.reduce((acc, p, i) => {
           if (!acc[p.tpk_id]) acc[p.tpk_id] = { count: 0, totalUk: 0 }
           acc[p.tpk_id].count++
-          acc[p.tpk_id].totalUk += p.total_uk || 0
+          acc[p.tpk_id].totalUk += liveTotals[i] || 0
           return acc
         }, {})
 

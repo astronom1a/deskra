@@ -80,7 +80,7 @@ export default function AdminTpkDetail() {
         .order('created_at', { ascending: false })
         .then(async ({ data }) => {
           const list = data || []
-          const totals = await Promise.all(list.map(p => computeTotalUK(p.id, p.periode)))
+          const totals = await Promise.all(list.map(p => computeTotalUK(p.id, p.periode, { tpkId: p.tpk_id || id })))
           setPeriodes(list.map((p, i) => ({ ...p, total_uk: totals[i] })))
           setPeriodeLoading(false)
         })
