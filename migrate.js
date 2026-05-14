@@ -9,6 +9,7 @@ import { readFileSync, readdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { config } from 'dotenv'
+import { createMigrationChecksum, planMigrations } from './src/lib/migrationLedger.js'
 
 config()
 
@@ -27,8 +28,12 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: false }
 })
 
+function sqlLiteral(value) {
+  return `'${String(value ?? '').replace(/'/g, "''")}'`
+}
+
 async function ensureMigrationTable() {
-  // Cukup pastikan tabel ada — sudah dibuat via bootstrap.sql
+  // Cukup pastikan tabel ada — sudah dibuat via bootstrap.sql.
   const { error } = await supabase
     .from('_deskra_migrations')
     .select('id')
@@ -39,19 +44,47 @@ async function ensureMigrationTable() {
     console.error('    Jalankan dulu: supabase/bootstrap.sql di Supabase SQL Editor.')
     process.exit(1)
   }
+
+  const { error: checksumError } = await supabase.rpc('run_sql', {
+    sql: 'alter table _deskra_migrations add column if not exists checksum text',
+  })
+
+  if (checksumError) {
+    console.error(`❌  Gagal menyiapkan kolom checksum migrasi: ${checksumError.message}`)
+    process.exit(1)
+  }
 }
 
 async function getAppliedMigrations() {
   const { data, error } = await supabase
     .from('_deskra_migrations')
-    .select('filename')
+    .select('filename, checksum')
     .order('filename')
 
   if (error) return []
-  return data.map(d => d.filename)
+  return data || []
 }
 
-async function runMigration(filename, sql) {
+async function backfillMigrationChecksum({ filename, checksum }) {
+  const { error } = await supabase.rpc('run_sql', {
+    sql: `
+      update _deskra_migrations
+      set checksum = ${sqlLiteral(checksum)}
+      where filename = ${sqlLiteral(filename)}
+    `,
+  })
+
+  if (error) {
+    console.error(`  ✗  Gagal catat checksum ${filename}: ${error.message}`)
+    return false
+  }
+
+  console.log(`  ✓  Checksum dicatat: ${filename}`)
+  return true
+}
+
+async function runMigration(file) {
+  const { filename, sql, checksum } = file
   console.log(`  ▶  Running: ${filename}`)
 
   const { error } = await supabase.rpc('run_sql', { sql })
@@ -61,9 +94,12 @@ async function runMigration(filename, sql) {
     return false
   }
 
-  const { error: insertError } = await supabase
-    .from('_deskra_migrations')
-    .insert({ filename })
+  const { error: insertError } = await supabase.rpc('run_sql', {
+    sql: `
+      insert into _deskra_migrations (filename, checksum)
+      values (${sqlLiteral(filename)}, ${sqlLiteral(checksum)})
+    `,
+  })
 
   if (insertError) {
     console.error(`  ✗  Gagal catat migrasi: ${insertError.message}`)
@@ -81,11 +117,31 @@ async function main() {
   await ensureMigrationTable()
   const applied = await getAppliedMigrations()
 
-  const files = readdirSync(MIGRATIONS_DIR)
+  const localFiles = readdirSync(MIGRATIONS_DIR)
     .filter(f => f.endsWith('.sql'))
     .sort()
+    .map(filename => {
+      const sql = readFileSync(join(MIGRATIONS_DIR, filename), 'utf8')
+      return { filename, sql, checksum: createMigrationChecksum(sql) }
+    })
 
-  const pending = files.filter(f => !applied.includes(f))
+  const { pending, checksumBackfills, checksumMismatches } = planMigrations({ applied, localFiles })
+
+  if (checksumMismatches.length > 0) {
+    console.error('❌  Ada migration yang sudah pernah dijalankan tetapi isi file lokalnya berubah:\n')
+    checksumMismatches.forEach(row => {
+      console.error(`  • ${row.filename}`)
+      console.error(`    DB    : ${row.appliedChecksum}`)
+      console.error(`    Lokal : ${row.localChecksum}`)
+    })
+    console.error('\n    Buat migration baru untuk perubahan schema, jangan edit file migration yang sudah tercatat.\n')
+    process.exit(1)
+  }
+
+  for (const row of checksumBackfills) {
+    const ok = await backfillMigrationChecksum(row)
+    if (!ok) process.exit(1)
+  }
 
   if (pending.length === 0) {
     console.log('✅  Semua migrasi sudah up to date.\n')
@@ -96,8 +152,7 @@ async function main() {
 
   let success = 0
   for (const file of pending) {
-    const sql = readFileSync(join(MIGRATIONS_DIR, file), 'utf8')
-    const ok = await runMigration(file, sql)
+    const ok = await runMigration(file)
     if (ok) success++
     else break
   }

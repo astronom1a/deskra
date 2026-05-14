@@ -19,5 +19,9 @@ $$;
 create table if not exists _deskra_migrations (
   id         serial primary key,
   filename   text not null unique,
+  checksum   text,
   applied_at timestamp with time zone default now()
 );
+
+alter table _deskra_migrations
+  add column if not exists checksum text;
