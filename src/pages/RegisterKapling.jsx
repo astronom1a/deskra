@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2, FileText, Pencil, Trash2, Settings, ChevronUp, ChevronDown, ChevronsUpDown, SlidersHorizontal, ChevronLeft, ChevronRight, Search, Plus } from 'lucide-react'
+import Toast, { useToast } from '../components/Toast'
 import * as XLSX from 'xlsx'
 import * as pdfjsLib from 'pdfjs-dist'
 import { supabase } from '../lib/supabase'
@@ -305,8 +306,8 @@ export default function RegisterKapling() {
   const [showBatchEdit, setShowBatchEdit]     = useState(false)
   const [batchEditData, setBatchEditData]     = useState({ tgl_kapling: '', periode: '', no_blok: '', sertifikasi: '' })
   const [batchEditSaving, setBatchEditSaving] = useState(false)
+  const { toast, showToast } = useToast(3500)
   const [contextMenu, setContextMenu]         = useState(null)
-  const [toast, setToast]           = useState(null)
 
   const [colMap, setColMap] = useState(() => {
     try { return JSON.parse(localStorage.getItem(colMapStorageKey)) || DEFAULT_COL_MAP }
@@ -405,11 +406,6 @@ export default function RegisterKapling() {
       document.removeEventListener('keydown', dismiss)
     }
   }, [contextMenu])
-
-  function showToast(msg, type = 'success') {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3500)
-  }
 
   function saveColMap(newMap) {
     setColMap(newMap)
@@ -914,19 +910,7 @@ export default function RegisterKapling() {
         .rk-row:hover .rk-actions { opacity: 1 !important; }
       `}</style>
 
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed', top: 20, right: 20, zIndex: 50, display: 'flex', alignItems: 'center', gap: 8,
-          padding: '10px 16px', borderRadius: 3, fontSize: 12, fontFamily: 'monospace',
-          background: toast.type === 'error' ? 'rgba(255,107,107,0.12)' : 'rgba(0,255,136,0.10)',
-          border: `1px solid ${toast.type === 'error' ? 'rgba(255,107,107,0.3)' : 'rgba(0,255,136,0.3)'}`,
-          color: toast.type === 'error' ? '#ff6b6b' : '#00ff88',
-        }}>
-          {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>}
-          {toast.msg}
-        </div>
-      )}
+      <Toast toast={toast} />
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>

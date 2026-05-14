@@ -23,7 +23,8 @@ export function applyNumbers(rows) {
 // Bangun rekap baris pekerjaan untuk satu periode — sumber tunggal
 // dipakai oleh Main Link & Dashboard.
 function scoped(query, tpkId) {
-  return tpkId ? query.eq('tpk_id', tpkId) : query
+  if (!tpkId) throw new Error('tpkId diperlukan untuk mengambil data periode')
+  return query.eq('tpk_id', tpkId)
 }
 
 export async function buildRows(periodeId, periodeLabel, options = {}) {

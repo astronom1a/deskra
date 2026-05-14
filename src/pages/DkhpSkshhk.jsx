@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import * as XLSX from 'xlsx'
+import Toast, { useToast } from '../components/Toast'
 import {
   Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2, Download,
   Plus, Pencil, Trash2, ScrollText, Search, ChevronUp, ChevronDown, ChevronsUpDown,
@@ -259,7 +260,7 @@ export default function DkhpSkshhk() {
   const [saving, setSaving]   = useState(false)
   const [deleteRow, setDeleteRow]   = useState(null)
   const [deleting, setDeleting]     = useState(false)
-  const [toast, setToast]           = useState(null)
+  const { toast, showToast } = useToast(3000)
   const [contextMenu, setContextMenu] = useState(null)
   const [exportMonth, setExportMonth] = useState(() => {
     const d = new Date()
@@ -268,11 +269,6 @@ export default function DkhpSkshhk() {
   const [exporting, setExporting] = useState(false)
   const fileRef        = useRef(null)
   const colDropdownRef = useRef(null)
-
-  const showToast = (msg, kind = 'success') => {
-    setToast({ msg, kind })
-    setTimeout(() => setToast(null), 3000)
-  }
 
   useEffect(() => {
     if (!tpkId) return
@@ -1231,18 +1227,7 @@ export default function DkhpSkshhk() {
         </div>
       )}
 
-      {toast && (
-        <div style={{
-          position: 'fixed', bottom: 16, right: 16, display: 'flex', alignItems: 'center', gap: 8,
-          padding: '10px 16px', borderRadius: 3, fontSize: 12, fontFamily: 'monospace', zIndex: 50,
-          background: toast.kind === 'error' ? 'rgba(255,107,107,0.12)' : 'rgba(0,255,136,0.10)',
-          border: `1px solid ${toast.kind === 'error' ? 'rgba(255,107,107,0.3)' : 'rgba(0,255,136,0.3)'}`,
-          color: toast.kind === 'error' ? '#ff6b6b' : '#00ff88',
-        }}>
-          {toast.kind === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>}
-          {toast.msg}
-        </div>
-      )}
+      <Toast toast={toast} />
 
       {preview && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>

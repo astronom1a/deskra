@@ -7,7 +7,8 @@ import { fetchActivePejabatSnapshot, refreshPeriodePejabatSnapshot } from '../li
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import ThemedSelect from '../components/ThemedSelect'
 import TpkRequiredState from '../components/TpkRequiredState'
-import { Plus, Save, AlertCircle, CheckCircle2, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, Printer, FileText, ClipboardCheck, Receipt, Wallet, ClipboardList, FileSpreadsheet } from 'lucide-react'
+import { Plus, Save, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, Printer, FileText, ClipboardCheck, Receipt, Wallet, ClipboardList, FileSpreadsheet } from 'lucide-react'
+import Toast, { useToast } from '../components/Toast'
 
 // ─── helpers ────────────────────────────────────────────────
 const BULAN = ['Januari','Februari','Maret','April','Mei','Juni',
@@ -67,7 +68,7 @@ export default function MainLink() {
   const [rows, setRows]                 = useState([])
   const [loading, setLoading]           = useState(false)
   const [saving, setSaving]             = useState(false)
-  const [toast, setToast]               = useState(null)
+  const { toast, showToast } = useToast(3500)
   const [confirmDelete, setConfirmDel]  = useState(null)
   const [confirmRefreshPejabat, setConfirmRefreshPejabat] = useState(false)
   const [showPeriodeForm, setShowForm]  = useState(false)
@@ -237,11 +238,6 @@ export default function MainLink() {
   }
 
   const previewTanggal = generateTanggal(newPeriode.periodeOption.half, newPeriode.periodeOption.bulan, Number(newPeriode.tahun))
-
-  function showToast(msg, type='success') {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3500)
-  }
 
   // ── fetch periods ──
   useEffect(() => {
@@ -456,20 +452,7 @@ export default function MainLink() {
         .ml-row:hover td { background: rgba(255,255,255,0.02) !important; }
       `}</style>
 
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed', top: 20, right: 20, zIndex: 50,
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '10px 16px', borderRadius: 3, fontSize: 12, fontFamily: 'monospace',
-          background: toast.type === 'error' ? 'rgba(255,107,107,0.12)' : 'rgba(0,255,136,0.10)',
-          border: `1px solid ${toast.type === 'error' ? 'rgba(255,107,107,0.3)' : 'rgba(0,255,136,0.3)'}`,
-          color: toast.type === 'error' ? '#ff6b6b' : '#00ff88',
-        }}>
-          {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>}
-          {toast.msg}
-        </div>
-      )}
+      <Toast toast={toast} />
 
       {/* Confirm delete modal */}
       {confirmDelete && (

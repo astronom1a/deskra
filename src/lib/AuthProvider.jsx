@@ -38,6 +38,10 @@ export function AuthProvider({ children }) {
         setProfile(data)
         setTpk(data.tabel_tpk ?? null)
       })
+      .catch(() => {
+        setProfile(null)
+        setTpk(null)
+      })
   }, [session])
 
   const signOut = () => supabase.auth.signOut()

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { Save, AlertCircle, CheckCircle2, CalendarDays, Sparkles, Layers, Lock } from 'lucide-react'
+import { Save, CalendarDays, Sparkles, Layers, Lock } from 'lucide-react'
 import { DEFAULT_TARIF_PERIODE, TUMPUK_TARIF_KODE } from '../lib/rekapPekerjaan'
 import { useAuth } from '../lib/AuthProvider'
 import { requireTpkId } from '../lib/tenantScope'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import TpkRequiredState from '../components/TpkRequiredState'
+import Toast, { useToast } from '../components/Toast'
 
 const JENIS_LIST = [
   { key: 'JATI', label: 'Tumpuk Kapling JATI' },
@@ -44,8 +45,8 @@ export default function TumpukKapling() {
   const [summary, setSummary] = useState({ penomoran: 0, sabuk: 0, slaghammer: 0 })
   // Tarif per sortimen — sumber: tabel_tarif_periode (dikelola di Main Link)
   const [tarifSortimen, setTarifSortimen] = useState(DEFAULT_TARIF)
+  const { toast, showToast } = useToast(3000)
   const [loading, setLoading] = useState(false)
-  const [toast, setToast] = useState(null)
 
   useEffect(() => {
     if (tpkId) fetchPeriodes()
@@ -100,11 +101,6 @@ export default function TumpukKapling() {
       sabuk: { fisik: total, tarif: 400, nilai: total * 400 },
       slaghammer: { fisik: slagTotal, tarif: 3000, nilai: slagTotal * 3000 },
     })
-  }
-
-  function showToast(msg, type = 'success') {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3000)
   }
 
   function getRow(jenis, sortimen) {
@@ -228,20 +224,7 @@ export default function TumpukKapling() {
         .tk-row:hover td { background: rgba(255,255,255,0.02) !important; }
       `}</style>
 
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed', top: 20, right: 20, zIndex: 50,
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '10px 16px', borderRadius: 3, fontSize: 12, fontFamily: 'monospace',
-          background: toast.type === 'error' ? 'rgba(255,107,107,0.12)' : 'rgba(0,255,136,0.10)',
-          border: `1px solid ${toast.type === 'error' ? 'rgba(255,107,107,0.3)' : 'rgba(0,255,136,0.3)'}`,
-          color: toast.type === 'error' ? '#ff6b6b' : '#00ff88',
-        }}>
-          {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>}
-          {toast.msg}
-        </div>
-      )}
+      <Toast toast={toast} />
 
       {/* Header */}
       <div style={{ marginBottom: 20 }}>

@@ -92,10 +92,8 @@ function SidebarItem({ item }) {
       <div>
         <button
           onClick={() => setOpen(o => !o)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs font-mono tracking-widest uppercase transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2 text-xs font-mono tracking-widest uppercase transition-colors sb-btn"
           style={{ color: open ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.22)' }}
-          onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
-          onMouseLeave={e => { e.currentTarget.style.color = open ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.22)' }}
         >
           <span className="flex items-center gap-2">
             {item.icon && <item.icon size={12} />}
@@ -120,35 +118,7 @@ function SidebarItem({ item }) {
     <NavLink
       to={item.path}
       end={item.path === '/admin'}
-      style={({ isActive }) => ({
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '7px 12px',
-        borderRadius: 3,
-        fontSize: 13,
-        fontFamily: 'inherit',
-        textDecoration: 'none',
-        transition: 'background 0.15s, color 0.15s, border-color 0.15s',
-        borderLeft: isActive ? '2px solid #00ff88' : '2px solid transparent',
-        paddingLeft: isActive ? 10 : 12,
-        background: isActive ? 'rgba(0,255,136,0.07)' : 'transparent',
-        color: isActive ? '#00ff88' : 'rgba(255,255,255,0.38)',
-      })}
-      onMouseEnter={e => {
-        const active = e.currentTarget.getAttribute('aria-current') === 'page'
-        if (!active) {
-          e.currentTarget.style.color = '#f0f0f0'
-          e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
-        }
-      }}
-      onMouseLeave={e => {
-        const active = e.currentTarget.getAttribute('aria-current') === 'page'
-        if (!active) {
-          e.currentTarget.style.color = 'rgba(255,255,255,0.38)'
-          e.currentTarget.style.background = 'transparent'
-        }
-      }}
+      className={({ isActive }) => `sb-link ${isActive ? 'sb-link-active' : ''}`}
     >
       {item.icon && <item.icon size={14} />}
       <span className="font-mono">{item.label}</span>
@@ -198,6 +168,14 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#0a0a0a' }}>
+      <style>{`
+        .sb-link { display:flex; align-items:center; gap:10px; padding:7px 12px; border-radius:3px; font-size:13px; text-decoration:none; transition:background 0.15s, color 0.15s, border-color 0.15s; border-left:2px solid transparent; color:rgba(255,255,255,0.38); }
+        .sb-link:hover { color:#f0f0f0; background:rgba(255,255,255,0.04); }
+        .sb-link-active { color:#00ff88 !important; background:rgba(0,255,136,0.07) !important; border-left-color:#00ff88 !important; padding-left:10px !important; }
+        .sb-btn { transition:color 0.15s, background 0.15s; }
+        .sb-btn:hover { color:rgba(255,255,255,0.5); }
+        .sb-btn-danger:hover { color:#ff6b6b !important; background:rgba(255,107,107,0.07) !important; }
+      `}</style>
 
       {/* Sidebar */}
       <aside
@@ -234,7 +212,6 @@ export default function Layout() {
                   animation: realtimeStatus !== 'disconnected' ? 'sb-glow 2s ease-in-out infinite' : 'none',
                 }}
               />
-              <style>{`@keyframes sb-glow { 0%,100%{opacity:1} 50%{opacity:.45} }`}</style>
             </div>
             {isAdmin && !activeTpkId ? (
               <div className="flex items-center gap-1 mt-0.5">
@@ -284,24 +261,7 @@ export default function Layout() {
             <div data-sb-item>
               <NavLink
                 to="/settings"
-                style={({ isActive }) => ({
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '7px 12px',
-                  borderRadius: 3, textDecoration: 'none',
-                  fontSize: 13, transition: 'background 0.15s, color 0.15s',
-                  borderLeft: isActive ? '2px solid #00ff88' : '2px solid transparent',
-                  paddingLeft: isActive ? 10 : 12,
-                  background: isActive ? 'rgba(0,255,136,0.07)' : 'transparent',
-                  color: isActive ? '#00ff88' : 'rgba(255,255,255,0.38)',
-                })}
-                onMouseEnter={e => {
-                  const active = e.currentTarget.getAttribute('aria-current') === 'page'
-                  if (!active) { e.currentTarget.style.color = '#f0f0f0'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }
-                }}
-                onMouseLeave={e => {
-                  const active = e.currentTarget.getAttribute('aria-current') === 'page'
-                  if (!active) { e.currentTarget.style.color = 'rgba(255,255,255,0.38)'; e.currentTarget.style.background = 'transparent' }
-                }}
+                className={({ isActive }) => `sb-link ${isActive ? 'sb-link-active' : ''}`}
               >
                 <SettingsIcon size={14} />
                 <span className="font-mono">Settings</span>
@@ -311,13 +271,11 @@ export default function Layout() {
           <div data-sb-item>
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center gap-2.5 px-3 py-2 font-mono text-xs transition-colors"
+              className="w-full flex items-center gap-2.5 px-3 py-2 font-mono text-xs sb-btn sb-btn-danger"
               style={{
                 borderRadius: 3, borderLeft: '2px solid transparent',
                 color: 'rgba(255,255,255,0.28)',
               }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#ff6b6b'; e.currentTarget.style.background = 'rgba(255,107,107,0.07)' }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.28)'; e.currentTarget.style.background = 'transparent' }}
             >
               <LogOut size={13} />
               keluar
@@ -330,13 +288,12 @@ export default function Layout() {
           <p className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.12)' }}>Perum Perhutani · KPH Banyuwangi Utara</p>
           <p className="text-[10px] font-mono mt-1" style={{ color: 'rgba(255,255,255,0.1)' }}>
             © 2026{' '}
-            <a
-              href="https://astrolabs.site"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: 'rgba(0,255,136,0.3)', transition: 'color 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#00ff88' }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(0,255,136,0.3)' }}
+             <a
+               href="https://astrolabs.site"
+               target="_blank"
+               rel="noopener noreferrer"
+               className="sb-footer-link"
+               style={{ color: 'rgba(0,255,136,0.3)' }}
             >
               AstroLabs Studio
             </a>

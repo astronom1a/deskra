@@ -5,9 +5,10 @@ import { requireTpkId } from '../lib/tenantScope'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import TpkRequiredState from '../components/TpkRequiredState'
 import {
-  Save, AlertCircle, CheckCircle2, CalendarDays, Plus, Trash2,
+  Save, CalendarDays, Plus, Trash2,
   TreePine, Barcode, Users, Sparkles, Zap, Package, Lock
 } from 'lucide-react'
+import Toast, { useToast } from '../components/Toast'
 
 const DEFAULT_JENIS = ['JATI', 'RIMBA', 'MAHONI']
 const DEFAULT_JENIS_BARCODE = ['JATI', 'MAHONI', 'KEDAWUNG']
@@ -156,10 +157,10 @@ function SectionPerJenis({
 export default function DetailPekerjaan() {
   const { profile, activeTpkId } = useAuth()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
+  const { toast, showToast } = useToast(3000)
   const [periodes, setPeriodes] = useState([])
   const [selectedPeriode, setSelectedPeriode] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [toast, setToast] = useState(null)
 
   const [tandaLaku, setTandaLaku] = useState([])
   const [brongkol, setBrongkol] = useState([])
@@ -231,11 +232,6 @@ export default function DetailPekerjaan() {
     setLoading(false)
   }
 
-  function showToast(msg, type = 'success') {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3000)
-  }
-
   async function fetchJumlahTenagaBantuAktif(scopedTpkId = requireTpkId(tpkId)) {
     const { data, error } = await supabase
       .from('tabel_tenaga_kerja')
@@ -273,16 +269,6 @@ export default function DetailPekerjaan() {
         urutan: i,
       }))
 
-    // Replace-style save (delete + insert per tabel)
-    const ops = [
-      supabase.from('tabel_tanda_laku').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
-      supabase.from('tabel_tumpuk_brongkol').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
-      supabase.from('tabel_pemasangan_barcode').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
-      supabase.from('tabel_custom_item').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
-    ]
-    await Promise.all(ops)
-
-    const inserts = []
     const tlRows = mapRows(tandaLaku, 'volume')
     const tbRows = mapRows(brongkol, 'volume')
     const pbRows = barcodeRows
@@ -307,12 +293,13 @@ export default function DetailPekerjaan() {
         urutan: i,
       }))
 
+    // Insert data baru dulu — baru hapus yang lama (safe order: insert first)
+    const inserts = []
     if (tlRows.length) inserts.push(supabase.from('tabel_tanda_laku').insert(tlRows))
     if (tbRows.length) inserts.push(supabase.from('tabel_tumpuk_brongkol').insert(tbRows))
     if (pbRows.length) inserts.push(supabase.from('tabel_pemasangan_barcode').insert(pbRows))
     if (ciRows.length) inserts.push(supabase.from('tabel_custom_item').insert(ciRows))
 
-    // Tenaga Bantu & Kebersihan & Listrik - upsert
     if (isPeriodeII) {
       const jumlahTenagaBantuAktif = await fetchJumlahTenagaBantuAktif(scopedTpkId)
       inserts.push(supabase.from('tabel_tenaga_bantu').upsert({
@@ -344,10 +331,20 @@ export default function DetailPekerjaan() {
     const err = results.find(r => r.error)
     if (err) {
       showToast(err.error.message, 'error')
-    } else {
-      showToast('Semua data berhasil disimpan')
-      fetchAll(pid)
+      setLoading(false)
+      return
     }
+
+    // Insert sukses — baru hapus data lama
+    await Promise.all([
+      supabase.from('tabel_tanda_laku').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
+      supabase.from('tabel_tumpuk_brongkol').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
+      supabase.from('tabel_pemasangan_barcode').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
+      supabase.from('tabel_custom_item').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
+    ])
+
+    showToast('Semua data berhasil disimpan')
+    fetchAll(pid)
     setLoading(false)
   }
 
@@ -377,20 +374,7 @@ export default function DetailPekerjaan() {
         .dp-input::placeholder { color: rgba(255,255,255,0.2); }
       `}</style>
 
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed', top: 20, right: 20, zIndex: 50,
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '10px 16px', borderRadius: 3, fontSize: 12, fontFamily: 'monospace',
-          background: toast.type === 'error' ? 'rgba(255,107,107,0.12)' : 'rgba(0,255,136,0.10)',
-          border: `1px solid ${toast.type === 'error' ? 'rgba(255,107,107,0.3)' : 'rgba(0,255,136,0.3)'}`,
-          color: toast.type === 'error' ? '#ff6b6b' : '#00ff88',
-        }}>
-          {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>}
-          {toast.msg}
-        </div>
-      )}
+      <Toast toast={toast} />
 
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
