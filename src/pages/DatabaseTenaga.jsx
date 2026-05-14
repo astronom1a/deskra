@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
+import ConfirmDialog from '../components/ConfirmDialog'
+import TpkRequiredState from '../components/TpkRequiredState'
 import { Plus, Pencil, Trash2, X, CheckCircle2, AlertCircle } from 'lucide-react'
 
 const POSISI_OPTIONS = [
@@ -40,6 +42,8 @@ export default function DatabaseTenaga() {
   const [editId, setEditId] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [toast, setToast] = useState(null)
+  const [deleteRow, setDeleteRow] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (tpkId) fetchData()
@@ -127,11 +131,14 @@ export default function DatabaseTenaga() {
     fetchData()
   }
 
-  async function handleDelete(id) {
+  async function handleDelete() {
     if (!tpkId) return showToast('TPK aktif tidak ditemukan. Coba pilih TPK atau login ulang.', 'error')
-    if (!confirm('Hapus data tenaga kerja ini?')) return
-    const { error } = await supabase.from('tabel_tenaga_kerja').delete().eq('tpk_id', tpkId).eq('id', id)
+    if (!deleteRow) return
+    setDeleting(true)
+    const { error } = await supabase.from('tabel_tenaga_kerja').delete().eq('tpk_id', tpkId).eq('id', deleteRow.id)
+    setDeleting(false)
     if (error) return showToast(error.message, 'error')
+    setDeleteRow(null)
     showToast('Data berhasil dihapus')
     fetchData()
   }
@@ -145,6 +152,8 @@ export default function DatabaseTenaga() {
     SLAGHAMMER:     { bg: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.3)', color: '#a78bfa' },
     BARCODE:        { bg: 'rgba(250,204,21,0.12)',  border: 'rgba(250,204,21,0.3)',  color: '#facc15' },
   }
+
+  if (!tpkId) return <TpkRequiredState />
 
   return (
     <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
@@ -161,6 +170,16 @@ export default function DatabaseTenaga() {
           {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>} {toast.msg}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteRow}
+        title="Hapus Tenaga Kerja?"
+        message="Data tenaga kerja ini akan dihapus dari TPK aktif."
+        detail={deleteRow?.nama}
+        loading={deleting}
+        onCancel={() => setDeleteRow(null)}
+        onConfirm={handleDelete}
+      />
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
@@ -350,7 +369,7 @@ export default function DatabaseTenaga() {
                         onMouseEnter={e => e.currentTarget.style.color = '#00ff88'}
                         onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
                       ><Pencil size={13}/></button>
-                      <button onClick={() => handleDelete(row.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                      <button onClick={() => setDeleteRow(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
                         onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
                         onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
                       ><Trash2 size={13}/></button>

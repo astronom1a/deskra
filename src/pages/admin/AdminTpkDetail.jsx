@@ -37,6 +37,7 @@ export default function AdminTpkDetail() {
   const [operators, setOperators] = useState(null) // null = loading, [] = kosong
   const [resetSent, setResetSent] = useState({}) // { email: true }
   const [resetting, setResetting] = useState({})
+  const [operatorError, setOperatorError] = useState('')
 
   // Modal tambah operator
   const [showAddModal, setShowAddModal] = useState(false)
@@ -155,6 +156,7 @@ export default function AdminTpkDetail() {
 
   const handleDeleteOperator = async (user_id) => {
     setDeleting(user_id)
+    setOperatorError('')
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/remove-tpk-operator`, {
@@ -170,7 +172,7 @@ export default function AdminTpkDetail() {
       if (!res.ok) throw new Error(json.error || 'Terjadi kesalahan')
       setOperators(ops => ops.filter(o => o.user_id !== user_id))
     } catch (err) {
-      alert(err.message)
+      setOperatorError(err.message)
     } finally {
       setDeleting(null)
       setConfirmDelete(null)
@@ -368,6 +370,13 @@ export default function AdminTpkDetail() {
               <UserPlus size={13} /> Tambah Operator
             </button>
           </div>
+
+          {operatorError && (
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+              <AlertCircle size={14} className="mt-0.5 shrink-0" />
+              <span>{operatorError}</span>
+            </div>
+          )}
 
           {operators === null ? (
             <div className="text-sm text-gray-400 py-2">Memuat...</div>

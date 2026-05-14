@@ -4,3 +4,4 @@ dist
 .claude/worktrees/
 supabase/.temp/
 .vercel
+ruvector.db

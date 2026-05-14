@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthProvider'
+import { getEffectiveTpkId } from '../lib/effectiveTpk'
+import ConfirmDialog from '../components/ConfirmDialog'
+import TpkRequiredState from '../components/TpkRequiredState'
 import { Plus, Pencil, Trash2, X, CheckCircle2, AlertCircle } from 'lucide-react'
 
 const emptyForm = { kode_rek: '', uraian: '', satuan: '', tarif: '', aktif: true }
@@ -9,18 +13,28 @@ function formatRupiah(val) {
 }
 
 export default function DatabaseTarif() {
+  const { profile, activeTpkId } = useAuth()
+  const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(emptyForm)
   const [editId, setEditId] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [toast, setToast] = useState(null)
+  const [deleteRow, setDeleteRow] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+    if (tpkId) fetchData()
+    else {
+      setData([])
+      setLoading(false)
+    }
+  }, [tpkId])
 
   async function fetchData() {
     setLoading(true)
-    const { data } = await supabase.from('tabel_tarif').select('*').order('uraian')
+    const { data } = await supabase.from('tabel_tarif').select('*').eq('tpk_id', tpkId).order('uraian')
     setData(data || [])
     setLoading(false)
   }
@@ -38,14 +52,15 @@ export default function DatabaseTarif() {
   }
 
   async function handleSubmit() {
+    if (!tpkId) return showToast('TPK aktif tidak ditemukan. Coba pilih TPK atau login ulang.', 'error')
     if (!form.uraian || !form.tarif) return showToast('Uraian dan tarif wajib diisi', 'error')
     const payload = { ...form, tarif: parseFloat(form.tarif) }
     if (editId) {
-      const { error } = await supabase.from('tabel_tarif').update(payload).eq('id', editId)
+      const { error } = await supabase.from('tabel_tarif').update(payload).eq('tpk_id', tpkId).eq('id', editId)
       if (error) return showToast(error.message, 'error')
       showToast('Tarif berhasil diperbarui')
     } else {
-      const { error } = await supabase.from('tabel_tarif').insert(payload)
+      const { error } = await supabase.from('tabel_tarif').insert({ ...payload, tpk_id: tpkId })
       if (error) return showToast(error.message, 'error')
       showToast('Tarif berhasil ditambahkan')
     }
@@ -53,15 +68,21 @@ export default function DatabaseTarif() {
     fetchData()
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Hapus data tarif ini?')) return
-    const { error } = await supabase.from('tabel_tarif').delete().eq('id', id)
+  async function handleDelete() {
+    if (!tpkId) return showToast('TPK aktif tidak ditemukan. Coba pilih TPK atau login ulang.', 'error')
+    if (!deleteRow) return
+    setDeleting(true)
+    const { error } = await supabase.from('tabel_tarif').delete().eq('tpk_id', tpkId).eq('id', deleteRow.id)
+    setDeleting(false)
     if (error) return showToast(error.message, 'error')
+    setDeleteRow(null)
     showToast('Tarif berhasil dihapus')
     fetchData()
   }
 
   const INP = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#f0f0f0', borderRadius: 3, outline: 'none', fontFamily: 'monospace', fontSize: 12, padding: '7px 10px', width: '100%', boxSizing: 'border-box' }
+
+  if (!tpkId) return <TpkRequiredState />
 
   return (
     <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
@@ -80,6 +101,16 @@ export default function DatabaseTarif() {
           {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>} {toast.msg}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteRow}
+        title="Hapus Tarif?"
+        message="Data tarif ini akan dihapus dari TPK aktif."
+        detail={deleteRow?.uraian}
+        loading={deleting}
+        onCancel={() => setDeleteRow(null)}
+        onConfirm={handleDelete}
+      />
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
@@ -169,7 +200,7 @@ export default function DatabaseTarif() {
                         onMouseEnter={e => e.currentTarget.style.color = '#00ff88'}
                         onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
                       ><Pencil size={13}/></button>
-                      <button onClick={() => handleDelete(row.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                      <button onClick={() => setDeleteRow(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
                         onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
                         onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
                       ><Trash2 size={13}/></button>

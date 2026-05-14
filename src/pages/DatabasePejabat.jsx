@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
+import ConfirmDialog from '../components/ConfirmDialog'
+import TpkRequiredState from '../components/TpkRequiredState'
 import { Plus, Pencil, Trash2, X, CheckCircle2, AlertCircle } from 'lucide-react'
 
 const emptyForm = { npk: '', nama: '', jabatan: '', aktif: true }
@@ -15,6 +17,8 @@ export default function DatabasePejabat() {
   const [editId, setEditId] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [toast, setToast] = useState(null)
+  const [deleteRow, setDeleteRow] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (tpkId) fetchData()
@@ -59,16 +63,21 @@ export default function DatabasePejabat() {
     fetchData()
   }
 
-  async function handleDelete(id) {
+  async function handleDelete() {
     if (!tpkId) return showToast('TPK aktif tidak ditemukan. Coba pilih TPK atau login ulang.', 'error')
-    if (!confirm('Hapus data pejabat ini?')) return
-    const { error } = await supabase.from('tabel_pejabat').delete().eq('tpk_id', tpkId).eq('id', id)
+    if (!deleteRow) return
+    setDeleting(true)
+    const { error } = await supabase.from('tabel_pejabat').delete().eq('tpk_id', tpkId).eq('id', deleteRow.id)
+    setDeleting(false)
     if (error) return showToast(error.message, 'error')
+    setDeleteRow(null)
     showToast('Data berhasil dihapus')
     fetchData()
   }
 
   const INP = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#f0f0f0', borderRadius: 3, outline: 'none', fontFamily: 'monospace', fontSize: 12, padding: '7px 10px', width: '100%', boxSizing: 'border-box' }
+
+  if (!tpkId) return <TpkRequiredState />
 
   return (
     <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
@@ -83,6 +92,16 @@ export default function DatabasePejabat() {
           {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>} {toast.msg}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteRow}
+        title="Hapus Pejabat?"
+        message="Data pejabat ini akan dihapus dari TPK aktif."
+        detail={deleteRow?.nama}
+        loading={deleting}
+        onCancel={() => setDeleteRow(null)}
+        onConfirm={handleDelete}
+      />
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
@@ -190,7 +209,7 @@ export default function DatabasePejabat() {
                         onMouseEnter={e => e.currentTarget.style.color = '#00ff88'}
                         onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
                       ><Pencil size={13}/></button>
-                      <button onClick={() => handleDelete(row.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                      <button onClick={() => setDeleteRow(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
                         onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
                         onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
                       ><Trash2 size={13}/></button>
