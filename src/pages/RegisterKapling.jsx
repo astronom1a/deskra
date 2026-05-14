@@ -5,6 +5,7 @@ import * as pdfjsLib from 'pdfjs-dist'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
 import { buildInvoiceKaplingUpdates } from '../lib/tenantScope'
+import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import ThemedSelect from '../components/ThemedSelect'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -279,8 +280,8 @@ function SertBadge({ val }) {
 }
 
 export default function RegisterKapling() {
-  const { profile } = useAuth()
-  const tpkId = profile?.tpk_id
+  const { profile, activeTpkId } = useAuth()
+  const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const [rows, setRows]             = useState([])
   const [loading, setLoading]       = useState(true)
   const [importing, setImporting]   = useState(false)

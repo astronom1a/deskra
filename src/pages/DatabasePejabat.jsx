@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthProvider'
+import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import { Plus, Pencil, Trash2, X, CheckCircle2, AlertCircle } from 'lucide-react'
 
 const emptyForm = { npk: '', nama: '', jabatan: '', aktif: true }
 
 export default function DatabasePejabat() {
+  const { profile, activeTpkId } = useAuth()
+  const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(emptyForm)
@@ -12,11 +16,17 @@ export default function DatabasePejabat() {
   const [showForm, setShowForm] = useState(false)
   const [toast, setToast] = useState(null)
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+    if (tpkId) fetchData()
+    else {
+      setData([])
+      setLoading(false)
+    }
+  }, [tpkId])
 
   async function fetchData() {
     setLoading(true)
-    const { data } = await supabase.from('tabel_pejabat').select('*').order('jabatan')
+    const { data } = await supabase.from('tabel_pejabat').select('*').eq('tpk_id', tpkId).order('jabatan')
     setData(data || [])
     setLoading(false)
   }
@@ -34,13 +44,14 @@ export default function DatabasePejabat() {
   }
 
   async function handleSubmit() {
+    if (!tpkId) return showToast('TPK aktif tidak ditemukan. Coba pilih TPK atau login ulang.', 'error')
     if (!form.nama || !form.jabatan) return showToast('Nama dan jabatan wajib diisi', 'error')
     if (editId) {
-      const { error } = await supabase.from('tabel_pejabat').update(form).eq('id', editId)
+      const { error } = await supabase.from('tabel_pejabat').update(form).eq('tpk_id', tpkId).eq('id', editId)
       if (error) return showToast(error.message, 'error')
       showToast('Data pejabat diperbarui')
     } else {
-      const { error } = await supabase.from('tabel_pejabat').insert(form)
+      const { error } = await supabase.from('tabel_pejabat').insert({ ...form, tpk_id: tpkId })
       if (error) return showToast(error.message, 'error')
       showToast('Pejabat berhasil ditambahkan')
     }
@@ -49,8 +60,9 @@ export default function DatabasePejabat() {
   }
 
   async function handleDelete(id) {
+    if (!tpkId) return showToast('TPK aktif tidak ditemukan. Coba pilih TPK atau login ulang.', 'error')
     if (!confirm('Hapus data pejabat ini?')) return
-    const { error } = await supabase.from('tabel_pejabat').delete().eq('id', id)
+    const { error } = await supabase.from('tabel_pejabat').delete().eq('tpk_id', tpkId).eq('id', id)
     if (error) return showToast(error.message, 'error')
     showToast('Data berhasil dihapus')
     fetchData()

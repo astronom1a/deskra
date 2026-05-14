@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
 import { requireTpkId } from '../lib/tenantScope'
+import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import {
   Save, AlertCircle, CheckCircle2, CalendarDays, Plus, Trash2,
   TreePine, Barcode, Users, Sparkles, Zap, Package, Lock
@@ -152,8 +153,8 @@ function SectionPerJenis({
 // Main Page
 // ============================================================
 export default function DetailPekerjaan() {
-  const { profile } = useAuth()
-  const tpkId = profile?.tpk_id
+  const { profile, activeTpkId } = useAuth()
+  const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const [periodes, setPeriodes] = useState([])
   const [selectedPeriode, setSelectedPeriode] = useState(null)
   const [loading, setLoading] = useState(false)

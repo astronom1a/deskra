@@ -6,9 +6,9 @@ import {
   SlidersHorizontal, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { getNamaTpk } from '../lib/useAccount'
 import { useAuth } from '../lib/AuthProvider'
 import { requireTpkId } from '../lib/tenantScope'
+import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import ThemedSelect from '../components/ThemedSelect'
 
 const MONTH_FULL_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
@@ -236,8 +236,9 @@ const EMPTY_FORM = {
 }
 
 export default function DkhpSkshhk() {
-  const { profile } = useAuth()
-  const tpkId = profile?.tpk_id
+  const { profile, activeTpkId } = useAuth()
+  const tpkId = getEffectiveTpkId({ activeTpkId, profile })
+  const [tpkName, setTpkName]     = useState('TPK Wongsorejo')
   const [rows, setRows]           = useState([])
   const [loading, setLoading]     = useState(true)
   const [lastUpdated, setLastUpdated] = useState(null)
@@ -271,6 +272,18 @@ export default function DkhpSkshhk() {
     setToast({ msg, kind })
     setTimeout(() => setToast(null), 3000)
   }
+
+  useEffect(() => {
+    if (!tpkId) return
+    supabase
+      .from('tabel_tpk')
+      .select('namatpk')
+      .eq('id', tpkId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.namatpk) setTpkName(data.namatpk)
+      })
+  }, [tpkId])
 
   async function fetchData() {
     if (!tpkId) {
@@ -619,7 +632,6 @@ export default function DkhpSkshhk() {
       const penerbit = (pejabatList || []).find(p => has(p, 'penerbit')) || {}
       const kepala   = (pejabatList || []).find(p => has(p, 'kepala tpk')) || {}
 
-      const tpkName  = getNamaTpk()
       const tpkUpper = tpkName.toUpperCase()
       const tpkCode  = tpkAbbr(tpkName)
       const monthLabel = MONTH_FULL_ID[m - 1]

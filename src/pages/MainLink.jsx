@@ -4,6 +4,7 @@ import { buildRows, DEFAULT_TARIF_PERIODE } from '../lib/rekapPekerjaan'
 import { useAuth } from '../lib/AuthProvider'
 import { requireTpkId } from '../lib/tenantScope'
 import { fetchActivePejabatSnapshot, refreshPeriodePejabatSnapshot } from '../lib/pejabatSnapshot'
+import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import ThemedSelect from '../components/ThemedSelect'
 import { Plus, Save, AlertCircle, CheckCircle2, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, Printer, FileText, ClipboardCheck, Receipt, Wallet, ClipboardList, FileSpreadsheet } from 'lucide-react'
 
@@ -58,8 +59,8 @@ function formatNum(n,dec=3) {
 
 // ─── Component ───────────────────────────────────────────────
 export default function MainLink() {
-  const { profile } = useAuth()
-  const tpkId = profile?.tpk_id
+  const { profile, activeTpkId } = useAuth()
+  const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const [periodes, setPeriodes]         = useState([])
   const [selectedPeriode, setSelected]  = useState(null)
   const [rows, setRows]                 = useState([])

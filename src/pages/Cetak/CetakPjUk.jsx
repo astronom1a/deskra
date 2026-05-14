@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import CetakLayout, { CetakPageSkeleton } from './CetakLayout'
 import { buildRows } from '../../lib/rekapPekerjaan'
 import { formatAngka, formatTanggalTtd } from './cetakHelpers'
-import { getNamaTpkUpper } from '../../lib/useAccount'
 import { resolvePejabatForPeriode } from '../../lib/pejabatSnapshot'
+import { getTpkNameUpper } from '../../lib/effectiveTpk'
 
 const ARIAL   = { fontFamily: 'Arial, Helvetica, sans-serif' }
 const CALIBRI = { fontFamily: 'Calibri, "Segoe UI", Arial, sans-serif' }
@@ -25,7 +25,7 @@ export default function CetakPjUk() {
 
 function PjUkDoc({ periode }) {
   const [data, setData] = useState(null)
-  const tpkUpper = getNamaTpkUpper()
+  const tpkUpper = getTpkNameUpper(periode)
 
   useEffect(() => {
     (async () => {

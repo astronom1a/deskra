@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import CetakLayout, { CetakPageSkeleton } from './CetakLayout'
 import { fetchCetakData, formatAngka, terbilangBungkus, formatTanggalLengkap, formatTanggalTtd } from './cetakHelpers'
-import { getNamaTpkUpper } from '../../lib/useAccount'
+import { getTpkNameUpper } from '../../lib/effectiveTpk'
 
 const TIMES = { fontFamily: '"Times New Roman", Times, serif' }
 
@@ -15,7 +15,7 @@ export default function CetakPermintaanUk() {
 
 function PermintaanUkDoc({ periode }) {
   const [data, setData] = useState(null)
-  const tpkUpper = getNamaTpkUpper()
+  const tpkUpper = getTpkNameUpper(periode)
   useEffect(() => { fetchCetakData(periode.id).then(setData) }, [periode.id])
   if (!data) return <CetakPageSkeleton />
 

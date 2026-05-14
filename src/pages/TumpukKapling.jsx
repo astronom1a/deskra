@@ -4,6 +4,7 @@ import { Save, AlertCircle, CheckCircle2, CalendarDays, Sparkles, Layers, Lock }
 import { DEFAULT_TARIF_PERIODE, TUMPUK_TARIF_KODE } from '../lib/rekapPekerjaan'
 import { useAuth } from '../lib/AuthProvider'
 import { requireTpkId } from '../lib/tenantScope'
+import { getEffectiveTpkId } from '../lib/effectiveTpk'
 
 const JENIS_LIST = [
   { key: 'JATI', label: 'Tumpuk Kapling JATI' },
@@ -34,8 +35,8 @@ function formatNum(n) {
 }
 
 export default function TumpukKapling() {
-  const { profile } = useAuth()
-  const tpkId = profile?.tpk_id
+  const { profile, activeTpkId } = useAuth()
+  const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const [periodes, setPeriodes] = useState([])
   const [selectedPeriode, setSelectedPeriode] = useState(null)
   const [rows, setRows] = useState([])

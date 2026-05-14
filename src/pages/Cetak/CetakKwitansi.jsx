@@ -4,8 +4,8 @@ import CetakLayout, { CetakPageSkeleton } from './CetakLayout'
 import { supabase } from '../../lib/supabase'
 import { buildRows } from '../../lib/rekapPekerjaan'
 import { formatAngka, formatAngkaFisik, terbilangBungkus, formatTanggalTtd } from './cetakHelpers'
-import { getNamaTpk, getNamaTpkUpper } from '../../lib/useAccount'
 import { resolvePejabatForPeriode } from '../../lib/pejabatSnapshot'
+import { getTpkName, getTpkNameUpper } from '../../lib/effectiveTpk'
 
 const TIMES = { fontFamily: '"Times New Roman", Times, serif' }
 
@@ -40,8 +40,8 @@ export default function CetakKwitansi() {
 function KwitansiDoc({ periode }) {
   const { itemKey } = useParams()
   const [data, setData] = useState(null)
-  const tpkName = getNamaTpk()
-  const tpkUpper = getNamaTpkUpper()
+  const tpkName = getTpkName(periode)
+  const tpkUpper = getTpkNameUpper(periode)
 
   useEffect(() => {
     (async () => {

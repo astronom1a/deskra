@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useAccount } from '../lib/useAccount'
 import { useAuth } from '../lib/AuthProvider'
+import { getEffectiveTpkId } from '../lib/effectiveTpk'
 
 const SORTIMENS = ['AI', 'AII', 'AIII']
 
@@ -40,8 +41,10 @@ export default function Dashboard() {
   const navigate  = useNavigate()
   const now       = useDateTime()
   const { account } = useAccount()
-  const { profile, tpk } = useAuth()
-  const namaTpk   = tpk?.namatpk || account.namaTpk || 'TPK Wongsorejo'
+  const { profile, tpk, activeTpkId } = useAuth()
+  const tpkId     = getEffectiveTpkId({ activeTpkId, profile })
+  const [activeTpkName, setActiveTpkName] = useState('')
+  const namaTpk   = activeTpkName || tpk?.namatpk || account.namaTpk || 'TPK Wongsorejo'
   const [periodes,    setPeriodes]    = useState([])
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState(null)
@@ -65,18 +68,32 @@ export default function Dashboard() {
   const maskRupiah = v => hideAmount ? 'Rp ••••••••' : formatRupiah(v)
 
   useEffect(() => {
-    if (!tpk?.id) { setLoading(false); return }
+    if (!tpkId) return
+    if (tpkId === tpk?.id) {
+      setActiveTpkName('')
+      return
+    }
+    supabase
+      .from('tabel_tpk')
+      .select('namatpk')
+      .eq('id', tpkId)
+      .maybeSingle()
+      .then(({ data }) => setActiveTpkName(data?.namatpk || ''))
+  }, [tpkId, tpk?.id])
+
+  useEffect(() => {
+    if (!tpkId) { setLoading(false); return }
     async function fetchPeriodes() {
       try {
         const { data, error } = await supabase
           .from('tabel_periode')
           .select('*')
-          .eq('tpk_id', tpk.id)
+          .eq('tpk_id', tpkId)
           .order('created_at', { ascending: false })
           .limit(5)
         if (error) throw error
         const list   = data || []
-        const totals = await Promise.all(list.map(p => computeTotalUK(p.id, p.periode, { tpkId: tpk.id })))
+        const totals = await Promise.all(list.map(p => computeTotalUK(p.id, p.periode, { tpkId })))
         setPeriodes(list.map((p, i) => ({ ...p, total_uk: totals[i] })))
       } catch (err) {
         setError(err.message)
@@ -85,10 +102,10 @@ export default function Dashboard() {
       }
     }
     fetchPeriodes()
-  }, [tpk?.id])
+  }, [tpkId])
 
   useEffect(() => {
-    if (!tpk?.id) { setStatsLoading(false); return }
+    if (!tpkId) { setStatsLoading(false); return }
     async function fetchStats() {
       try {
         const PAGE = 1000
@@ -97,7 +114,7 @@ export default function Dashboard() {
           const { data } = await supabase
             .from('tabel_register_kapling')
             .select('no_kapling, sortimen, batang, volume, no_invois')
-            .eq('tpk_id', tpk.id)
+            .eq('tpk_id', tpkId)
             .order('no_kapling', { ascending: true })
             .range(from, from + PAGE - 1)
           if (!data || data.length === 0) break
@@ -118,7 +135,7 @@ export default function Dashboard() {
           supabase
             .from('tabel_dkhp_skshhk')
             .select('no_dkhp, tanggal')
-            .eq('tpk_id', tpk.id)
+            .eq('tpk_id', tpkId)
             .not('no_dkhp', 'ilike', '%perni%')
             .order('tanggal', { ascending: false })
             .order('id', { ascending: false })
@@ -127,7 +144,7 @@ export default function Dashboard() {
           supabase
             .from('tabel_dkhp_skshhk')
             .select('no_dkhp, tanggal')
-            .eq('tpk_id', tpk.id)
+            .eq('tpk_id', tpkId)
             .ilike('no_dkhp', '%perni%')
             .order('tanggal', { ascending: false })
             .order('id', { ascending: false })
@@ -141,7 +158,7 @@ export default function Dashboard() {
       }
     }
     fetchStats()
-  }, [tpk?.id])
+  }, [tpkId])
 
   const totalKapling = kaplingRows.length
   const totalBatang  = kaplingRows.reduce((s, r) => s + (r.batang || 0), 0)

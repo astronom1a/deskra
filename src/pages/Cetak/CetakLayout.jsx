@@ -37,7 +37,11 @@ export default function CetakLayout({ title, landscape = false, children: render
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('tabel_periode').select('*').eq('id', periodeId).maybeSingle()
+      const { data } = await supabase
+        .from('tabel_periode')
+        .select('*, tabel_tpk(id, namatpk, kode_tpk)')
+        .eq('id', periodeId)
+        .maybeSingle()
       setPeriode(data)
       setLoading(false)
     })()

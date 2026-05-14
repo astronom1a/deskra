@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthProvider'
+import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import { Plus, Pencil, Trash2, X, CheckCircle2, AlertCircle } from 'lucide-react'
 
 const POSISI_OPTIONS = [
@@ -30,6 +32,8 @@ function posisiLabel(v) {
 }
 
 export default function DatabaseTenaga() {
+  const { profile, activeTpkId } = useAuth()
+  const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(emptyForm)
@@ -37,13 +41,20 @@ export default function DatabaseTenaga() {
   const [showForm, setShowForm] = useState(false)
   const [toast, setToast] = useState(null)
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+    if (tpkId) fetchData()
+    else {
+      setData([])
+      setLoading(false)
+    }
+  }, [tpkId])
 
   async function fetchData() {
     setLoading(true)
     const { data } = await supabase
       .from('tabel_tenaga_kerja')
       .select('*')
+      .eq('tpk_id', tpkId)
       .order('posisi', { ascending: true })
       .order('nama', { ascending: true })
     setData(data || [])
@@ -90,6 +101,7 @@ export default function DatabaseTenaga() {
   }
 
   async function handleSubmit() {
+    if (!tpkId) return showToast('TPK aktif tidak ditemukan. Coba pilih TPK atau login ulang.', 'error')
     if (!form.nama.trim()) return showToast('Nama wajib diisi', 'error')
     if (!form.posisi.length) return showToast('Posisi wajib dipilih minimal satu', 'error')
 
@@ -102,11 +114,11 @@ export default function DatabaseTenaga() {
     }
 
     if (editId) {
-      const { error } = await supabase.from('tabel_tenaga_kerja').update(payload).eq('id', editId)
+      const { error } = await supabase.from('tabel_tenaga_kerja').update(payload).eq('tpk_id', tpkId).eq('id', editId)
       if (error) return showToast(error.message, 'error')
       showToast('Data tenaga diperbarui')
     } else {
-      const { error } = await supabase.from('tabel_tenaga_kerja').insert(payload)
+      const { error } = await supabase.from('tabel_tenaga_kerja').insert({ ...payload, tpk_id: tpkId })
       if (error) return showToast(error.message, 'error')
       showToast('Tenaga kerja berhasil ditambahkan')
     }
@@ -116,8 +128,9 @@ export default function DatabaseTenaga() {
   }
 
   async function handleDelete(id) {
+    if (!tpkId) return showToast('TPK aktif tidak ditemukan. Coba pilih TPK atau login ulang.', 'error')
     if (!confirm('Hapus data tenaga kerja ini?')) return
-    const { error } = await supabase.from('tabel_tenaga_kerja').delete().eq('id', id)
+    const { error } = await supabase.from('tabel_tenaga_kerja').delete().eq('tpk_id', tpkId).eq('id', id)
     if (error) return showToast(error.message, 'error')
     showToast('Data berhasil dihapus')
     fetchData()

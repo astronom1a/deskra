@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import CetakLayout, { CetakPageSkeleton } from './CetakLayout'
 import { buildRows } from '../../lib/rekapPekerjaan'
 import { formatAngka, terbilangBungkus, formatTanggalTtd } from './cetakHelpers'
-import { getNamaTpkUpper } from '../../lib/useAccount'
 import { resolvePejabatForPeriode } from '../../lib/pejabatSnapshot'
+import { getTpkNameUpper } from '../../lib/effectiveTpk'
 
 const TIMES = { fontFamily: '"Times New Roman", Times, serif' }
 
@@ -17,7 +17,7 @@ export default function CetakGabunganPembayaran() {
 
 function GPDoc({ periode }) {
   const [data, setData] = useState(null)
-  const tpkUpper = getNamaTpkUpper()
+  const tpkUpper = getTpkNameUpper(periode)
 
   useEffect(() => {
     (async () => {

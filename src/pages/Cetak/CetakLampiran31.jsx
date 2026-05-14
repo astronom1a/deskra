@@ -4,8 +4,8 @@ import CetakLayout, { CetakPageSkeleton } from './CetakLayout'
 import { supabase } from '../../lib/supabase'
 import { buildRows } from '../../lib/rekapPekerjaan'
 import { formatAngka, formatAngkaFisik, formatTanggalLengkap } from './cetakHelpers'
-import { getNamaTpkUpper } from '../../lib/useAccount'
 import { resolvePejabatForPeriode } from '../../lib/pejabatSnapshot'
+import { getTpkNameUpper } from '../../lib/effectiveTpk'
 
 const ARIAL = { fontFamily: 'Arial, Helvetica, sans-serif' }
 
@@ -64,7 +64,7 @@ function Lampiran31Doc({ periode }) {
       ])
       const pejabat = pejabatRes || {}
       setData({
-        rows, pejabat,
+        periode, rows, pejabat,
         tumpuk: tumpuk.data||[],
         brongkol: brongkol.data||[],
         barcode: barcode.data||[],
@@ -209,7 +209,7 @@ function SingleWorkerBody({ data, item, grand, cfg, itemKey }) {
           <td className="border border-black px-1 align-top">{worker.nama || ''}</td>
           <td className="border border-black px-1 align-top">{worker.nik || ''}</td>
           <td className="border border-black px-1 align-top">{extractDesa(worker.alamat)}</td>
-          <td className="border border-black px-1 align-top">{cfg.perincian.replace(/%TPK%/g, getNamaTpkUpper())}</td>
+          <td className="border border-black px-1 align-top">{cfg.perincian.replace(/%TPK%/g, getTpkNameUpper(data.periode))}</td>
           <td className="border border-black px-1 text-right align-top">{formatAngkaFisik(item.fisik)}</td>
           <td className="border border-black px-1 text-right align-top">{formatAngka(item.tarif)}</td>
           <td className="border border-black px-1 text-right align-top">{formatAngka(grand)}</td>
