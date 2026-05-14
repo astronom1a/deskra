@@ -114,100 +114,106 @@ export default function AdminDashboard() {
     style: 'currency', currency: 'IDR', minimumFractionDigits: 0,
   }).format(Math.round(v || 0))
 
+  const statCards = [
+    { label: 'Total TPK', value: stats?.total, icon: Building2, color: '#00ff88', delay: 0 },
+    { label: 'TPK Aktif', value: stats?.aktif, icon: CheckCircle2, color: '#34d399', delay: 0.12 },
+    { label: 'Total Periode', value: stats?.totalPeriode, icon: CalendarDays, color: '#60a5fa', delay: 0.24 },
+  ]
+
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Dashboard Admin</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Ringkasan seluruh TPK yang terdaftar di sistem.</p>
-      </div>
+    <div style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0', padding: 24 }}>
+      <div className="mx-auto" style={{ width: '100%', maxWidth: 'min(96vw, 1180px)' }}>
+        <div className="mb-8">
+          <p className="text-xs font-mono tracking-widest uppercase mb-2" style={{ color: '#00ff88' }}>— superadmin</p>
+          <h1 className="text-2xl font-bold" style={{ color: '#f0f0f0' }}>Dashboard Admin</h1>
+          <p className="text-sm mt-1 font-mono" style={{ color: 'rgba(255,255,255,0.32)' }}>Ringkasan seluruh TPK yang terdaftar di sistem.</p>
+        </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        {[
-          { label: 'Total TPK',    value: stats?.total,       icon: Building2,   color: 'text-primary-600', delay: 0    },
-          { label: 'TPK Aktif',    value: stats?.aktif,       icon: CheckCircle2, color: 'text-emerald-600', delay: 0.12 },
-          { label: 'Total Periode',value: stats?.totalPeriode, icon: CalendarDays, color: 'text-blue-600',   delay: 0.24 },
-        ].map(s => (
-          <div key={s.label} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex items-center gap-4">
-            <div className="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900">
-              <s.icon size={20} className={s.color} />
+        {/* Stat cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          {statCards.map(s => (
+            <div key={s.label} className="p-5 flex items-center gap-4" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 3, background: `${s.color}14`, border: `1px solid ${s.color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <s.icon size={18} style={{ color: s.color }} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold tabular-nums font-mono" style={{ color: '#f0f0f0' }}>
+                  {loading
+                    ? <span className="inline-block w-6 h-6" style={{ borderRadius: 3, background: 'rgba(255,255,255,0.08)' }} />
+                    : <ScrambleNumber value={s.value} delay={s.delay} />
+                  }
+                </p>
+                <p className="text-xs font-mono mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{s.label}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold tabular-nums text-gray-800 dark:text-gray-100">
-                {loading
-                  ? <span className="inline-block w-6 h-6 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-                  : <ScrambleNumber value={s.value} delay={s.delay} />
-                }
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{s.label}</p>
-            </div>
+          ))}
+        </div>
+
+        {/* TPK list */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-mono tracking-widest uppercase" style={{ color: '#00ff88' }}>— semua tpk</h2>
+            <button
+              onClick={() => navigate('/admin/tpk')}
+              className="flex items-center gap-1 font-mono"
+              style={{ fontSize: 11, color: 'rgba(0,255,136,0.9)' }}
+            >
+              Lihat semua <ChevronRight size={13} />
+            </button>
           </div>
-        ))}
-      </div>
 
-      {/* TPK list */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Semua TPK</h2>
-          <button
-            onClick={() => navigate('/admin/tpk')}
-            className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
-          >
-            Lihat semua <ChevronRight size={13} />
-          </button>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {loading ? (
-            <div className="p-8 text-center text-gray-400 text-sm">Memuat data...</div>
-          ) : error ? (
-            <div className="p-6 text-red-500 text-sm">{error}</div>
-          ) : tpkList.length === 0 ? (
-            <div className="p-8 text-center text-gray-400 text-sm">Belum ada TPK terdaftar.</div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
-                <tr>
-                  <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Lokasi TPK</th>
-                  <th className="text-left px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Kode</th>
-                  <th className="text-center px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Operator</th>
-                  <th className="text-center px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Periode</th>
-                  <th className="text-right px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Total UK</th>
-                  <th className="text-center px-5 py-3 text-gray-500 dark:text-gray-400 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
-                {tpkList.map(t => (
-                  <tr
-                    key={t.id}
-                    onClick={() => navigate(`/admin/tpk/${t.id}`)}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
-                  >
-                    <td className="px-5 py-3.5 font-medium text-gray-800 dark:text-gray-100">{t.namatpk}</td>
-                    <td className="px-5 py-3.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{t.kode_tpk || '—'}</td>
-                    <td className="px-5 py-3.5 text-center text-gray-500 dark:text-gray-400">{t.operatorCount}</td>
-                    <td className="px-5 py-3.5 text-center text-gray-500 dark:text-gray-400">{t.periodeCount}</td>
-                    <td className="px-5 py-3.5 text-right font-semibold text-primary-700 dark:text-primary-400">
-                      {fmt(t.totalUk)}
-                    </td>
-                    <td className="px-5 py-3.5 text-center">
-                      {t.aktif ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                          <CheckCircle2 size={10} /> Aktif
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-                          <XCircle size={10} /> Nonaktif
-                        </span>
-                      )}
-                    </td>
+          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+            {loading ? (
+              <div className="p-8 text-center text-sm font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>Memuat data...</div>
+            ) : error ? (
+              <div className="p-6 text-sm font-mono" style={{ color: '#ff6b6b' }}>{error}</div>
+            ) : tpkList.length === 0 ? (
+              <div className="p-8 text-center text-sm font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>Belum ada TPK terdaftar.</div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead style={{ background: 'rgba(255,255,255,0.015)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <tr>
+                    {['Lokasi TPK','Kode','Operator','Periode','Total UK','Status'].map((h, i) => (
+                      <th key={h} className={`px-5 py-3 font-mono text-xs ${i >= 2 && i <= 3 ? 'text-center' : i === 4 ? 'text-right' : 'text-left'}`} style={{ color: 'rgba(255,255,255,0.35)' }}>{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </section>
+                </thead>
+                <tbody>
+                  {tpkList.map(t => (
+                    <tr
+                      key={t.id}
+                      onClick={() => navigate(`/admin/tpk/${t.id}`)}
+                      className="cursor-pointer transition-colors"
+                      style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.025)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                    >
+                      <td className="px-5 py-3.5 font-medium" style={{ color: '#f0f0f0' }}>{t.namatpk}</td>
+                      <td className="px-5 py-3.5 font-mono text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>{t.kode_tpk || '—'}</td>
+                      <td className="px-5 py-3.5 text-center font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>{t.operatorCount}</td>
+                      <td className="px-5 py-3.5 text-center font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>{t.periodeCount}</td>
+                      <td className="px-5 py-3.5 text-right font-semibold font-mono" style={{ color: '#00ff88' }}>
+                        {fmt(t.totalUk)}
+                      </td>
+                      <td className="px-5 py-3.5 text-center">
+                        {t.aktif ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-medium" style={{ borderRadius: 3, background: 'rgba(0,255,136,0.1)', border: '1px solid rgba(0,255,136,0.22)', color: '#00ff88' }}>
+                            <CheckCircle2 size={10} /> Aktif
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-medium" style={{ borderRadius: 3, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.35)' }}>
+                            <XCircle size={10} /> Nonaktif
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   )
 }
