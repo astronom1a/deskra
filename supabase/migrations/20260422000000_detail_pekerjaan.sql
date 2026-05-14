@@ -94,10 +94,14 @@ $$ language sql stable;
 -- ============================================================
 create or replace function seed_kebersihan_if_periode_2(p_periode_id uuid)
 returns void as $$
+declare
+  v_tpk_id uuid;
 begin
   if periode_half(p_periode_id) = 'II' then
-    insert into tabel_kebersihan (periode_id, nominal)
-    values (p_periode_id, 52000)
+    select tpk_id into v_tpk_id from tabel_periode where id = p_periode_id;
+
+    insert into tabel_kebersihan (periode_id, tpk_id, nominal)
+    values (p_periode_id, v_tpk_id, 52000)
     on conflict (periode_id) do nothing;
   end if;
 end;

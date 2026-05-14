@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Save, AlertCircle, CheckCircle2, CalendarDays, Sparkles, Layers, Lock } from 'lucide-react'
 import { DEFAULT_TARIF_PERIODE, TUMPUK_TARIF_KODE } from '../lib/rekapPekerjaan'
+import { useAuth } from '../lib/AuthProvider'
+import { requireTpkId } from '../lib/tenantScope'
 
 const JENIS_LIST = [
   { key: 'JATI', label: 'Tumpuk Kapling JATI' },
@@ -32,6 +34,8 @@ function formatNum(n) {
 }
 
 export default function TumpukKapling() {
+  const { profile } = useAuth()
+  const tpkId = profile?.tpk_id
   const [periodes, setPeriodes] = useState([])
   const [selectedPeriode, setSelectedPeriode] = useState(null)
   const [rows, setRows] = useState([])
@@ -41,24 +45,36 @@ export default function TumpukKapling() {
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState(null)
 
-  useEffect(() => { fetchPeriodes() }, [])
+  useEffect(() => {
+    if (tpkId) fetchPeriodes()
+    else {
+      setPeriodes([])
+      setSelectedPeriode(null)
+    }
+  }, [tpkId])
 
   useEffect(() => {
     if (selectedPeriode) fetchData(selectedPeriode.id)
   }, [selectedPeriode])
 
   async function fetchPeriodes() {
+    const scopedTpkId = requireTpkId(tpkId)
     const { data } = await supabase
-      .from('tabel_periode').select('*').order('created_at', { ascending: false })
+      .from('tabel_periode')
+      .select('*')
+      .eq('tpk_id', scopedTpkId)
+      .order('created_at', { ascending: false })
     setPeriodes(data || [])
     if (data?.length && !selectedPeriode) setSelectedPeriode(data[0])
+    if (!data?.some(p => p.id === selectedPeriode?.id)) setSelectedPeriode(data?.[0] || null)
   }
 
   async function fetchData(periodeId) {
+    const scopedTpkId = requireTpkId(selectedPeriode?.tpk_id || tpkId)
     setLoading(true)
     const [{ data: rowData }, { data: tarifData }] = await Promise.all([
-      supabase.from('tabel_tumpuk_kapling').select('*').eq('periode_id', periodeId),
-      supabase.from('tabel_tarif_periode').select('kode,tarif').eq('periode_id', periodeId),
+      supabase.from('tabel_tumpuk_kapling').select('*').eq('tpk_id', scopedTpkId).eq('periode_id', periodeId),
+      supabase.from('tabel_tarif_periode').select('kode,tarif').eq('tpk_id', scopedTpkId).eq('periode_id', periodeId),
     ])
     setRows(rowData || [])
     // Build map sortimen → tarif (fallback: DEFAULT_TARIF_PERIODE)
@@ -68,20 +84,19 @@ export default function TumpukKapling() {
       AII:  tarifByKode[TUMPUK_TARIF_KODE.AII]  ?? DEFAULT_TARIF.AII,
       AIII: tarifByKode[TUMPUK_TARIF_KODE.AIII] ?? DEFAULT_TARIF.AIII,
     })
-    await fetchSummary(periodeId)
+    fetchSummary(rowData || [])
     setLoading(false)
   }
 
-  async function fetchSummary(periodeId) {
-    const [{ data: pen }, { data: sab }, { data: slag }] = await Promise.all([
-      supabase.from('v_penomoran_kapling').select('*').eq('periode_id', periodeId).maybeSingle(),
-      supabase.from('v_sabuk_kapling').select('*').eq('periode_id', periodeId).maybeSingle(),
-      supabase.from('v_slaghammer').select('*').eq('periode_id', periodeId).maybeSingle(),
-    ])
+  function fetchSummary(sourceRows) {
+    const total = sourceRows.reduce((sum, row) => sum + Number(row.volume || 0), 0)
+    const slagTotal = sourceRows
+      .filter(row => ['JATI', 'RIMBA_MAHONI'].includes(row.jenis))
+      .reduce((sum, row) => sum + Number(row.volume || 0), 0)
     setSummary({
-      penomoran: pen || { fisik: 0, tarif: 900, nilai: 0 },
-      sabuk: sab || { fisik: 0, tarif: 400, nilai: 0 },
-      slaghammer: slag || { fisik: 0, tarif: 3000, nilai: 0 },
+      penomoran: { fisik: total, tarif: 900, nilai: total * 900 },
+      sabuk: { fisik: total, tarif: 400, nilai: total * 400 },
+      slaghammer: { fisik: slagTotal, tarif: 3000, nilai: slagTotal * 3000 },
     })
   }
 
@@ -113,7 +128,18 @@ export default function TumpukKapling() {
 
   async function handleSeed() {
     if (!selectedPeriode) return
-    const { error } = await supabase.rpc('seed_tumpuk_kapling', { p_periode_id: selectedPeriode.id })
+    const scopedTpkId = requireTpkId(selectedPeriode.tpk_id || tpkId)
+    const payload = buildEmptyGrid(selectedPeriode.id).map(row => ({
+      periode_id: selectedPeriode.id,
+      tpk_id: scopedTpkId,
+      jenis: row.jenis,
+      sortimen: row.sortimen,
+      volume: 0,
+      tarif: row.tarif,
+    }))
+    const { error } = await supabase
+      .from('tabel_tumpuk_kapling')
+      .upsert(payload, { onConflict: 'periode_id,jenis,sortimen' })
     if (error) return showToast(error.message, 'error')
     showToast('9 baris default berhasil dibuat')
     fetchData(selectedPeriode.id)
@@ -140,6 +166,7 @@ export default function TumpukKapling() {
 
   async function handleSave() {
     if (!selectedPeriode) return showToast('Pilih periode dulu', 'error')
+    const scopedTpkId = requireTpkId(selectedPeriode.tpk_id || tpkId)
     setLoading(true)
 
     const payload = []
@@ -148,6 +175,7 @@ export default function TumpukKapling() {
         const row = getRow(j.key, s)
         payload.push({
           periode_id: selectedPeriode.id,
+          tpk_id: scopedTpkId,
           jenis: j.key,
           sortimen: s,
           volume: parseFloat(row?.volume) || 0,

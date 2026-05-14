@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { buildRows } from '../../lib/rekapPekerjaan'
 import { formatAngka, formatAngkaFisik, formatTanggalLengkap } from './cetakHelpers'
 import { getNamaTpkUpper } from '../../lib/useAccount'
+import { resolvePejabatForPeriode } from '../../lib/pejabatSnapshot'
 
 const ARIAL = { fontFamily: 'Arial, Helvetica, sans-serif' }
 
@@ -53,21 +54,15 @@ function Lampiran31Doc({ periode }) {
   useEffect(() => {
     (async () => {
       const [rows, pejabatRes, tumpuk, brongkol, barcode, tenagaBantu, tenagaKerja] = await Promise.all([
-        buildRows(periode.id, periode.periode),
-        supabase.from('tabel_pejabat').select('*').eq('aktif', true),
-        supabase.from('tabel_tumpuk_kapling').select('*').eq('periode_id', periode.id),
-        supabase.from('tabel_tumpuk_brongkol').select('*').eq('periode_id', periode.id),
-        supabase.from('tabel_pemasangan_barcode').select('*').eq('periode_id', periode.id),
-        supabase.from('tabel_tenaga_bantu').select('*').eq('periode_id', periode.id).maybeSingle(),
-        supabase.from('tabel_tenaga_kerja').select('*').eq('aktif', true).order('nama'),
+        buildRows(periode.id, periode.periode, { tpkId: periode.tpk_id }),
+        resolvePejabatForPeriode(periode),
+        supabase.from('tabel_tumpuk_kapling').select('*').eq('periode_id', periode.id).eq('tpk_id', periode.tpk_id),
+        supabase.from('tabel_tumpuk_brongkol').select('*').eq('periode_id', periode.id).eq('tpk_id', periode.tpk_id),
+        supabase.from('tabel_pemasangan_barcode').select('*').eq('periode_id', periode.id).eq('tpk_id', periode.tpk_id),
+        supabase.from('tabel_tenaga_bantu').select('*').eq('periode_id', periode.id).eq('tpk_id', periode.tpk_id).maybeSingle(),
+        supabase.from('tabel_tenaga_kerja').select('*').eq('tpk_id', periode.tpk_id).eq('aktif', true).order('nama'),
       ])
-      const has = (p, n) => (p.jabatan||'').toLowerCase().includes(n)
-      const find = (pred) => (pejabatRes.data||[]).find(pred) || {}
-      const pejabat = {
-        kepala_tpk: find(p => has(p,'kepala tpk') || has(p,'bendahara pengeluaran')),
-        pelaksana:  find(p => has(p,'pelaksana')),
-        tu_tpk:     find(p => has(p,'tu tpk') || has(p,'sp tpk') || has(p,'sp.tpk')),
-      }
+      const pejabat = pejabatRes || {}
       setData({
         rows, pejabat,
         tumpuk: tumpuk.data||[],
@@ -77,7 +72,7 @@ function Lampiran31Doc({ periode }) {
         tenagaKerja: tenagaKerja.data || [],
       })
     })()
-  }, [periode.id])
+  }, [periode])
 
   if (!data) return <CetakPageSkeleton landscape />
 

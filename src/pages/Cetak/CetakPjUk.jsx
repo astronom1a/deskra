@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import CetakLayout, { CetakPageSkeleton } from './CetakLayout'
-import { supabase } from '../../lib/supabase'
 import { buildRows } from '../../lib/rekapPekerjaan'
 import { formatAngka, formatTanggalTtd } from './cetakHelpers'
 import { getNamaTpkUpper } from '../../lib/useAccount'
+import { resolvePejabatForPeriode } from '../../lib/pejabatSnapshot'
 
 const ARIAL   = { fontFamily: 'Arial, Helvetica, sans-serif' }
 const CALIBRI = { fontFamily: 'Calibri, "Segoe UI", Arial, sans-serif' }
@@ -30,19 +30,13 @@ function PjUkDoc({ periode }) {
   useEffect(() => {
     (async () => {
       const [rows, pejabatRes] = await Promise.all([
-        buildRows(periode.id, periode.periode),
-        supabase.from('tabel_pejabat').select('*').eq('aktif', true),
+        buildRows(periode.id, periode.periode, { tpkId: periode.tpk_id }),
+        resolvePejabatForPeriode(periode),
       ])
-      const has = (p, n) => (p.jabatan||'').toLowerCase().includes(n)
-      const find = (pred) => (pejabatRes.data||[]).find(pred) || {}
-      const pejabat = {
-        pengguna_anggaran:     find(p => has(p,'administratur utama') && !has(p,'wakil') && !has(p,'waka')),
-        bendahara_umum:        find(p => has(p,'bendahara umum')),
-        bendahara_pengeluaran: find(p => has(p,'kepala tpk') || has(p,'bendahara pengeluaran')),
-      }
+      const pejabat = pejabatRes || {}
       setData({ rows, pejabat })
     })()
-  }, [periode.id])
+  }, [periode])
 
   if (!data) return <CetakPageSkeleton landscape />
 

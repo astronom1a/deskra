@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { buildRows, DEFAULT_TARIF_PERIODE } from '../lib/rekapPekerjaan'
 import { useAuth } from '../lib/AuthProvider'
+import { requireTpkId } from '../lib/tenantScope'
+import { fetchActivePejabatSnapshot, refreshPeriodePejabatSnapshot } from '../lib/pejabatSnapshot'
 import ThemedSelect from '../components/ThemedSelect'
 import { Plus, Save, AlertCircle, CheckCircle2, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, Printer, FileText, ClipboardCheck, Receipt, Wallet, ClipboardList, FileSpreadsheet } from 'lucide-react'
 
@@ -57,6 +59,7 @@ function formatNum(n,dec=3) {
 // ─── Component ───────────────────────────────────────────────
 export default function MainLink() {
   const { profile } = useAuth()
+  const tpkId = profile?.tpk_id
   const [periodes, setPeriodes]         = useState([])
   const [selectedPeriode, setSelected]  = useState(null)
   const [rows, setRows]                 = useState([])
@@ -64,10 +67,12 @@ export default function MainLink() {
   const [saving, setSaving]             = useState(false)
   const [toast, setToast]               = useState(null)
   const [confirmDelete, setConfirmDel]  = useState(null)
+  const [confirmRefreshPejabat, setConfirmRefreshPejabat] = useState(false)
   const [showPeriodeForm, setShowForm]  = useState(false)
   const [showTarif, setShowTarif]       = useState(false)
   const [tarifRows, setTarifRows]       = useState([])
   const [savingTarif, setSavingTarif]   = useState(false)
+  const [refreshingPejabat, setRefreshingPejabat] = useState(false)
   const currentYear = new Date().getFullYear()
   const [newPeriode, setNewPeriode] = useState({ periodeOption: PERIODE_OPTIONS[0], tahun: currentYear })
 
@@ -238,23 +243,32 @@ export default function MainLink() {
 
   // ── fetch periods ──
   useEffect(() => {
-    if (profile) fetchPeriodes()
-  }, [profile?.tpk_id])
+    if (tpkId) fetchPeriodes()
+    else {
+      setPeriodes([])
+      setSelected(null)
+    }
+  }, [tpkId])
 
   async function fetchPeriodes() {
-    let query = supabase.from('tabel_periode').select('*').order('created_at',{ascending:false})
-    if (profile?.tpk_id) query = query.eq('tpk_id', profile.tpk_id)
-    const { data } = await query
-    setPeriodes(data||[])
+    const scopedTpkId = requireTpkId(tpkId)
+    const { data } = await supabase
+      .from('tabel_periode')
+      .select('*')
+      .eq('tpk_id', scopedTpkId)
+      .order('created_at',{ascending:false})
+    setPeriodes(data || [])
     if (data?.length && !selectedPeriode) setSelected(data[0])
+    if (!data?.some(p => p.id === selectedPeriode?.id)) setSelected(data?.[0] || null)
   }
 
   // ── fetch tarif rows for selected periode ──
   async function fetchTarif(periodeId) {
+    const scopedTpkId = requireTpkId(selectedPeriode?.tpk_id || tpkId)
     const { data } = await supabase
       .from('tabel_tarif_periode').select('*')
       .eq('periode_id', periodeId)
-      .eq('tpk_id', selectedPeriode?.tpk_id || profile?.tpk_id)
+      .eq('tpk_id', scopedTpkId)
       .order('created_at')
     const dbByKode = Object.fromEntries((data || []).map(r => [r.kode, r]))
     // Gabung metadata + DB: tampilkan SEMUA baris (termasuk yang belum di-seed di DB)
@@ -271,14 +285,14 @@ export default function MainLink() {
     if (!p) return
     setLoading(true)
     try {
-      const built = await buildRows(p.id, p.periode)
+      const built = await buildRows(p.id, p.periode, { tpkId: requireTpkId(p.tpk_id || tpkId) })
       setRows(built)
     } catch(e) {
       showToast(e.message, 'error')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [tpkId])
 
   useEffect(() => {
     if (selectedPeriode) {
@@ -290,18 +304,22 @@ export default function MainLink() {
   // ── create periode ──
   async function handleCreatePeriode() {
     const { periodeOption, tahun } = newPeriode
-    const tpkId = profile?.tpk_id
-    if (!tpkId) return showToast('Profil TPK tidak ditemukan. Coba login ulang.', 'error')
+    let scopedTpkId
+    try { scopedTpkId = requireTpkId(tpkId) }
+    catch (err) { return showToast(err.message, 'error') }
     const tahunNum = Number(tahun)
     if (!tahun || tahunNum<2000 || tahunNum>2100) return showToast('Tahun tidak valid','error')
     const label = `${periodeOption.label} / ${tahun}`
     const { tgl_awal, tgl_akhir } = generateTanggal(periodeOption.half, periodeOption.bulan, tahunNum)
+    let pejabatSnapshot
+    try { pejabatSnapshot = await fetchActivePejabatSnapshot(scopedTpkId) }
+    catch (err) { return showToast(err.message, 'error') }
     const { data, error } = await supabase.from('tabel_periode')
-      .insert({ periode:label, tgl_awal, tgl_akhir, status:'aktif', tpk_id: tpkId }).select().single()
+      .insert({ periode:label, tgl_awal, tgl_akhir, status:'aktif', tpk_id: scopedTpkId, pejabat_snapshot: pejabatSnapshot }).select().single()
     if (error) return showToast(error.message,'error')
     const seedPayload = TARIF_META.map(meta => ({
       periode_id: data.id,
-      tpk_id: tpkId,
+      tpk_id: scopedTpkId,
       kode: meta.kode,
       kode_rek: meta.kode_rek,
       uraian: meta.uraian,
@@ -318,15 +336,35 @@ export default function MainLink() {
     showToast(`Periode ${label} berhasil dibuat`)
   }
 
+  async function handleRefreshPejabat() {
+    if (!selectedPeriode) return
+    let scopedTpkId
+    try { scopedTpkId = requireTpkId(selectedPeriode.tpk_id || tpkId) }
+    catch (err) { return showToast(err.message, 'error') }
+    setRefreshingPejabat(true)
+    try {
+      const updated = await refreshPeriodePejabatSnapshot(selectedPeriode.id, scopedTpkId)
+      setPeriodes(prev => prev.map(p => p.id === updated.id ? updated : p))
+      setSelected(updated)
+      setConfirmRefreshPejabat(false)
+      showToast('Pejabat periode berhasil diperbarui')
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setRefreshingPejabat(false)
+    }
+  }
+
   // ── save tarif per periode ──
   async function handleSaveTarif() {
     if (!selectedPeriode) return
-    const tpkId = selectedPeriode.tpk_id || profile?.tpk_id
-    if (!tpkId) return showToast('Profil TPK tidak ditemukan. Coba login ulang.', 'error')
+    let scopedTpkId
+    try { scopedTpkId = requireTpkId(selectedPeriode.tpk_id || tpkId) }
+    catch (err) { return showToast(err.message, 'error') }
     setSavingTarif(true)
     const payload = tarifRows.map(r => ({
       periode_id: selectedPeriode.id,
-      tpk_id: tpkId,
+      tpk_id: scopedTpkId,
       kode: r.kode,
       kode_rek: r.kode_rek,
       uraian: r.uraian,
@@ -348,7 +386,14 @@ export default function MainLink() {
   // ── delete periode ──
   async function handleDeletePeriode() {
     if (!confirmDelete) return
-    const { error } = await supabase.from('tabel_periode').delete().eq('id', confirmDelete.id)
+    let scopedTpkId
+    try { scopedTpkId = requireTpkId(confirmDelete.tpk_id || tpkId) }
+    catch (err) { return showToast(err.message, 'error') }
+    const { error } = await supabase
+      .from('tabel_periode')
+      .delete()
+      .eq('tpk_id', scopedTpkId)
+      .eq('id', confirmDelete.id)
     if (error) return showToast(error.message,'error')
     setConfirmDel(null)
     const next = periodes.filter(p=>p.id!==confirmDelete.id)
@@ -360,15 +405,20 @@ export default function MainLink() {
   // ── save to tabel_pekerjaan (untuk cetak) ──
   async function handleSave() {
     if (!selectedPeriode) return
-    const tpkId = selectedPeriode.tpk_id || profile?.tpk_id
-    if (!tpkId) return showToast('Profil TPK tidak ditemukan. Coba login ulang.', 'error')
+    let scopedTpkId
+    try { scopedTpkId = requireTpkId(selectedPeriode.tpk_id || tpkId) }
+    catch (err) { return showToast(err.message, 'error') }
     setSaving(true)
-    await supabase.from('tabel_pekerjaan').delete().eq('periode_id', selectedPeriode.id)
+    await supabase
+      .from('tabel_pekerjaan')
+      .delete()
+      .eq('tpk_id', scopedTpkId)
+      .eq('periode_id', selectedPeriode.id)
     const toInsert = rows
       .filter(r => (r.fisik||0)*(r.tarif||0) > 0 || r.no !== '-')
       .map((r, i) => ({
         periode_id: selectedPeriode.id,
-        tpk_id: tpkId,
+        tpk_id: scopedTpkId,
         no: typeof r.no === 'number' ? r.no : null,
         kode_rek: r.kode_rek||null,
         uraian: r.uraian||'',
@@ -439,6 +489,34 @@ export default function MainLink() {
                 style={{ flex: 1, padding: '8px 16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', fontSize: 12, fontFamily: 'monospace', cursor: 'pointer' }}>Batal</button>
               <button onClick={handleDeletePeriode}
                 style={{ flex: 1, padding: '8px 16px', background: 'rgba(255,107,107,0.15)', border: '1px solid rgba(255,107,107,0.3)', borderRadius: 3, color: '#ff6b6b', fontSize: 12, fontFamily: 'monospace', cursor: 'pointer', fontWeight: 700 }}>Ya, Hapus</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmRefreshPejabat && selectedPeriode && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)' }}>
+          <div style={{ background: '#111', border: '1px solid rgba(0,255,136,0.25)', borderRadius: 3, padding: 24, maxWidth: 400, width: '100%', margin: '0 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{ width: 36, height: 36, background: 'rgba(0,255,136,0.10)', border: '1px solid rgba(0,255,136,0.2)', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <RefreshCw size={16} style={{ color: '#00ff88' }}/>
+              </div>
+              <div>
+                <p style={{ fontFamily: 'monospace', fontSize: 13, color: '#f0f0f0', fontWeight: 600 }}>Refresh Pejabat?</p>
+                <p style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>Snapshot pejabat periode ini akan diganti dengan pejabat aktif saat ini.</p>
+              </div>
+            </div>
+            <div style={{ background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.14)', borderRadius: 3, padding: '8px 16px', marginBottom: 16, textAlign: 'center' }}>
+              <p style={{ fontFamily: 'monospace', color: '#00ff88', fontWeight: 700, fontSize: 13 }}>{selectedPeriode.periode}</p>
+              <p style={{ fontFamily: 'monospace', color: 'rgba(0,255,136,0.55)', fontSize: 11 }}>{formatTanggal(selectedPeriode.tgl_awal)} – {formatTanggal(selectedPeriode.tgl_akhir)}</p>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={()=>setConfirmRefreshPejabat(false)}
+                disabled={refreshingPejabat}
+                style={{ flex: 1, padding: '8px 16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', fontSize: 12, fontFamily: 'monospace', cursor: refreshingPejabat ? 'not-allowed' : 'pointer' }}>Batal</button>
+              <button onClick={handleRefreshPejabat}
+                disabled={refreshingPejabat}
+                style={{ flex: 1, padding: '8px 16px', background: refreshingPejabat ? 'rgba(0,255,136,0.10)' : 'rgba(0,255,136,0.16)', border: '1px solid rgba(0,255,136,0.3)', borderRadius: 3, color: refreshingPejabat ? 'rgba(0,255,136,0.45)' : '#00ff88', fontSize: 12, fontFamily: 'monospace', cursor: refreshingPejabat ? 'not-allowed' : 'pointer', fontWeight: 700 }}>{refreshingPejabat ? 'Memperbarui...' : 'Ya, Refresh'}</button>
             </div>
           </div>
         </div>
@@ -545,6 +623,13 @@ export default function MainLink() {
                   disabled={loading}
                   style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 11, fontFamily: 'monospace', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', opacity: loading ? 0.5 : 1 }}
                 ><RefreshCw size={11}/> Refresh</button>
+
+                <button
+                  onClick={()=>setConfirmRefreshPejabat(true)}
+                  disabled={refreshingPejabat}
+                  title="Perbarui pejabat untuk periode yang dipilih"
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 11, fontFamily: 'monospace', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.5)', cursor: refreshingPejabat ? 'not-allowed' : 'pointer', opacity: refreshingPejabat ? 0.5 : 1 }}
+                ><RefreshCw size={11}/> {refreshingPejabat ? 'Refresh Pejabat...' : 'Refresh Pejabat'}</button>
 
                 {[
                   { label: 'Biaya TPK',           icon: Receipt,       action: ()=>openCetak('biaya-tpk') },

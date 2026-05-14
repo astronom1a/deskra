@@ -8,6 +8,7 @@ import {
 import { supabase } from '../lib/supabase'
 import { getNamaTpk } from '../lib/useAccount'
 import { useAuth } from '../lib/AuthProvider'
+import { requireTpkId } from '../lib/tenantScope'
 import ThemedSelect from '../components/ThemedSelect'
 
 const MONTH_FULL_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
@@ -64,7 +65,7 @@ const COLS = [
   { key: 'tujuan',        label: 'Tujuan',     w: 'w-[280px]' },
   { key: 'kota_tujuan',   label: 'Kota Tujuan', w: 'w-[120px]' },
   { key: 'pembeli',       label: 'Pembeli',    w: 'w-[160px]' },
-  { key: 'tanggal_dimatikan', label: 'Tanggal Dimatikan', w: 'w-[120px]' },
+  { key: 'tanggal_dimatikan', label: 'Dimatikan', w: 'w-[120px]' },
 ]
 
 const KLAS_STYLE = {
@@ -236,6 +237,7 @@ const EMPTY_FORM = {
 
 export default function DkhpSkshhk() {
   const { profile } = useAuth()
+  const tpkId = profile?.tpk_id
   const [rows, setRows]           = useState([])
   const [loading, setLoading]     = useState(true)
   const [lastUpdated, setLastUpdated] = useState(null)
@@ -271,6 +273,12 @@ export default function DkhpSkshhk() {
   }
 
   async function fetchData() {
+    if (!tpkId) {
+      setRows([])
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     const PAGE = 1000
     const all = []
@@ -279,6 +287,7 @@ export default function DkhpSkshhk() {
       const { data, error: pageError } = await supabase
         .from('tabel_dkhp_skshhk')
         .select('*')
+        .eq('tpk_id', tpkId)
         .order('no_dkhp', { ascending: true })
         .order('tanggal', { ascending: true })
         .range(from, from + PAGE - 1)
@@ -291,7 +300,7 @@ export default function DkhpSkshhk() {
     else { setRows(all) }
     setLoading(false)
   }
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => { fetchData() }, [tpkId])
 
   const exportMonthOptions = useMemo(() => {
     const months = [...new Set(
@@ -366,6 +375,14 @@ export default function DkhpSkshhk() {
   async function handleImport() {
     if (!preview) return
     setImporting(true)
+    let scopedTpkId
+    try {
+      scopedTpkId = requireTpkId(tpkId)
+    } catch (err) {
+      setImporting(false)
+      showToast(err.message, 'error')
+      return
+    }
     const existing = new Set(rows.map(r => String(r.no_skshhk || '').trim()).filter(Boolean))
     const dedup = Object.values(
       preview.rows
@@ -378,8 +395,7 @@ export default function DkhpSkshhk() {
       setPreview(null)
       return
     }
-    const tpk_id = profile?.tpk_id
-    const { error } = await supabase.from('tabel_dkhp_skshhk').insert(dedup.map(r => ({ ...r, tpk_id })))
+    const { error } = await supabase.from('tabel_dkhp_skshhk').insert(dedup.map(r => ({ ...r, tpk_id: scopedTpkId })))
     setImporting(false)
     if (error) { showToast(error.message, 'error'); return }
     showToast(`${dedup.length} SKSHHK baru berhasil diimport`)
@@ -394,6 +410,13 @@ export default function DkhpSkshhk() {
   async function handleSave() {
     if (!editRow) return
     if (!editRow.no_skshhk?.trim()) { showToast('Nomor SKSHHK wajib diisi.', 'error'); return }
+    let scopedTpkId
+    try {
+      scopedTpkId = requireTpkId(tpkId)
+    } catch (err) {
+      showToast(err.message, 'error')
+      return
+    }
     const payload = { ...editRow }
     delete payload._new
     const fallbackYear = payload._dateYear || dateYear(payload.tanggal) || dateYear(payload.tanggal_dimatikan) || new Date().getFullYear()
@@ -412,10 +435,15 @@ export default function DkhpSkshhk() {
     payload.jml_m3 = +(payload.ai_m3 + payload.aii_m3 + payload.aiii_m3).toFixed(3)
     let error
     if (editRow._new) {
-      payload.tpk_id = profile?.tpk_id
+      payload.tpk_id = scopedTpkId
       ;({ error } = await supabase.from('tabel_dkhp_skshhk').insert(payload))
     } else {
-      ({ error } = await supabase.from('tabel_dkhp_skshhk').update(payload).eq('id', editRow.id))
+      ({ error } = await supabase
+        .from('tabel_dkhp_skshhk')
+        .update(payload)
+        .eq('tpk_id', scopedTpkId)
+        .eq('id', editRow.id)
+      )
     }
     setSaving(false)
     if (error) { showToast(error.message, 'error'); return }
@@ -427,8 +455,19 @@ export default function DkhpSkshhk() {
 
   async function handleDelete() {
     if (!deleteRow) return
+    let scopedTpkId
+    try {
+      scopedTpkId = requireTpkId(tpkId)
+    } catch (err) {
+      showToast(err.message, 'error')
+      return
+    }
     setDeleting(true)
-    const { error } = await supabase.from('tabel_dkhp_skshhk').delete().eq('id', deleteRow.id)
+    const { error } = await supabase
+      .from('tabel_dkhp_skshhk')
+      .delete()
+      .eq('tpk_id', scopedTpkId)
+      .eq('id', deleteRow.id)
     setDeleting(false)
     if (error) { showToast(error.message, 'error'); return }
     showToast(`SKSHHK ${deleteRow.no_skshhk} dihapus`)
@@ -570,7 +609,12 @@ export default function DkhpSkshhk() {
         return
       }
 
-      const { data: pejabatList } = await supabase.from('tabel_pejabat').select('*').eq('aktif', true)
+      const scopedTpkId = requireTpkId(tpkId)
+      const { data: pejabatList } = await supabase
+        .from('tabel_pejabat')
+        .select('*')
+        .eq('tpk_id', scopedTpkId)
+        .eq('aktif', true)
       const has = (p, needle) => (p.jabatan || '').toLowerCase().includes(needle)
       const penerbit = (pejabatList || []).find(p => has(p, 'penerbit')) || {}
       const kepala   = (pejabatList || []).find(p => has(p, 'kepala tpk')) || {}
@@ -745,7 +789,7 @@ export default function DkhpSkshhk() {
   }
 
   return (
-    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+    <div style={{ padding: 24, height: '100vh', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0a0a0a', color: '#f0f0f0' }}>
       <style>{`
         .dk-input { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #f0f0f0 !important; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; }
         .dk-input:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
@@ -1001,7 +1045,7 @@ export default function DkhpSkshhk() {
         </div>
       )}
 
-      <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+      <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 12, fontFamily: 'monospace' }}>
             <Loader2 size={14} className="animate-spin" style={{ marginRight: 8 }}/> memuat…
@@ -1011,7 +1055,7 @@ export default function DkhpSkshhk() {
             belum ada data — klik <span style={{ color: '#00ff88' }}>import excel</span> atau <span style={{ color: '#00ff88' }}>tambah</span> untuk mulai
           </div>
         ) : (
-          <div style={{ overflow: 'auto', maxHeight: 'max(360px, calc(100vh - 280px))', scrollbarGutter: 'stable both-edges' }}>
+          <div style={{ flex: '1 1 auto', minHeight: 0, overflow: 'auto', scrollbarGutter: 'stable both-edges' }}>
             <table style={{ minWidth: '100%', fontSize: 11, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -1117,29 +1161,6 @@ export default function DkhpSkshhk() {
           </div>
         )}
       </div>
-
-      {/* Bottom pagination */}
-      {rows.length > 0 && pageSize > 0 && totalPages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 }}>
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={safePage === 1}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 12, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontFamily: 'monospace', opacity: safePage === 1 ? 0.4 : 1 }}
-          >
-            <ChevronLeft size={13}/> prev
-          </button>
-          <span style={{ fontSize: 12, fontFamily: 'monospace', color: 'rgba(255,255,255,0.35)' }}>
-            halaman <span style={{ color: '#f0f0f0', fontWeight: 600 }}>{safePage}</span> dari <span style={{ color: '#f0f0f0', fontWeight: 600 }}>{totalPages}</span>
-          </span>
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={safePage === totalPages}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 12, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontFamily: 'monospace', opacity: safePage === totalPages ? 0.4 : 1 }}
-          >
-            next <ChevronRight size={13}/>
-          </button>
-        </div>
-      )}
 
       {/* Sort panel modal */}
       {showSortPanel && (

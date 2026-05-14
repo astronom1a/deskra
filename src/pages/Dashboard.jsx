@@ -76,7 +76,7 @@ export default function Dashboard() {
           .limit(5)
         if (error) throw error
         const list   = data || []
-        const totals = await Promise.all(list.map(p => computeTotalUK(p.id, p.periode)))
+        const totals = await Promise.all(list.map(p => computeTotalUK(p.id, p.periode, { tpkId: tpk.id })))
         setPeriodes(list.map((p, i) => ({ ...p, total_uk: totals[i] })))
       } catch (err) {
         setError(err.message)

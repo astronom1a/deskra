@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx'
 import * as pdfjsLib from 'pdfjs-dist'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
+import { buildInvoiceKaplingUpdates } from '../lib/tenantScope'
 import ThemedSelect from '../components/ThemedSelect'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -279,6 +280,7 @@ function SertBadge({ val }) {
 
 export default function RegisterKapling() {
   const { profile } = useAuth()
+  const tpkId = profile?.tpk_id
   const [rows, setRows]             = useState([])
   const [loading, setLoading]       = useState(true)
   const [importing, setImporting]   = useState(false)
@@ -324,11 +326,24 @@ export default function RegisterKapling() {
   const colDropdownRef  = useRef()
 
   useEffect(() => {
+    if (!tpkId) {
+      setRows([])
+      setSelectedIds(new Set())
+      setLoading(false)
+      setRealtimeStatus('disconnected')
+      return
+    }
+
     fetchData()
 
     const channel = supabase
-      .channel('register_kapling_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tabel_register_kapling' }, () => {
+      .channel(`register_kapling_rt:${tpkId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'tabel_register_kapling',
+        filter: `tpk_id=eq.${tpkId}`,
+      }, () => {
         fetchData()
       })
       .subscribe(status => {
@@ -338,9 +353,10 @@ export default function RegisterKapling() {
       })
 
     return () => { supabase.removeChannel(channel) }
-  }, [])
+  }, [tpkId])
 
   async function fetchData() {
+    if (!tpkId) return
     setLoading(true)
     const PAGE = 1000
     const all = []
@@ -348,6 +364,7 @@ export default function RegisterKapling() {
       const { data, error } = await supabase
         .from('tabel_register_kapling')
         .select('*')
+        .eq('tpk_id', tpkId)
         .order('no_kapling', { ascending: true })
         .range(from, from + PAGE - 1)
       if (error) { showToast(error.message, 'error'); break }
@@ -443,7 +460,6 @@ export default function RegisterKapling() {
   async function handleImport() {
     if (!preview) return
     setImporting(true)
-    const tpkId = profile?.tpk_id
     if (!tpkId) {
       setImporting(false)
       showToast('Profil pengguna tidak ditemukan. Coba login ulang.', 'error')
@@ -479,6 +495,7 @@ export default function RegisterKapling() {
         const { error } = await supabase
           .from('tabel_register_kapling')
           .update(patch)
+          .eq('tpk_id', tpkId)
           .eq('no_kapling', row.no_kapling)
         error ? fail++ : ok++
       }
@@ -495,6 +512,7 @@ export default function RegisterKapling() {
   async function handleEditSave() {
     if (!editRow) return
     if (!editRow.no_kapling?.trim()) { showToast('No. Kapling wajib diisi.', 'error'); return }
+    if (!tpkId) { showToast('Profil TPK tidak ditemukan. Coba login ulang.', 'error'); return }
     setEditSaving(true)
     const payload = {
       tgl_kapling:    editRow.tgl_kapling || null,
@@ -521,10 +539,15 @@ export default function RegisterKapling() {
     let error
     if (editRow._new) {
       payload.no_kapling = editRow.no_kapling.trim()
-      payload.tpk_id     = profile?.tpk_id
+      payload.tpk_id     = tpkId
       ;({ error } = await supabase.from('tabel_register_kapling').insert(payload))
     } else {
-      ;({ error } = await supabase.from('tabel_register_kapling').update(payload).eq('no_kapling', editRow.no_kapling))
+      ;({ error } = await supabase
+        .from('tabel_register_kapling')
+        .update(payload)
+        .eq('tpk_id', tpkId)
+        .eq('id', editRow.id)
+      )
     }
     setEditSaving(false)
     if (error) { showToast(error.message, 'error'); return }
@@ -535,11 +558,13 @@ export default function RegisterKapling() {
 
   // ── Batch delete ─────────────────────────────────────────────────────────
   async function handleBatchDelete() {
+    if (!tpkId) { showToast('Profil TPK tidak ditemukan. Coba login ulang.', 'error'); return }
     setBatchDeleting(true)
     const ids = [...selectedIds]
     const { error } = await supabase
       .from('tabel_register_kapling')
       .delete()
+      .eq('tpk_id', tpkId)
       .in('id', ids)
     setBatchDeleting(false)
     if (error) { showToast(error.message, 'error'); return }
@@ -550,6 +575,7 @@ export default function RegisterKapling() {
 
   // ── Batch edit ───────────────────────────────────────────────────────────
   async function handleBatchEdit() {
+    if (!tpkId) { showToast('Profil TPK tidak ditemukan. Coba login ulang.', 'error'); return }
     const patch = {}
     if (batchEditData.tgl_kapling) patch.tgl_kapling = batchEditData.tgl_kapling
     if (batchEditData.periode)     patch.periode      = batchEditData.periode
@@ -564,6 +590,7 @@ export default function RegisterKapling() {
     const { error } = await supabase
       .from('tabel_register_kapling')
       .update(patch)
+      .eq('tpk_id', tpkId)
       .in('id', ids)
     setBatchEditSaving(false)
     if (error) { showToast(error.message, 'error'); return }
@@ -576,11 +603,13 @@ export default function RegisterKapling() {
   // ── Delete row ────────────────────────────────────────────────────────────
   async function handleDelete() {
     if (!deleteRow) return
+    if (!tpkId) { showToast('Profil TPK tidak ditemukan. Coba login ulang.', 'error'); return }
     setDeleting(true)
     const { error } = await supabase
       .from('tabel_register_kapling')
       .delete()
-      .eq('no_kapling', deleteRow.no_kapling)
+      .eq('tpk_id', tpkId)
+      .eq('id', deleteRow.id)
     setDeleting(false)
     if (error) { showToast(error.message, 'error'); return }
     showToast(`Kapling ${deleteRow.no_kapling} berhasil dihapus`)
@@ -642,24 +671,23 @@ export default function RegisterKapling() {
 
   async function handleInvoisSave() {
     if (!invoisPreview?.totalMatched) return
+    if (!tpkId) { showToast('Profil TPK tidak ditemukan. Coba login ulang.', 'error'); return }
     setInvoisSaving(true)
-    const updatesByKapling = new Map()
-    for (const invoice of invoisPreview.invoices) {
-      for (const row of invoice.matched) {
-        updatesByKapling.set(row.no_kapling, {
-          ...row,
-          no_invois: invoice.noInvois,
-          pembeli:   invoice.pembeli,
-        })
-      }
+    let updates
+    try {
+      updates = buildInvoiceKaplingUpdates({ tpkId, invoices: invoisPreview.invoices })
+    } catch (err) {
+      setInvoisSaving(false)
+      showToast(err.message, 'error')
+      return
     }
-    const updates = [...updatesByKapling.values()]
-    const { error } = await supabase
+    const results = await Promise.all(updates.map(update => supabase
       .from('tabel_register_kapling')
-      .upsert(
-        updates,
-        { onConflict: 'no_kapling' }
-      )
+      .update({ no_invois: update.no_invois, pembeli: update.pembeli })
+      .eq('tpk_id', tpkId)
+      .eq('id', update.id)
+    ))
+    const error = results.find(res => res.error)?.error
     setInvoisSaving(false)
     if (error) { showToast(error.message, 'error'); return }
     showToast(`${updates.length} kapling diperbarui dari ${invoisPreview.invoices.length} invois`)
@@ -792,7 +820,7 @@ export default function RegisterKapling() {
   const sortVolume = Object.fromEntries(SORTIMENS.map(m => [m, rows.filter(r => (r.sortimen || '').trim().toUpperCase() === m).reduce((s, r) => s + Number(r.volume || 0), 0)]))
 
   return (
-    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+    <div style={{ padding: 24, height: '100vh', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0a0a0a', color: '#f0f0f0' }}>
       <style>{`
         .rk-input { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #f0f0f0 !important; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; color-scheme: dark; }
         .rk-input:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
@@ -1634,7 +1662,7 @@ export default function RegisterKapling() {
       )}
 
       {/* Table */}
-      <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+      <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 12, fontFamily: 'monospace' }}>memuat...</div>
         ) : rows.length === 0 ? (
@@ -1644,7 +1672,7 @@ export default function RegisterKapling() {
             <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11, marginTop: 4, fontFamily: 'monospace' }}>klik <span style={{ color: '#00ff88' }}>import excel</span> untuk mengimpor file DP Kapling</p>
           </div>
         ) : (
-          <div style={{ overflow: 'auto', maxHeight: 'max(360px, calc(100vh - 300px))', scrollbarGutter: 'stable both-edges' }}>
+          <div style={{ flex: '1 1 auto', minHeight: 0, overflow: 'auto', scrollbarGutter: 'stable both-edges' }}>
             <table style={{ fontSize: 12, width: 'max-content', minWidth: '100%' }}>
               <thead style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <tr>
@@ -1732,21 +1760,6 @@ export default function RegisterKapling() {
           </div>
         )}
       </div>
-
-      {/* Bottom pagination */}
-      {rows.length > 0 && pageSize > 0 && totalPages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 }}>
-          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', fontSize: 12, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: safePage === 1 ? 'not-allowed' : 'pointer', opacity: safePage === 1 ? 0.4 : 1, fontFamily: 'monospace' }}
-          ><ChevronLeft size={13}/> prev</button>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>
-            halaman <span style={{ fontWeight: 700, color: 'rgba(255,255,255,0.65)' }}>{safePage}</span> dari <span style={{ fontWeight: 700, color: 'rgba(255,255,255,0.65)' }}>{totalPages}</span>
-          </span>
-          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', fontSize: 12, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: safePage === totalPages ? 'not-allowed' : 'pointer', opacity: safePage === totalPages ? 0.4 : 1, fontFamily: 'monospace' }}
-          >next <ChevronRight size={13}/></button>
-        </div>
-      )}
 
       {/* Context menu */}
       {contextMenu && (() => {

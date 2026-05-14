@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { buildRows } from '../../lib/rekapPekerjaan'
 import { formatAngka, formatAngkaFisik, terbilangBungkus, formatTanggalTtd } from './cetakHelpers'
 import { getNamaTpk, getNamaTpkUpper } from '../../lib/useAccount'
+import { resolvePejabatForPeriode } from '../../lib/pejabatSnapshot'
 
 const TIMES = { fontFamily: '"Times New Roman", Times, serif' }
 
@@ -45,23 +46,16 @@ function KwitansiDoc({ periode }) {
   useEffect(() => {
     (async () => {
       const [rows, pejabatRes, tumpuk, tandaLaku, barcode, brongkol, tenagaBantu, tenagaKerja] = await Promise.all([
-        buildRows(periode.id, periode.periode),
-        supabase.from('tabel_pejabat').select('*').eq('aktif', true),
-        supabase.from('tabel_tumpuk_kapling').select('*').eq('periode_id', periode.id),
-        supabase.from('tabel_tanda_laku').select('*').eq('periode_id', periode.id),
-        supabase.from('tabel_pemasangan_barcode').select('*').eq('periode_id', periode.id),
-        supabase.from('tabel_tumpuk_brongkol').select('*').eq('periode_id', periode.id),
-        supabase.from('tabel_tenaga_bantu').select('*').eq('periode_id', periode.id).maybeSingle(),
-        supabase.from('tabel_tenaga_kerja').select('*').eq('aktif', true).order('nama'),
+        buildRows(periode.id, periode.periode, { tpkId: periode.tpk_id }),
+        resolvePejabatForPeriode(periode),
+        supabase.from('tabel_tumpuk_kapling').select('*').eq('periode_id', periode.id).eq('tpk_id', periode.tpk_id),
+        supabase.from('tabel_tanda_laku').select('*').eq('periode_id', periode.id).eq('tpk_id', periode.tpk_id),
+        supabase.from('tabel_pemasangan_barcode').select('*').eq('periode_id', periode.id).eq('tpk_id', periode.tpk_id),
+        supabase.from('tabel_tumpuk_brongkol').select('*').eq('periode_id', periode.id).eq('tpk_id', periode.tpk_id),
+        supabase.from('tabel_tenaga_bantu').select('*').eq('periode_id', periode.id).eq('tpk_id', periode.tpk_id).maybeSingle(),
+        supabase.from('tabel_tenaga_kerja').select('*').eq('tpk_id', periode.tpk_id).eq('aktif', true).order('nama'),
       ])
-      const has = (p, n) => (p.jabatan||'').toLowerCase().includes(n)
-      const find = (pred) => (pejabatRes.data||[]).find(pred) || {}
-      const pejabat = {
-        pelaksana:   find(p => has(p,'pelaksana')),
-        wakil_adm:   find(p => has(p,'wakil administratur') || has(p,'waka administratur')),
-        kepala_tpk:  find(p => has(p,'kepala tpk') || has(p,'bendahara pengeluaran')),
-        tu_tpk:      find(p => has(p,'tu tpk') || has(p,'sp tpk') || has(p,'sp.tpk')),
-      }
+      const pejabat = pejabatRes || {}
       setData({
         rows, pejabat,
         tumpuk: tumpuk.data||[],
@@ -72,7 +66,7 @@ function KwitansiDoc({ periode }) {
         tenagaKerja: (tenagaKerja.data || []).filter(w => (w.posisi || '').split(',').map(s => s.trim()).includes('TENAGA_BANTU')),
       })
     })()
-  }, [periode.id])
+  }, [periode])
 
   if (!data) return <CetakPageSkeleton />
 

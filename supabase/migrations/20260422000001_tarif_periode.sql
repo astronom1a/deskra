@@ -29,14 +29,18 @@ create trigger trg_tarif_periode_updated
 -- ============================================================
 create or replace function seed_tarif_periode(p_periode_id uuid)
 returns void as $$
+declare
+  v_tpk_id uuid;
 begin
-  insert into tabel_tarif_periode (periode_id, kode, kode_rek, uraian, satuan, tarif) values
-    (p_periode_id, 'penomoran', '51.69.43', 'PENOMORAN KAPLING',   'M3',  900),
-    (p_periode_id, 'sabuk',     '51.69.43', 'SABUK KAPLING',       'M3',  400),
-    (p_periode_id, 'tanda_laku','51.69.43', 'TANDA LAKU',          'M3',  750),
-    (p_periode_id, 'slaghammer','51.69.43', 'SLAGHAMMER',          'M3',  3000),
-    (p_periode_id, 'barcode',   '51.69.44', 'PEMASANGAN BARCODE',  'BTG', 350),
-    (p_periode_id, 'brongkol',  '51.69.44', 'TUMPUK BRONGKOL',     'SM',  7000)
+  select tpk_id into v_tpk_id from tabel_periode where id = p_periode_id;
+
+  insert into tabel_tarif_periode (periode_id, tpk_id, kode, kode_rek, uraian, satuan, tarif) values
+    (p_periode_id, v_tpk_id, 'penomoran', '51.69.43', 'PENOMORAN KAPLING',   'M3',  900),
+    (p_periode_id, v_tpk_id, 'sabuk',     '51.69.43', 'SABUK KAPLING',       'M3',  400),
+    (p_periode_id, v_tpk_id, 'tanda_laku','51.69.43', 'TANDA LAKU',          'M3',  750),
+    (p_periode_id, v_tpk_id, 'slaghammer','51.69.43', 'SLAGHAMMER',          'M3',  3000),
+    (p_periode_id, v_tpk_id, 'barcode',   '51.69.44', 'PEMASANGAN BARCODE',  'BTG', 350),
+    (p_periode_id, v_tpk_id, 'brongkol',  '51.69.44', 'TUMPUK BRONGKOL',     'SM',  7000)
   on conflict (periode_id, kode) do nothing;
 end;
 $$ language plpgsql;

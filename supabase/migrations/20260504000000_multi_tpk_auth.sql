@@ -9,7 +9,7 @@
 -- ============================================================
 create table if not exists tabel_tpk (
   id         uuid default gen_random_uuid() primary key,
-  nama_tpk   text not null,
+  namatpk    text not null,
   kode_tpk   char(7) check (kode_tpk ~ '^\d{7}$'),
   aktif      boolean not null default true,
   created_at timestamptz default now()
@@ -34,11 +34,11 @@ declare
   v_tpk_id uuid;
 begin
   -- Insert jika belum ada
-  insert into tabel_tpk (nama_tpk, kode_tpk)
+  insert into tabel_tpk (namatpk, kode_tpk)
   values ('Wongsorejo', null)
   on conflict do nothing;
 
-  select id into v_tpk_id from tabel_tpk where nama_tpk = 'Wongsorejo' limit 1;
+  select id into v_tpk_id from tabel_tpk where namatpk = 'Wongsorejo' limit 1;
 
   -- ============================================================
   -- 4. Tambah kolom tpk_id ke semua tabel operasional (nullable dulu)
@@ -207,6 +207,10 @@ $$;
 -- tabel_tpk: semua user bisa baca (untuk tampilkan nama TPK),
 -- hanya admin yang bisa tulis
 alter table tabel_tpk enable row level security;
+drop policy if exists "tpk_select" on tabel_tpk;
+drop policy if exists "tpk_insert" on tabel_tpk;
+drop policy if exists "tpk_update" on tabel_tpk;
+drop policy if exists "tpk_delete" on tabel_tpk;
 create policy "tpk_select" on tabel_tpk for select using (true);
 create policy "tpk_insert" on tabel_tpk for insert with check (is_admin());
 create policy "tpk_update" on tabel_tpk for update using (is_admin());
@@ -214,6 +218,10 @@ create policy "tpk_delete" on tabel_tpk for delete using (is_admin());
 
 -- profiles: user hanya bisa lihat & edit profil sendiri; admin bisa semua
 alter table profiles enable row level security;
+drop policy if exists "profiles_select" on profiles;
+drop policy if exists "profiles_insert" on profiles;
+drop policy if exists "profiles_update" on profiles;
+drop policy if exists "profiles_delete" on profiles;
 create policy "profiles_select" on profiles for select using (id = auth.uid() or is_admin());
 create policy "profiles_insert" on profiles for insert with check (is_admin());
 create policy "profiles_update" on profiles for update using (id = auth.uid() or is_admin());
@@ -234,6 +242,7 @@ declare
 begin
   foreach t in array tables loop
     execute format('alter table %I enable row level security', t);
+    execute format('drop policy if exists "rls_%s_all" on %I', t, t);
     execute format('
       create policy "rls_%s_all" on %I for all
       using (tpk_id = my_tpk_id() or is_admin())

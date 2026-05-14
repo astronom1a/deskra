@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import CetakLayout from './CetakLayout'
 import { parsePeriode, formatTanggalLengkap } from './cetakHelpers'
+import { resolvePejabatForPeriode } from '../../lib/pejabatSnapshot'
 
 const CALIBRI = { fontFamily: 'Calibri, "Segoe UI", Arial, sans-serif' }
 const ABSEN_ROWS_MIN = 14
@@ -14,15 +15,6 @@ function daysInMonth(month, year) {
 
 function monthName(month) {
   return BULAN[Math.max(0, Math.min(11, month - 1))] || ''
-}
-
-function findPejabat(pejabatList) {
-  const has = (p, n) => (p.jabatan || '').toLowerCase().includes(n)
-  const find = (pred) => (pejabatList || []).find(pred) || {}
-  return {
-    kepala_tpk: find(p => has(p, 'kepala tpk') || has(p, 'bendahara pengeluaran')),
-    tu_tpk: find(p => has(p, 'tu tpk') || has(p, 'sp tpk') || has(p, 'sp.tpk')),
-  }
 }
 
 function hasPos(worker, posValue) {
@@ -85,14 +77,15 @@ function AbsenDoc({ periode }) {
       const [tenagaRes, pejabatRes] = await Promise.all([
         supabase.from('tabel_tenaga_kerja')
           .select('*')
+          .eq('tpk_id', periode.tpk_id)
           .eq('aktif', true)
           .order('nama'),
-        supabase.from('tabel_pejabat').select('*').eq('aktif', true),
+        resolvePejabatForPeriode(periode),
       ])
       setWorkers(resolveWorkersForAbsen(tenagaRes.data || [], itemKey))
-      setPejabat(findPejabat(pejabatRes.data || []))
+      setPejabat(pejabatRes || {})
     })()
-  }, [periode.id, itemKey])
+  }, [periode, itemKey])
 
   const p = parsePeriode(periode.periode)
   const month = Number(p.bulan) || (new Date(periode.tgl_awal).getMonth() + 1)

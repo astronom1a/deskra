@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase'
+import { resolvePejabatForPeriode } from '../../lib/pejabatSnapshot'
 
 // ── formatter ───────────────────────────────────────────────
 export function formatRupiah(v) {
@@ -48,23 +49,12 @@ export function terbilangBungkus(n) {
 
 // ── fetch semua data yang dibutuhkan halaman cetak ──────────
 export async function fetchCetakData(periodeId) {
-  const [{ data: periode }, { data: rows }, { data: pejabatList }] = await Promise.all([
-    supabase.from('tabel_periode').select('*').eq('id', periodeId).maybeSingle(),
-    supabase.from('tabel_pekerjaan').select('*').eq('periode_id', periodeId).order('no'),
-    supabase.from('tabel_pejabat').select('*').eq('aktif', true),
+  const { data: periode } = await supabase.from('tabel_periode').select('*').eq('id', periodeId).maybeSingle()
+  if (!periode) return { periode: null, rows: [], pejabat: {}, grandTotal: 0 }
+  const [{ data: rows }, pejabat] = await Promise.all([
+    supabase.from('tabel_pekerjaan').select('*').eq('periode_id', periodeId).eq('tpk_id', periode?.tpk_id).order('no'),
+    resolvePejabatForPeriode(periode),
   ])
-
-  const findPejabat = (predicate) => (pejabatList||[]).find(predicate) || {}
-  const has = (p, needle) => (p.jabatan||'').toLowerCase().includes(needle)
-  const pejabat = {
-    // Pengguna Anggaran = Administratur Utama (tanpa kata "wakil")
-    pengguna_anggaran:     findPejabat(p => has(p,'administratur utama') && !has(p,'wakil') && !has(p,'waka')),
-    // Waka Administratur = Wakil Administratur Utama
-    waka_administratur:    findPejabat(p => has(p,'wakil administratur') || has(p,'waka administratur')),
-    bendahara_umum:        findPejabat(p => has(p,'bendahara umum')),
-    // Bendahara Pengeluaran = Kepala TPK (sesuai praktik di lapangan)
-    bendahara_pengeluaran: findPejabat(p => has(p,'kepala tpk') || has(p,'bendahara pengeluaran')),
-  }
 
   const grandTotal = (rows||[]).reduce((s,r) => s + (Number(r.fisik)||0) * (Number(r.tarif)||0), 0)
 

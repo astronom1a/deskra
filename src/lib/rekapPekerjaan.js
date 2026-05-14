@@ -22,7 +22,12 @@ export function applyNumbers(rows) {
 
 // Bangun rekap baris pekerjaan untuk satu periode — sumber tunggal
 // dipakai oleh Main Link & Dashboard.
-export async function buildRows(periodeId, periodeLabel) {
+function scoped(query, tpkId) {
+  return tpkId ? query.eq('tpk_id', tpkId) : query
+}
+
+export async function buildRows(periodeId, periodeLabel, options = {}) {
+  const { tpkId } = options
   const half = parseHalf(periodeLabel)
   const isPeriodeII = half === 'II'
   const isPeriodeI  = half === 'I'
@@ -38,15 +43,15 @@ export async function buildRows(periodeId, periodeLabel) {
     { data: custom },
     { data: tarifDb },
   ] = await Promise.all([
-    supabase.from('tabel_tumpuk_kapling').select('*').eq('periode_id', periodeId),
-    supabase.from('tabel_tanda_laku').select('*').eq('periode_id', periodeId),
-    supabase.from('tabel_tumpuk_brongkol').select('*').eq('periode_id', periodeId),
-    supabase.from('tabel_pemasangan_barcode').select('*').eq('periode_id', periodeId),
-    supabase.from('tabel_tenaga_bantu').select('*').eq('periode_id', periodeId).maybeSingle(),
-    supabase.from('tabel_kebersihan').select('*').eq('periode_id', periodeId).maybeSingle(),
-    supabase.from('tabel_listrik').select('*').eq('periode_id', periodeId).maybeSingle(),
-    supabase.from('tabel_custom_item').select('*').eq('periode_id', periodeId).order('urutan'),
-    supabase.from('tabel_tarif_periode').select('*').eq('periode_id', periodeId),
+    scoped(supabase.from('tabel_tumpuk_kapling').select('*').eq('periode_id', periodeId), tpkId),
+    scoped(supabase.from('tabel_tanda_laku').select('*').eq('periode_id', periodeId), tpkId),
+    scoped(supabase.from('tabel_tumpuk_brongkol').select('*').eq('periode_id', periodeId), tpkId),
+    scoped(supabase.from('tabel_pemasangan_barcode').select('*').eq('periode_id', periodeId), tpkId),
+    scoped(supabase.from('tabel_tenaga_bantu').select('*').eq('periode_id', periodeId), tpkId).maybeSingle(),
+    scoped(supabase.from('tabel_kebersihan').select('*').eq('periode_id', periodeId), tpkId).maybeSingle(),
+    scoped(supabase.from('tabel_listrik').select('*').eq('periode_id', periodeId), tpkId).maybeSingle(),
+    scoped(supabase.from('tabel_custom_item').select('*').eq('periode_id', periodeId), tpkId).order('urutan'),
+    scoped(supabase.from('tabel_tarif_periode').select('*').eq('periode_id', periodeId), tpkId),
   ])
 
   const tarifMap = { ...DEFAULT_TARIF_PERIODE }
@@ -139,7 +144,7 @@ export async function buildRows(periodeId, periodeLabel) {
 }
 
 // Helper: hitung total UK satu periode (dipakai Dashboard)
-export async function computeTotalUK(periodeId, periodeLabel) {
-  const rows = await buildRows(periodeId, periodeLabel)
+export async function computeTotalUK(periodeId, periodeLabel, options = {}) {
+  const rows = await buildRows(periodeId, periodeLabel, options)
   return rows.reduce((s, r) => s + (r.fisik||0) * (r.tarif||0), 0)
 }

@@ -46,7 +46,8 @@ create trigger trg_tumpuk_kapling_updated
 -- ============================================================
 
 -- Total tumpuk kapling per jenis per periode
-create or replace view v_tumpuk_kapling_per_jenis as
+create or replace view v_tumpuk_kapling_per_jenis
+with (security_invoker = true) as
 select
   periode_id,
   jenis,
@@ -56,7 +57,8 @@ from tabel_tumpuk_kapling
 group by periode_id, jenis;
 
 -- Penomoran Kapling: volume = SUM semua jenis, tarif 900
-create or replace view v_penomoran_kapling as
+create or replace view v_penomoran_kapling
+with (security_invoker = true) as
 select
   periode_id,
   sum(volume)            as fisik,
@@ -66,7 +68,8 @@ from tabel_tumpuk_kapling
 group by periode_id;
 
 -- Sabuk Kapling: volume = sama dengan Penomoran Kapling, tarif 400
-create or replace view v_sabuk_kapling as
+create or replace view v_sabuk_kapling
+with (security_invoker = true) as
 select
   periode_id,
   sum(volume)            as fisik,
@@ -76,7 +79,8 @@ from tabel_tumpuk_kapling
 group by periode_id;
 
 -- Slaghammer: volume = JATI + RIMBA_MAHONI saja (tidak termasuk KEDAWUNG), tarif 3000
-create or replace view v_slaghammer as
+create or replace view v_slaghammer
+with (security_invoker = true) as
 select
   periode_id,
   sum(volume)            as fisik,
@@ -92,17 +96,21 @@ group by periode_id;
 -- ============================================================
 create or replace function seed_tumpuk_kapling(p_periode_id uuid)
 returns void as $$
+declare
+  v_tpk_id uuid;
 begin
-  insert into tabel_tumpuk_kapling (periode_id, jenis, sortimen, volume, tarif) values
-    (p_periode_id, 'JATI',           'AI',   0, 19000),
-    (p_periode_id, 'JATI',           'AII',  0, 21500),
-    (p_periode_id, 'JATI',           'AIII', 0, 24800),
-    (p_periode_id, 'RIMBA_MAHONI',   'AI',   0, 19000),
-    (p_periode_id, 'RIMBA_MAHONI',   'AII',  0, 21500),
-    (p_periode_id, 'RIMBA_MAHONI',   'AIII', 0, 24800),
-    (p_periode_id, 'RIMBA_KEDAWUNG', 'AI',   0, 19000),
-    (p_periode_id, 'RIMBA_KEDAWUNG', 'AII',  0, 21500),
-    (p_periode_id, 'RIMBA_KEDAWUNG', 'AIII', 0, 24800)
+  select tpk_id into v_tpk_id from tabel_periode where id = p_periode_id;
+
+  insert into tabel_tumpuk_kapling (periode_id, tpk_id, jenis, sortimen, volume, tarif) values
+    (p_periode_id, v_tpk_id, 'JATI',           'AI',   0, 19000),
+    (p_periode_id, v_tpk_id, 'JATI',           'AII',  0, 21500),
+    (p_periode_id, v_tpk_id, 'JATI',           'AIII', 0, 24800),
+    (p_periode_id, v_tpk_id, 'RIMBA_MAHONI',   'AI',   0, 19000),
+    (p_periode_id, v_tpk_id, 'RIMBA_MAHONI',   'AII',  0, 21500),
+    (p_periode_id, v_tpk_id, 'RIMBA_MAHONI',   'AIII', 0, 24800),
+    (p_periode_id, v_tpk_id, 'RIMBA_KEDAWUNG', 'AI',   0, 19000),
+    (p_periode_id, v_tpk_id, 'RIMBA_KEDAWUNG', 'AII',  0, 21500),
+    (p_periode_id, v_tpk_id, 'RIMBA_KEDAWUNG', 'AIII', 0, 24800)
   on conflict (periode_id, jenis, sortimen) do nothing;
 end;
 $$ language plpgsql;

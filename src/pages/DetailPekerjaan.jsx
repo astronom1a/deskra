@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthProvider'
+import { requireTpkId } from '../lib/tenantScope'
 import {
   Save, AlertCircle, CheckCircle2, CalendarDays, Plus, Trash2,
   TreePine, Barcode, Users, Sparkles, Zap, Package, Lock
@@ -150,6 +152,8 @@ function SectionPerJenis({
 // Main Page
 // ============================================================
 export default function DetailPekerjaan() {
+  const { profile } = useAuth()
+  const tpkId = profile?.tpk_id
   const [periodes, setPeriodes] = useState([])
   const [selectedPeriode, setSelectedPeriode] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -167,29 +171,41 @@ export default function DetailPekerjaan() {
   const isPeriodeI = half === 'I'
   const isPeriodeII = half === 'II'
 
-  useEffect(() => { fetchPeriodes() }, [])
+  useEffect(() => {
+    if (tpkId) fetchPeriodes()
+    else {
+      setPeriodes([])
+      setSelectedPeriode(null)
+    }
+  }, [tpkId])
   useEffect(() => {
     if (selectedPeriode) fetchAll(selectedPeriode.id)
   }, [selectedPeriode])
 
   async function fetchPeriodes() {
+    const scopedTpkId = requireTpkId(tpkId)
     const { data } = await supabase
-      .from('tabel_periode').select('*').order('created_at', { ascending: false })
+      .from('tabel_periode')
+      .select('*')
+      .eq('tpk_id', scopedTpkId)
+      .order('created_at', { ascending: false })
     setPeriodes(data || [])
     if (data?.length && !selectedPeriode) setSelectedPeriode(data[0])
+    if (!data?.some(p => p.id === selectedPeriode?.id)) setSelectedPeriode(data?.[0] || null)
   }
 
   async function fetchAll(periodeId) {
+    const scopedTpkId = requireTpkId(selectedPeriode?.tpk_id || tpkId)
     setLoading(true)
     const [tl, tb, pb, tnb, kb, lt, ci, tenagaBantuCount] = await Promise.all([
-      supabase.from('tabel_tanda_laku').select('*').eq('periode_id', periodeId).order('urutan'),
-      supabase.from('tabel_tumpuk_brongkol').select('*').eq('periode_id', periodeId).order('urutan'),
-      supabase.from('tabel_pemasangan_barcode').select('*').eq('periode_id', periodeId).order('urutan'),
-      supabase.from('tabel_tenaga_bantu').select('*').eq('periode_id', periodeId).maybeSingle(),
-      supabase.from('tabel_kebersihan').select('*').eq('periode_id', periodeId).maybeSingle(),
-      supabase.from('tabel_listrik').select('*').eq('periode_id', periodeId).maybeSingle(),
-      supabase.from('tabel_custom_item').select('*').eq('periode_id', periodeId).order('urutan'),
-      fetchJumlahTenagaBantuAktif(),
+      supabase.from('tabel_tanda_laku').select('*').eq('tpk_id', scopedTpkId).eq('periode_id', periodeId).order('urutan'),
+      supabase.from('tabel_tumpuk_brongkol').select('*').eq('tpk_id', scopedTpkId).eq('periode_id', periodeId).order('urutan'),
+      supabase.from('tabel_pemasangan_barcode').select('*').eq('tpk_id', scopedTpkId).eq('periode_id', periodeId).order('urutan'),
+      supabase.from('tabel_tenaga_bantu').select('*').eq('tpk_id', scopedTpkId).eq('periode_id', periodeId).maybeSingle(),
+      supabase.from('tabel_kebersihan').select('*').eq('tpk_id', scopedTpkId).eq('periode_id', periodeId).maybeSingle(),
+      supabase.from('tabel_listrik').select('*').eq('tpk_id', scopedTpkId).eq('periode_id', periodeId).maybeSingle(),
+      supabase.from('tabel_custom_item').select('*').eq('tpk_id', scopedTpkId).eq('periode_id', periodeId).order('urutan'),
+      fetchJumlahTenagaBantuAktif(scopedTpkId),
     ])
     setTandaLaku((tl.data || []).map(r => ({ ...r, _key: r.id })))
     setBrongkol((tb.data || []).map(r => ({ ...r, _key: r.id })))
@@ -218,10 +234,11 @@ export default function DetailPekerjaan() {
     setTimeout(() => setToast(null), 3000)
   }
 
-  async function fetchJumlahTenagaBantuAktif() {
+  async function fetchJumlahTenagaBantuAktif(scopedTpkId = requireTpkId(tpkId)) {
     const { data, error } = await supabase
       .from('tabel_tenaga_kerja')
       .select('id,posisi')
+      .eq('tpk_id', scopedTpkId)
       .eq('aktif', true)
     if (error) return null
     return (data || []).filter(w => (w.posisi || '').split(',').map(s => s.trim()).includes('TENAGA_BANTU')).length
@@ -237,6 +254,9 @@ export default function DetailPekerjaan() {
 
   async function handleSave() {
     if (!selectedPeriode) return showToast('Pilih periode dulu', 'error')
+    let scopedTpkId
+    try { scopedTpkId = requireTpkId(selectedPeriode.tpk_id || tpkId) }
+    catch (err) { return showToast(err.message, 'error') }
     setLoading(true)
     const pid = selectedPeriode.id
 
@@ -244,6 +264,7 @@ export default function DetailPekerjaan() {
       .filter(r => r.jenis?.trim())
       .map((r, i) => ({
         periode_id: pid,
+        tpk_id: scopedTpkId,
         jenis: r.jenis.trim(),
         [volumeField]: parseFloat(r[volumeField]) || 0,
         tarif: parseFloat(r.tarif) || 0,
@@ -252,10 +273,10 @@ export default function DetailPekerjaan() {
 
     // Replace-style save (delete + insert per tabel)
     const ops = [
-      supabase.from('tabel_tanda_laku').delete().eq('periode_id', pid),
-      supabase.from('tabel_tumpuk_brongkol').delete().eq('periode_id', pid),
-      supabase.from('tabel_pemasangan_barcode').delete().eq('periode_id', pid),
-      supabase.from('tabel_custom_item').delete().eq('periode_id', pid),
+      supabase.from('tabel_tanda_laku').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
+      supabase.from('tabel_tumpuk_brongkol').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
+      supabase.from('tabel_pemasangan_barcode').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
+      supabase.from('tabel_custom_item').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
     ]
     await Promise.all(ops)
 
@@ -266,6 +287,7 @@ export default function DetailPekerjaan() {
       .filter(r => r.jenis?.trim())
       .map((r, i) => ({
         periode_id: pid,
+        tpk_id: scopedTpkId,
         jenis: normalizeBarcodeJenis(r.jenis),
         jumlah: parseFloat(r.jumlah) || 0,
         tarif: parseFloat(r.tarif) || 0,
@@ -275,6 +297,7 @@ export default function DetailPekerjaan() {
       .filter(r => r.label?.trim())
       .map((r, i) => ({
         periode_id: pid,
+        tpk_id: scopedTpkId,
         label: r.label.trim(),
         satuan: r.satuan || null,
         fisik: parseFloat(r.fisik) || 0,
@@ -289,9 +312,10 @@ export default function DetailPekerjaan() {
 
     // Tenaga Bantu & Kebersihan & Listrik - upsert
     if (isPeriodeII) {
-      const jumlahTenagaBantuAktif = await fetchJumlahTenagaBantuAktif()
+      const jumlahTenagaBantuAktif = await fetchJumlahTenagaBantuAktif(scopedTpkId)
       inserts.push(supabase.from('tabel_tenaga_bantu').upsert({
         periode_id: pid,
+        tpk_id: scopedTpkId,
         jumlah_orang: jumlahTenagaBantuAktif ?? (parseInt(tenagaBantu.jumlah_orang) || 0),
         tarif_per_orang: parseFloat(tenagaBantu.tarif_per_orang) || 0,
       }, { onConflict: 'periode_id' }))
@@ -300,6 +324,7 @@ export default function DetailPekerjaan() {
     if (isPeriodeII) {
       inserts.push(supabase.from('tabel_kebersihan').upsert({
         periode_id: pid,
+        tpk_id: scopedTpkId,
         nominal: parseFloat(kebersihan.nominal) || 0,
       }, { onConflict: 'periode_id' }))
     }
@@ -307,6 +332,7 @@ export default function DetailPekerjaan() {
     if (isPeriodeI) {
       inserts.push(supabase.from('tabel_listrik').upsert({
         periode_id: pid,
+        tpk_id: scopedTpkId,
         nominal: parseFloat(listrik.nominal) || 0,
         no_meter: listrik.no_meter || null,
       }, { onConflict: 'periode_id' }))
@@ -629,4 +655,3 @@ export default function DetailPekerjaan() {
     </div>
   )
 }
-
