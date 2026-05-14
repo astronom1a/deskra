@@ -17,6 +17,7 @@ import DetailPekerjaan from './pages/DetailPekerjaan'
 import RegisterKapling from './pages/RegisterKapling'
 import DkhpSkshhk from './pages/DkhpSkshhk'
 import Settings from './pages/Settings'
+import { canUseOperatorRoutes, getAuthenticatedHomePath } from './lib/adminOperatorContext'
 
 // Halaman cetak di-lazy-load — hanya dimuat saat dibutuhkan
 const CetakBiayaTPK          = lazy(() => import('./pages/Cetak/CetakBiayaTPK'))
@@ -36,7 +37,7 @@ function PrintFallback() {
 }
 
 function ProtectedRoute({ children }) {
-  const { session, isAdmin, profile, loading } = useAuth()
+  const { session, isAdmin, profile, activeTpkId, loading } = useAuth()
   const location = useLocation()
 
   if (loading || (session && !profile)) {
@@ -51,7 +52,7 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  if (isAdmin) {
+  if (!canUseOperatorRoutes({ isAdmin, activeTpkId })) {
     return <Navigate to="/admin" replace />
   }
 
@@ -77,25 +78,25 @@ function AdminRoute({ children }) {
 }
 
 function PublicRoute({ children }) {
-  const { session, isAdmin, loading, profile } = useAuth()
+  const { session, isAdmin, activeTpkId, loading, profile } = useAuth()
 
   if (loading || (session && !profile)) return null
 
   if (session) {
-    return <Navigate to={isAdmin ? '/admin' : '/dashboard'} replace />
+    return <Navigate to={getAuthenticatedHomePath({ isAdmin, activeTpkId })} replace />
   }
 
   return children
 }
 
 function SmartRedirect() {
-  const { session, isAdmin, profile, loading } = useAuth()
+  const { session, isAdmin, activeTpkId, profile, loading } = useAuth()
   if (loading || (session && !profile)) return null
-  return <Navigate to={isAdmin ? '/admin' : '/dashboard'} replace />
+  return <Navigate to={getAuthenticatedHomePath({ isAdmin, activeTpkId })} replace />
 }
 
 function TitleUpdater() {
-  const { session, isAdmin, tpk, loading } = useAuth()
+  const { session, isAdmin, tpk, activeTpkId, loading } = useAuth()
 
   useEffect(() => {
     if (loading) return
@@ -103,13 +104,13 @@ function TitleUpdater() {
       document.title = 'Deskra'
       return
     }
-    if (isAdmin) {
+    if (isAdmin && !activeTpkId) {
       document.title = 'Deskra — Admin'
     } else {
       const nama = tpk?.namatpk ?? 'TPK'
       document.title = `Deskra — ${nama}`
     }
-  }, [session, isAdmin, tpk, loading])
+  }, [session, isAdmin, tpk, activeTpkId, loading])
 
   return null
 }

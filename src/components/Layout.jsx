@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAccount } from '../lib/useAccount'
 import { useAuth } from '../lib/AuthProvider'
+import { canUseOperatorRoutes } from '../lib/adminOperatorContext'
 import { version as appVersion } from '../../package.json'
 import { gsap } from 'gsap'
 
@@ -163,7 +164,8 @@ export default function Layout() {
   const { account } = useAccount()
   const { tpk, isAdmin, activeTpkId, setActiveTpkId, signOut } = useAuth()
   const namaTpk  = tpk?.namatpk || account.namaTpk || 'TPK Wongsorejo'
-  const navItems = isAdmin ? adminNavItems : operatorNavItems
+  const useOperatorContext = canUseOperatorRoutes({ isAdmin, activeTpkId })
+  const navItems = useOperatorContext ? operatorNavItems : adminNavItems
 
   // entrance animation
   useEffect(() => {
@@ -234,7 +236,7 @@ export default function Layout() {
               />
               <style>{`@keyframes sb-glow { 0%,100%{opacity:1} 50%{opacity:.45} }`}</style>
             </div>
-            {isAdmin ? (
+            {isAdmin && !activeTpkId ? (
               <div className="flex items-center gap-1 mt-0.5">
                 <ShieldCheck size={9} style={{ color: '#fbbf24' }} />
                 <span className="text-[10px] font-mono" style={{ color: '#fbbf24' }}>superadmin</span>
