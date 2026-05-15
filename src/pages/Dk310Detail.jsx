@@ -55,10 +55,11 @@ export default function Dk310Detail() {
   const navigate = useNavigate()
   const { toast, showToast } = useToast(3000)
 
-  const [period,   setPeriod]   = useState(null)
-  const [sbList,   setSbList]   = useState([])
-  const [loading,  setLoading]  = useState(true)
-  const [expanded, setExpanded] = useState(new Set())
+  const [period,     setPeriod]     = useState(null)
+  const [sbList,     setSbList]     = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [fetchError, setFetchError] = useState(false)
+  const [expanded,   setExpanded]   = useState(new Set())
 
   useEffect(() => { fetchData() }, [id])
 
@@ -73,8 +74,12 @@ export default function Dk310Detail() {
         .order('urutan'),
     ])
     setLoading(false)
-    if (pe) { showToast(pe.message, 'error'); return }
-    if (sbe) { showToast(sbe.message, 'error'); return }
+    if (pe || sbe) {
+      showToast((pe || sbe).message, 'error')
+      setFetchError(true)
+      return
+    }
+    setFetchError(false)
     setPeriod(p)
     setSbList(sb || [])
   }
@@ -96,7 +101,9 @@ export default function Dk310Detail() {
   if (!period) return (
     <div style={{ minHeight: '100%', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <AlertCircle size={16} style={{ color: 'rgba(255,255,255,0.3)', marginRight: 8 }} />
-      <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>Data tidak ditemukan.</span>
+      <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
+        {fetchError ? 'Gagal memuat data.' : 'Data tidak ditemukan.'}
+      </span>
     </div>
   )
 
@@ -183,7 +190,7 @@ export default function Dk310Detail() {
                     </tr>
 
                     {isOpen && (
-                      <tr>
+                      <tr key={sb.id + '-mutu'}>
                         <td colSpan={7} style={{ padding: '0 0 2px 0', background: 'rgba(55,145,101,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                           <div style={{ padding: '10px 20px 14px 40px' }}>
                             {[{ label: 'Kayu Bernomor (KB)', rows: kb }, { label: 'Kayu Tak Bernomor (TBN)', rows: tbn }]
