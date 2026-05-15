@@ -18,7 +18,13 @@ const operatorNavItems = [
   { label: 'Dashboard',       path: '/dashboard',       icon: LayoutDashboard },
   { label: 'Register Kapling',path: '/register-kapling',icon: ClipboardList },
   { label: 'DKHP SKSHHK',    path: '/dkhp-skshhk',     icon: ScrollText },
-  { label: 'DK310',           path: '/dk310',            icon: FileBarChart2 },
+  {
+    label: 'DK310', icon: FileBarChart2,
+    children: [
+      { label: 'DK310 Penambahan',  path: '/dk310/penambahan',  icon: FileBarChart2 },
+      { label: 'DK310 Pengurangan', path: '/dk310/pengurangan', icon: FileBarChart2 },
+    ],
+  },
   {
     label: 'Uang Kerja', icon: Wallet,
     children: [

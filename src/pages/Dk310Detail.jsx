@@ -115,7 +115,7 @@ export default function Dk310Detail() {
         {/* Header */}
         <div style={{ marginBottom: 20 }}>
           <button
-            onClick={() => navigate('/dk310')}
+            onClick={() => navigate('/dk310/penambahan')}
             style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', padding: '0 0 12px 0' }}
           >
             <ArrowLeft size={14} /> Kembali

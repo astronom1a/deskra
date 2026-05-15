@@ -16,8 +16,9 @@ import TumpukKapling from './pages/TumpukKapling'
 import DetailPekerjaan from './pages/DetailPekerjaan'
 import RegisterKapling from './pages/RegisterKapling'
 import DkhpSkshhk from './pages/DkhpSkshhk'
-import Dk310       from './pages/Dk310'
-import Dk310Detail from './pages/Dk310Detail'
+import Dk310             from './pages/Dk310'
+import Dk310Detail       from './pages/Dk310Detail'
+import Dk310Pengurangan  from './pages/Dk310Pengurangan'
 import Settings from './pages/Settings'
 import { canUseOperatorRoutes, getAuthenticatedHomePath } from './lib/adminOperatorContext'
 
@@ -158,8 +159,9 @@ function AppRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="register-kapling" element={<RegisterKapling />} />
         <Route path="dkhp-skshhk" element={<DkhpSkshhk />} />
-        <Route path="dk310"     element={<Dk310 />} />
-        <Route path="dk310/:id" element={<Dk310Detail />} />
+        <Route path="dk310/penambahan"     element={<Dk310 />} />
+        <Route path="dk310/penambahan/:id" element={<Dk310Detail />} />
+        <Route path="dk310/pengurangan"    element={<Dk310Pengurangan />} />
         <Route path="main-link" element={<MainLink />} />
         <Route path="tumpuk-kapling" element={<TumpukKapling />} />
         <Route path="detail-pekerjaan" element={<DetailPekerjaan />} />

@@ -268,7 +268,7 @@ export default function Dk310() {
                 {periods.map((p, idx) => (
                   <tr
                     key={p.id}
-                    onClick={() => navigate(`/dk310/${p.id}`)}
+                    onClick={() => navigate(`/dk310/penambahan/${p.id}`)}
                     style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', transition: 'background 0.15s' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
