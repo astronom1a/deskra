@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FileBarChart2, Upload, Loader2, AlertCircle, ChevronRight } from 'lucide-react'
+import { FileBarChart2, Upload, Loader2, AlertCircle, ChevronRight, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
@@ -37,12 +37,18 @@ function SummaryCard({ label, btg, m3 }) {
 }
 
 const CARDS = [
-  { key: 'penambahan',          label: 'Penambahan' },
+  { key: 'penambahan',         label: 'Penambahan' },
   { key: 'sisa_lalu',          label: 'Sisa yang Lalu' },
   { key: 'jumlah_persediaan',  label: 'Jumlah Persediaan' },
   { key: 'jumlah_pengurangan', label: 'Jumlah Pengurangan' },
   { key: 'sisa_sekarang',      label: 'Sisa Sekarang' },
 ]
+
+function parseMasaBulan(masa) {
+  if (!masa) return null
+  const stripped = masa.replace(/^[IVXLC]+\s*[-–]\s*/i, '').trim()
+  return stripped || null
+}
 
 const TH = {
   padding: '8px 10px', textAlign: 'left', fontWeight: 600, fontSize: 10,
@@ -61,10 +67,11 @@ export default function Dk310() {
   const fileRef   = useRef(null)
   const { toast, showToast } = useToast(3000)
 
-  const [periods,   setPeriods]   = useState([])
-  const [loading,   setLoading]   = useState(true)
-  const [importing, setImporting] = useState(false)
-  const [preview,   setPreview]   = useState(null)
+  const [periods,    setPeriods]    = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [importing,  setImporting]  = useState(false)
+  const [preview,    setPreview]    = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
 
   useEffect(() => { if (tpkId) fetchPeriods() }, [tpkId])
 
@@ -74,6 +81,7 @@ export default function Dk310() {
       .from('tabel_dk310_periods')
       .select('*')
       .eq('tpk_id', tpkId)
+      .eq('jenis', 'penambahan')
       .order('created_at', { ascending: false })
     setLoading(false)
     if (error) { showToast(error.message, 'error'); return }
@@ -105,7 +113,7 @@ export default function Dk310() {
     setImporting(true)
     const { data: period, error: periodErr } = await supabase
       .from('tabel_dk310_periods')
-      .insert({ ...preview.periodData, tpk_id: scopedTpkId, created_by: profile?.id })
+      .insert({ ...preview.periodData, tpk_id: scopedTpkId, created_by: profile?.id, jenis: 'penambahan' })
       .select('id')
       .single()
     if (periodErr) { setImporting(false); showToast(periodErr.message, 'error'); return }
@@ -148,6 +156,14 @@ export default function Dk310() {
     showToast(`Berhasil import: ${importedCount} surat bukti`)
   }
 
+  async function handleDelete(id) {
+    const { error } = await supabase.from('tabel_dk310_periods').delete().eq('id', id)
+    if (error) { showToast(error.message, 'error'); return }
+    setDeletingId(null)
+    await fetchPeriods()
+    showToast('Periode berhasil dihapus.')
+  }
+
   const totals = periods.reduce((acc, p) => {
     for (const c of CARDS) {
       acc[c.key + '_btg'] = (acc[c.key + '_btg'] || 0) + (p[c.key + '_btg'] || 0)
@@ -167,7 +183,9 @@ export default function Dk310() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <FileBarChart2 size={20} style={{ color: '#00ff88' }} />
-            <h1 style={{ fontSize: 20, fontWeight: 700, color: '#f0f0f0', letterSpacing: '-0.02em' }}>DK310</h1>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: '#f0f0f0', letterSpacing: '-0.02em' }}>
+              DK310<span style={{ color: '#00ff88' }}>+</span>
+            </h1>
           </div>
           <button
             onClick={() => fileRef.current?.click()}
@@ -250,7 +268,7 @@ export default function Dk310() {
                   {CARDS.map(c => (
                     <th key={c.key} colSpan={2} style={{ ...TH, textAlign: 'center' }}>{c.label}</th>
                   ))}
-                  <th style={TH}></th>
+                  <th style={TH} colSpan={2}></th>
                 </tr>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   <th style={TH_SUB}></th>
@@ -262,30 +280,59 @@ export default function Dk310() {
                     </Fragment>
                   ))}
                   <th style={TH_SUB}></th>
+                  <th style={TH_SUB}></th>
                 </tr>
               </thead>
               <tbody>
-                {periods.map((p, idx) => (
-                  <tr
-                    key={p.id}
-                    onClick={() => navigate(`/dk310/penambahan/${p.id}`)}
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', transition: 'background 0.15s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <td style={TD}>{idx + 1}</td>
-                    <td style={{ ...TD, color: '#00ff88', fontWeight: 600 }}>{p.periode}</td>
-                    {CARDS.map(c => (
-                      <Fragment key={c.key}>
-                        <td style={{ ...TD, textAlign: 'right', color: '#f0f0f0' }}>{fmt(p[c.key + '_btg'])}</td>
-                        <td style={{ ...TD, textAlign: 'right', color: '#379165' }}>{fmt(p[c.key + '_m3'], 3)}</td>
-                      </Fragment>
-                    ))}
-                    <td style={{ ...TD, color: 'rgba(255,255,255,0.2)', textAlign: 'right' }}>
-                      <ChevronRight size={14} />
-                    </td>
-                  </tr>
-                ))}
+                {periods.map((p, idx) => {
+                  const isConfirming = deletingId === p.id
+                  return (
+                    <tr
+                      key={p.id}
+                      onClick={() => !isConfirming && navigate(`/dk310/penambahan/${p.id}`)}
+                      style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: isConfirming ? 'default' : 'pointer', transition: 'background 0.15s', background: isConfirming ? 'rgba(255,60,60,0.04)' : 'transparent' }}
+                      onMouseEnter={e => { if (!isConfirming) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+                      onMouseLeave={e => { if (!isConfirming) e.currentTarget.style.background = 'transparent' }}
+                    >
+                      <td style={TD}>{idx + 1}</td>
+                      <td style={{ ...TD }}>
+                        <span style={{ color: '#00ff88', fontWeight: 600 }}>{p.periode}</span>
+                        {parseMasaBulan(p.masa_pembayaran) && (
+                          <span style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2, fontWeight: 400 }}>
+                            {parseMasaBulan(p.masa_pembayaran)}
+                          </span>
+                        )}
+                      </td>
+                      {CARDS.map(c => (
+                        <Fragment key={c.key}>
+                          <td style={{ ...TD, textAlign: 'right', color: '#f0f0f0' }}>{fmt(p[c.key + '_btg'])}</td>
+                          <td style={{ ...TD, textAlign: 'right', color: '#379165' }}>{fmt(p[c.key + '_m3'], 3)}</td>
+                        </Fragment>
+                      ))}
+                      <td style={{ ...TD, textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+                        {isConfirming ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+                            <span style={{ fontSize: 11, color: 'rgba(255,100,100,0.8)' }}>Hapus?</span>
+                            <button onClick={() => handleDelete(p.id)} style={{ padding: '3px 10px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,80,80,0.4)', background: 'rgba(255,60,60,0.15)', color: '#ff6b6b', cursor: 'pointer' }}>Ya</button>
+                            <button onClick={() => setDeletingId(null)} style={{ padding: '3px 10px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>Batal</button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={e => { e.stopPropagation(); setDeletingId(p.id) }}
+                            style={{ padding: '4px 6px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.18)', borderRadius: 3, lineHeight: 0 }}
+                            onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
+                            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.18)'}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </td>
+                      <td style={{ ...TD, color: 'rgba(255,255,255,0.2)', textAlign: 'right', width: 24 }} onClick={e => e.stopPropagation()}>
+                        {!isConfirming && <ChevronRight size={14} />}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

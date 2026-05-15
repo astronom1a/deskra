@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2, FileText, Pencil, Trash2, Settings, ChevronUp, ChevronDown, ChevronsUpDown, SlidersHorizontal, ChevronLeft, ChevronRight, Search, Plus } from 'lucide-react'
+import { Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2, FileText, Pencil, Trash2, Settings, ChevronUp, ChevronDown, ChevronsUpDown, SlidersHorizontal, ChevronLeft, ChevronRight, Search, Plus, Tag, FileBarChart2 } from 'lucide-react'
 import Toast, { useToast } from '../components/Toast'
 import * as XLSX from 'xlsx'
 import * as pdfjsLib from 'pdfjs-dist'
@@ -121,6 +121,37 @@ function displayDate(val) {
   if (!val) return null
   const m = String(val).match(/^(\d{4})-(\d{2})-(\d{2})$/)
   return m ? `${m[3]}/${m[2]}/${m[1]}` : val
+}
+
+const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des']
+function formatPeriode(val) {
+  if (!val) return val
+  const s = String(val).trim()
+  if (s.length !== 4) return s
+  const mm = parseInt(s.slice(0, 2), 10)
+  const yy = s.slice(2)
+  const label = BULAN[mm - 1]
+  return label ? `${label} '${yy}` : s
+}
+
+const INVOIS_PREFIX_MAP = {
+  ECR: { bg: 'rgba(0,180,255,0.1)',   color: 'rgba(0,180,255,0.95)',  border: 'rgba(0,180,255,0.28)',  desc: 'Retail' },
+  ECK: { bg: 'rgba(0,255,136,0.08)',  color: '#00ff88',               border: 'rgba(0,255,136,0.22)',  desc: 'DK318'  },
+  EKK: { bg: 'rgba(170,80,255,0.1)',  color: 'rgba(170,80,255,0.9)',  border: 'rgba(170,80,255,0.28)', desc: 'Khusus' },
+}
+
+function InvoisBadge({ val }) {
+  if (!val) return <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>
+  const prefix = String(val).trim().slice(0, 3).toUpperCase()
+  const pfx = INVOIS_PREFIX_MAP[prefix]
+  if (pfx) {
+    return (
+      <span title={pfx.desc} style={{ ...RK_BADGE_BASE, background: pfx.bg, color: pfx.color, border: `1px solid ${pfx.border}`, fontSize: 11 }}>
+        {val}
+      </span>
+    )
+  }
+  return <span style={{ color: 'rgba(255,255,255,0.75)', fontFamily: 'monospace', fontSize: 11 }}>{val}</span>
 }
 
 function formatDate(val) {
@@ -328,9 +359,23 @@ export default function RegisterKapling() {
   const [searchCol, setSearchCol]       = useState('all')
   const [showColDropdown, setShowColDropdown] = useState(false)
   const [realtimeStatus, setRealtimeStatus] = useState('connecting')
+  const [penguranganInvoices, setPenguranganInvoices] = useState([])
+  const [showFixPrefix, setShowFixPrefix]   = useState(false)
+  const [fixPrefixMap, setFixPrefixMap]     = useState({})
+  const [fixPrefixSaving, setFixPrefixSaving] = useState(false)
+
+  const [showDkhpModal, setShowDkhpModal]   = useState(false)
+  const [dkhpModalRows, setDkhpModalRows]   = useState([])
+  const [dkhpInput, setDkhpInput]           = useState('')
+  const [dkhpConflicts, setDkhpConflicts]   = useState([])
+  const [dkhpStep, setDkhpStep]             = useState('input')
+  const [dkhpSaving, setDkhpSaving]         = useState(false)
+  const [dkhpImportPreview, setDkhpImportPreview] = useState(null)
+  const [dkhpImportSaving, setDkhpImportSaving]   = useState(false)
 
   const fileRef         = useRef()
   const invoisRef       = useRef()
+  const dkhpImportRef   = useRef()
   const selectAllRef    = useRef()
   const colDropdownRef  = useRef()
 
@@ -374,12 +419,12 @@ export default function RegisterKapling() {
   async function fetchData() {
     if (!tpkId) return
     setLoading(true)
-    const PAGE = 1000
+    const PAGE = 500
     const all = []
     for (let from = 0; ; from += PAGE) {
       const { data, error } = await supabase
         .from('tabel_register_kapling')
-        .select('*')
+        .select('id,tpk_id,no_kapling,tgl_kapling,periode,no_blok,jenis,sortimen,sort_untuk,panjang,lebar,diameter_tebal,status,mutu,cacat,asal_kayu,sertifikasi,batang,volume,no_invois,pembeli,dkhp,skshhk,file_name')
         .eq('tpk_id', tpkId)
         .order('no_kapling', { ascending: true })
         .range(from, from + PAGE - 1)
@@ -390,6 +435,22 @@ export default function RegisterKapling() {
     }
     setRows(all)
     setSelectedIds(new Set())
+
+    const { data: pgPeriods } = await supabase
+      .from('tabel_dk310_periods')
+      .select('id')
+      .eq('tpk_id', tpkId)
+      .eq('jenis', 'pengurangan')
+    if (pgPeriods && pgPeriods.length > 0) {
+      const { data: sbRows } = await supabase
+        .from('tabel_dk310_surat_bukti')
+        .select('nomor_surat')
+        .in('period_id', pgPeriods.map(p => p.id))
+      setPenguranganInvoices((sbRows || []).map(r => r.nomor_surat).filter(Boolean))
+    } else {
+      setPenguranganInvoices([])
+    }
+
     setLoading(false)
   }
 
@@ -706,6 +767,175 @@ export default function RegisterKapling() {
     fetchData()
   }
 
+  function handleOpenDkhpModal(targetRows) {
+    setDkhpModalRows(targetRows)
+    setDkhpInput('')
+    setDkhpConflicts([])
+    setDkhpStep('input')
+    setShowDkhpModal(true)
+  }
+
+  function handleCheckDkhp() {
+    const val = dkhpInput.trim()
+    if (!val) return
+    const conflicts = dkhpModalRows.filter(r => r.dkhp && String(r.dkhp).trim() !== val)
+    if (conflicts.length > 0) {
+      setDkhpConflicts(conflicts)
+      setDkhpStep('confirm-conflicts')
+    } else {
+      handleSaveDkhp(false)
+    }
+  }
+
+  async function handleSaveDkhp(skipConflicts) {
+    const val = dkhpInput.trim()
+    const conflictIds = new Set(dkhpConflicts.map(r => r.id))
+    const targets = skipConflicts
+      ? dkhpModalRows.filter(r => !conflictIds.has(r.id))
+      : dkhpModalRows
+    if (!targets.length) { setShowDkhpModal(false); return }
+    setDkhpSaving(true)
+    const { data: dkhpRec } = await supabase
+      .from('tabel_dkhp_skshhk')
+      .select('no_skshhk')
+      .eq('tpk_id', tpkId)
+      .eq('no_dkhp', val)
+      .maybeSingle()
+    const patch = { dkhp: val, ...(dkhpRec?.no_skshhk ? { skshhk: dkhpRec.no_skshhk } : {}) }
+    const { error } = await supabase
+      .from('tabel_register_kapling')
+      .update(patch)
+      .in('id', targets.map(r => r.id))
+    setDkhpSaving(false)
+    if (error) { toast('Gagal menyimpan DKHP', 'error'); return }
+    toast(`DKHP ${val}${dkhpRec?.no_skshhk ? ` · SKSHHK ${dkhpRec.no_skshhk}` : ''} disimpan untuk ${targets.length} kapling`, 'success')
+    setShowDkhpModal(false)
+    fetchData()
+  }
+
+  async function handleDkhpImportFiles(e) {
+    const files = [...(e.target.files || [])]
+    if (!files.length) return
+    e.target.value = ''
+    const rowsByKapling = new Map(rows.map(r => [r.no_kapling, r]))
+    const dkhpList = []
+    const errors = []
+    for (const file of files) {
+      try {
+        const arrayBuffer = await file.arrayBuffer()
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+        let fullText = ''
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i)
+          const content = await page.getTextContent()
+          fullText += content.items.map(it => it.str).join(' ') + '\n'
+        }
+        const dkhpMatch = fullText.match(/2631602[.\s]*(\d+)/)
+        if (!dkhpMatch) { errors.push({ fileName: file.name, message: 'Nomor DKHP tidak ditemukan' }); continue }
+        const dkhpNo = String(parseInt(dkhpMatch[1], 10))
+        const kaplingNums = [...new Set(fullText.match(/2621302\d{6}/g) || [])]
+        const matched = kaplingNums.map(k => rowsByKapling.get(k)).filter(Boolean)
+        const unmatched = kaplingNums.filter(k => !rowsByKapling.has(k))
+        const conflicts = matched.filter(r => r.dkhp && String(r.dkhp) !== dkhpNo)
+        const aiiiPattern = /(2621302\d{6})\s+(2621302[\dA-Z]+)\w*\s+\w+\s+\w+\s+AIII\s+\w+\s+([\d.]+)\s+(\d+)\s+1\s+([\d.]+)/g
+        const aiiiBatang = []
+        let bm
+        while ((bm = aiiiPattern.exec(fullText)) !== null) {
+          aiiiBatang.push({ no_kapling: bm[1], no_batang: bm[2], panjang: parseFloat(bm[3]), diameter: parseInt(bm[4], 10), volume: parseFloat(bm[5]) })
+        }
+        dkhpList.push({ dkhpNo, matched, unmatched, conflicts, aiiiBatang, fileName: file.name })
+      } catch {
+        errors.push({ fileName: file.name, message: 'Gagal membaca PDF' })
+      }
+    }
+    if (!dkhpList.length) { toast('Tidak ada PDF DKHP yang bisa dibaca', 'error'); return }
+    setDkhpImportPreview({ dkhpList, errors })
+  }
+
+  async function handleDkhpImportSave(skipConflicts) {
+    setDkhpImportSaving(true)
+    const uniqueDkhpNos = [...new Set(dkhpImportPreview.dkhpList.map(d => d.dkhpNo))]
+    const { data: skshhkRows } = await supabase
+      .from('tabel_dkhp_skshhk')
+      .select('no_dkhp, no_skshhk')
+      .eq('tpk_id', tpkId)
+      .in('no_dkhp', uniqueDkhpNos)
+    const skshhkMap = Object.fromEntries((skshhkRows || []).map(r => [r.no_dkhp, r.no_skshhk]))
+    let totalUpdated = 0
+    let totalBatang = 0
+    for (const dkhp of dkhpImportPreview.dkhpList) {
+      const conflictIds = new Set(dkhp.conflicts.map(r => r.id))
+      const targets = skipConflicts ? dkhp.matched.filter(r => !conflictIds.has(r.id)) : dkhp.matched
+      if (targets.length) {
+        const patch = { dkhp: dkhp.dkhpNo, ...(skshhkMap[dkhp.dkhpNo] ? { skshhk: skshhkMap[dkhp.dkhpNo] } : {}) }
+        await supabase.from('tabel_register_kapling').update(patch).in('id', targets.map(r => r.id))
+        totalUpdated += targets.length
+      }
+      if (dkhp.aiiiBatang?.length) {
+        const validKaplings = new Set(targets.map(r => r.no_kapling))
+        const batangRows = dkhp.aiiiBatang
+          .filter(b => validKaplings.has(b.no_kapling))
+          .map(b => ({ ...b, tpk_id: tpkId }))
+        if (batangRows.length) {
+          await supabase.from('tabel_batang_aiii').upsert(batangRows, { onConflict: 'no_kapling,no_batang', ignoreDuplicates: true })
+          totalBatang += batangRows.length
+        }
+      }
+    }
+    setDkhpImportSaving(false)
+    toast(`DKHP + SKSHHK tersimpan untuk ${totalUpdated} kapling${totalBatang ? ` · ${totalBatang} batang AIII` : ''}`, 'success')
+    setDkhpImportPreview(null)
+    fetchData()
+  }
+
+  function handleOpenFixPrefix() {
+    // Bangun lookup: base nomor (tanpa prefix) → prefix dari dk310 pengurangan
+    const dk310BaseMap = {}
+    for (const nomSurat of penguranganInvoices) {
+      const sPrefix = String(nomSurat).slice(0, 3).toUpperCase()
+      if (!INVOIS_PREFIX_MAP[sPrefix]) continue
+      const base = String(nomSurat).slice(3)
+      if (base) dk310BaseMap[base] = sPrefix
+    }
+
+    // Hanya kumpulkan no_invois yang: (1) belum berprefiks, (2) ada cocokkannya di dk310
+    const matched = {}
+    for (const r of rows) {
+      if (!r.no_invois) continue
+      const key = r.no_invois.trim()
+      const existingPrefix = key.slice(0, 3).toUpperCase()
+      if (INVOIS_PREFIX_MAP[existingPrefix]) continue   // sudah punya prefix
+      if (!dk310BaseMap[key]) continue                  // tidak ada di dk310
+      if (!matched[key]) matched[key] = { noInvois: key, count: 0, prefix: dk310BaseMap[key] }
+      matched[key].count++
+    }
+
+    setFixPrefixMap(matched)
+    setShowFixPrefix(true)
+  }
+
+  async function handleApplyFixPrefix() {
+    if (!tpkId) { showToast('Profil TPK tidak ditemukan.', 'error'); return }
+    const entries = Object.values(fixPrefixMap).filter(e => e.prefix)
+    if (!entries.length) { showToast('Pilih prefix untuk minimal satu nomor invois.', 'error'); return }
+    setFixPrefixSaving(true)
+    let ok = 0, fail = 0
+    for (const { noInvois, prefix } of entries) {
+      const newVal = prefix + noInvois
+      const { error } = await supabase
+        .from('tabel_register_kapling')
+        .update({ no_invois: newVal })
+        .eq('tpk_id', tpkId)
+        .eq('no_invois', noInvois)
+      error ? fail++ : ok++
+    }
+    setFixPrefixSaving(false)
+    if (fail) { showToast(`${ok} berhasil, ${fail} gagal diupdate`, 'error') }
+    else { showToast(`${ok} nomor invois berhasil diperbaiki`) }
+    setShowFixPrefix(false)
+    fetchData()
+  }
+
   const kaplingInfo = useMemo(() => analyzeKapling(rows), [rows])
 
   const totalMissingCount = useMemo(() =>
@@ -713,6 +943,12 @@ export default function RegisterKapling() {
       ? kaplingInfo.missing.reduce((s, m) => s + Number(BigInt(m.to) - BigInt(m.from) + 1n), 0)
       : 0
   , [kaplingInfo])
+
+  const missingInvoices = useMemo(() => {
+    if (!penguranganInvoices.length) return []
+    const registered = new Set(rows.map(r => r.no_invois).filter(Boolean))
+    return [...new Set(penguranganInvoices.filter(inv => !registered.has(inv)))]
+  }, [penguranganInvoices, rows])
 
   const SORTIMENS = ['AI', 'AII', 'AIII']
 
@@ -930,21 +1166,49 @@ export default function RegisterKapling() {
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>data register kapling dari file dp kapling (.xlsx)</p>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={() => dkhpImportRef.current?.click()} title="Import DKHP dari PDF"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '7px 9px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.07)'; e.currentTarget.style.color = '#00ff88'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.2)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
+          ><FileBarChart2 size={14}/></button>
           <button onClick={() => { setDraftMap({ ...colMap }); setShowSettings(true) }} title="Pengaturan header kolom"
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 10px', fontSize: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#f0f0f0' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
           ><Settings size={14}/></button>
           <button onClick={() => setEditRow({ _new: true, no_kapling: '', tgl_kapling: '', periode: '', no_blok: '', jenis: '', sortimen: '', sort_untuk: '', panjang: '', lebar: '', diameter_tebal: '', status: '', mutu: '', cacat: '', asal_kayu: '', sertifikasi: '', batang: 0, volume: 0, no_invois: '', pembeli: '', dkhp: '', skshhk: '' })}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', fontSize: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace' }}
+            title="Tambah Kapling"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '7px 9px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#f0f0f0' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
-          ><Plus size={14}/> tambah manual</button>
+          ><Plus size={14}/></button>
           <button onClick={() => invoisRef.current?.click()}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', fontSize: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace' }}
+            title="Input invois"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '7px 9px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#f0f0f0' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
-          ><FileText size={14}/> input invois</button>
+          ><FileText size={14}/></button>
+          {(() => {
+            const needFix = new Set(rows.filter(r => r.no_invois && !INVOIS_PREFIX_MAP[String(r.no_invois).trim().slice(0, 3).toUpperCase()]).map(r => String(r.no_invois).trim())).size
+            if (!needFix) return null
+            return (
+              <button onClick={handleOpenFixPrefix} title="FIX INVOIS (ECR / ECK / EKK)"
+                style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '7px 9px', background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 3, color: '#ffaa00', cursor: 'pointer' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,170,0,0.18)'; e.currentTarget.style.borderColor = 'rgba(255,170,0,0.45)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,170,0,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,170,0,0.25)' }}
+              >
+                <Tag size={14}/>
+                <span style={{
+                  position: 'absolute', top: -6, right: -6,
+                  minWidth: 16, height: 16, borderRadius: 8,
+                  background: '#ffaa00', color: '#0a0a0a',
+                  fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '0 3px', lineHeight: 1,
+                }}>{needFix}</span>
+              </button>
+            )
+          })()}
           <button onClick={() => fileRef.current?.click()}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', fontSize: 12, background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 700 }}
             onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
@@ -953,11 +1217,14 @@ export default function RegisterKapling() {
         </div>
         <input ref={fileRef}   type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange}/>
         <input ref={invoisRef} type="file" accept=".pdf" multiple className="hidden" onChange={handleInvoisFileChange}/>
+        <input ref={dkhpImportRef} type="file" accept=".pdf" multiple className="hidden" onChange={handleDkhpImportFiles}/>
       </div>
 
       {/* Summary cards */}
       {rows.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+
+          {/* Card 1: Total Kapling */}
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '16px 20px', display: 'flex', gap: 16 }}>
             <div style={{ flexShrink: 0 }}>
               <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>total kapling</p>
@@ -984,32 +1251,79 @@ export default function RegisterKapling() {
               </div>
             )}
           </div>
-          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '16px 20px' }}>
-            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>total batang</p>
-            <p style={{ fontSize: 22, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>{totalBatang.toLocaleString('id')}</p>
-            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-              {SORTIMENS.map(m => (
-                <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>{m}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{sortBatang[m].toLocaleString('id')}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '16px 20px' }}>
-            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>total volume (m³)</p>
-            <p style={{ fontSize: 22, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>
-              {totalVolume.toFixed(3)} <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: 600 }}>m³</span>
+
+          {/* Card 2: Invois Terlewat (dari DK310 Pengurangan) */}
+          <div style={{
+            background: missingInvoices.length > 0 ? 'rgba(255,107,107,0.04)' : 'rgba(0,255,136,0.03)',
+            border: `1px solid ${missingInvoices.length > 0 ? 'rgba(255,107,107,0.18)' : 'rgba(0,255,136,0.12)'}`,
+            borderRadius: 3, padding: '16px 20px',
+          }}>
+            <p style={{ fontSize: 10, color: missingInvoices.length > 0 ? 'rgba(255,107,107,0.7)' : 'rgba(0,255,136,0.5)', marginBottom: 4, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              invois terlewat
             </p>
-            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-              {SORTIMENS.map(m => (
-                <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>{m}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>{sortVolume[m].toFixed(3)} <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)' }}>m³</span></span>
+            {penguranganInvoices.length === 0 ? (
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', marginTop: 6 }}>belum ada data dk310</p>
+            ) : missingInvoices.length === 0 ? (
+              <>
+                <p style={{ fontSize: 22, fontWeight: 700, color: '#00ff88', fontFamily: 'monospace', lineHeight: 1 }}>0</p>
+                <p style={{ fontSize: 10, color: 'rgba(0,255,136,0.5)', marginTop: 5, fontFamily: 'monospace' }}>semua invois terisi</p>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: 22, fontWeight: 700, color: '#ff6b6b', fontFamily: 'monospace', lineHeight: 1, marginBottom: 8 }}>
+                  {missingInvoices.length}
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, maxHeight: 72, overflowY: 'auto' }}>
+                  {missingInvoices.map(inv => {
+                    const prefix = String(inv).slice(0, 3).toUpperCase()
+                    const pfx = INVOIS_PREFIX_MAP[prefix]
+                    return (
+                      <div key={inv} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        {pfx && (
+                          <span style={{ ...RK_BADGE_BASE, background: pfx.bg, color: pfx.color, border: `1px solid ${pfx.border}`, fontSize: 9 }}>
+                            {prefix}
+                          </span>
+                        )}
+                        <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.65)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{inv}</span>
+                      </div>
+                    )
+                  })}
                 </div>
-              ))}
+              </>
+            )}
+          </div>
+
+          {/* Card 3: Total Batang + Volume (gabungan) */}
+          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div>
+              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>total batang</p>
+              <p style={{ fontSize: 20, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', lineHeight: 1 }}>{totalBatang.toLocaleString('id')}</p>
+              <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+                {SORTIMENS.map(m => (
+                  <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>{m}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.55)', fontFamily: 'monospace' }}>{sortBatang[m].toLocaleString('id')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
+              <p style={{ fontSize: 10, color: 'rgba(55,145,101,0.65)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>total volume</p>
+              <p style={{ fontSize: 20, fontWeight: 700, color: '#379165', fontFamily: 'monospace', lineHeight: 1 }}>
+                {totalVolume.toFixed(3)} <span style={{ fontSize: 10, fontWeight: 400, color: 'rgba(55,145,101,0.5)' }}>m³</span>
+              </p>
+              <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+                {SORTIMENS.map(m => (
+                  <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(55,145,101,0.5)', fontFamily: 'monospace' }}>{m}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(55,145,101,0.8)', fontFamily: 'monospace' }}>{sortVolume[m].toFixed(3)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+
+          {/* Card 4: Sisa Persediaan */}
           <div style={{ background: 'rgba(255,170,0,0.04)', border: '1px solid rgba(255,170,0,0.15)', borderRadius: 3, padding: '16px 20px', display: 'flex', gap: 16, alignItems: 'center' }}>
             <div style={{ flexShrink: 0 }}>
               <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.55)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>sisa persediaan</p>
@@ -1033,6 +1347,7 @@ export default function RegisterKapling() {
               ))}
             </div>
           </div>
+
         </div>
       )}
 
@@ -1279,6 +1594,71 @@ export default function RegisterKapling() {
         </div>
       )}
 
+      {/* Fix Prefix Invois modal */}
+      {showFixPrefix && (() => {
+        const entries = Object.values(fixPrefixMap)
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+            <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', maxHeight: '80vh' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '20px 24px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                <div>
+                  <p style={{ fontWeight: 600, color: '#f0f0f0', fontFamily: 'monospace', fontSize: 13 }}>perbaiki prefix invois</p>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>
+                    dicocokkan dari DK310 Pengurangan · {entries.length} nomor invois akan diperbarui
+                  </p>
+                </div>
+                <button onClick={() => setShowFixPrefix(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
+              </div>
+
+              <div style={{ overflowY: 'auto', flex: 1, minHeight: 0, padding: '8px 24px' }}>
+                {entries.length === 0 ? (
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', padding: '24px 0', textAlign: 'center' }}>
+                    tidak ada nomor invois yang bisa dicocokkan dengan DK310 Pengurangan.
+                  </p>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                        <th style={{ padding: '6px 0', textAlign: 'left', fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>No. Invois (lama)</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', width: 36 }}>Kpl</th>
+                        <th style={{ padding: '6px 0', textAlign: 'right', fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Menjadi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {entries.map(({ noInvois, count, prefix }) => {
+                        const v = INVOIS_PREFIX_MAP[prefix]
+                        return (
+                          <tr key={noInvois} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <td style={{ padding: '8px 0', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>{noInvois}</td>
+                            <td style={{ padding: '8px 8px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 11 }}>{count}</td>
+                            <td style={{ padding: '8px 0', textAlign: 'right' }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <span style={{ ...RK_BADGE_BASE, background: v.bg, color: v.color, border: `1px solid ${v.border}` }}>{prefix}</span>
+                                <span style={{ color: 'rgba(255,255,255,0.75)' }}>{noInvois}</span>
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                <button onClick={() => setShowFixPrefix(false)} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
+                <button onClick={handleApplyFixPrefix} disabled={fixPrefixSaving || entries.length === 0}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 11, borderRadius: 3, fontFamily: 'monospace', fontWeight: 700, border: 'none', cursor: (fixPrefixSaving || !entries.length) ? 'not-allowed' : 'pointer', background: (fixPrefixSaving || !entries.length) ? 'rgba(255,170,0,0.15)' : 'rgba(255,170,0,0.9)', color: (fixPrefixSaving || !entries.length) ? 'rgba(255,170,0,0.4)' : '#0a0a0a' }}
+                >
+                  {fixPrefixSaving && <Loader2 size={11} className="animate-spin"/>}
+                  {fixPrefixSaving ? 'menyimpan...' : `terapkan ${entries.length} invois`}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Edit modal */}
       {editRow && (() => {
         const iStyle = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '6px 10px', color: '#f0f0f0', fontFamily: 'monospace', fontSize: 12, width: '100%', boxSizing: 'border-box', outline: 'none' }
@@ -1380,12 +1760,21 @@ export default function RegisterKapling() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                     {[
                       { label: 'No. Invois', key: 'no_invois', span: 2 },
-                      { label: 'DKHP',       key: 'dkhp' },
-                      { label: 'SKSHHK',     key: 'skshhk', span: 2 },
-                      { label: 'Pembeli',    key: 'pembeli' },
+                      { label: 'DKHP',       key: 'dkhp',    alignEnd: true },
+                      { label: 'Pembeli',    key: 'pembeli', span: 2 },
+                      { label: 'SKSHHK',     key: 'skshhk',  alignEnd: true },
                     ].map(f => (
-                      <div key={f.key} style={f.span === 2 ? { gridColumn: 'span 2' } : {}}>
-                        <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4, fontFamily: 'monospace' }}>{f.label}</label>
+                      <div key={f.key} style={{ ...(f.span === 2 ? { gridColumn: 'span 2' } : {}), ...(f.alignEnd ? { alignSelf: 'end' } : {}) }}>
+                        <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4, fontFamily: 'monospace' }}>
+                          {f.label}
+                          {f.key === 'no_invois' && (
+                            <span style={{ marginLeft: 8, display: 'inline-flex', gap: 4 }}>
+                              {Object.entries(INVOIS_PREFIX_MAP).map(([k, v]) => (
+                                <span key={k} title={v.desc} style={{ ...RK_BADGE_BASE, background: v.bg, color: v.color, border: `1px solid ${v.border}`, fontSize: 9 }}>{k}</span>
+                              ))}
+                            </span>
+                          )}
+                        </label>
                         <input type="text" value={editRow[f.key] ?? ''} onChange={e => setEditRow(prev => ({ ...prev, [f.key]: e.target.value }))} className="rk-input" style={{ ...iStyle }}/>
                       </div>
                     ))}
@@ -1728,12 +2117,21 @@ export default function RegisterKapling() {
                                 ? (displayDate(row.tgl_kapling) ?? <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>)
                                 : c.key === 'pembeli'
                                   ? (getPembeliName(row.pembeli) ?? <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>)
-                                  : (row[c.key] ?? <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>)
+                                  : c.key === 'no_invois'
+                                    ? <InvoisBadge val={row.no_invois}/>
+                                    : c.key === 'periode'
+                                      ? (row.periode ? <span>{row.periode}</span> : <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>)
+                                      : (row[c.key] ?? <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>)
                         }
                       </td>
                     ))}
                     <td style={{ padding: '6px 8px' }}>
                       <div className="rk-actions" style={{ display: 'flex', alignItems: 'center', gap: 3, opacity: 0, transition: 'opacity 0.15s' }}>
+                        <button onClick={() => handleOpenDkhpModal([row])} title="Input DKHP"
+                          style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: row.dkhp ? '#00ff88' : 'rgba(255,255,255,0.3)' }}
+                          onMouseEnter={e => { e.currentTarget.style.color = '#00ff88'; e.currentTarget.style.background = 'rgba(0,255,136,0.07)' }}
+                          onMouseLeave={e => { e.currentTarget.style.color = row.dkhp ? '#00ff88' : 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
+                        ><FileBarChart2 size={12}/></button>
                         <button onClick={() => setEditRow({ ...row })}
                           style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}
                           onMouseEnter={e => { e.currentTarget.style.color = '#f0f0f0'; e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
@@ -1805,6 +2203,172 @@ export default function RegisterKapling() {
           </div>
         )
       })()}
+
+      {/* DKHP Import Preview */}
+      {dkhpImportPreview && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => !dkhpImportSaving && setDkhpImportPreview(null)}>
+          <div style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: 24, width: 500, maxHeight: '80vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#f0f0f0', fontSize: 13 }}>
+                <FileBarChart2 size={13} style={{ display: 'inline', marginRight: 8, color: '#00ff88' }}/>
+                Import DKHP — {dkhpImportPreview.dkhpList.length} file
+              </span>
+              <button onClick={() => setDkhpImportPreview(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}><X size={14}/></button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              {dkhpImportPreview.dkhpList.map((d, i) => (
+                <div key={i} style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: d.conflicts.length ? 8 : 0 }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{d.fileName}</span>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: '#00ff88' }}>DKHP {d.dkhpNo}</span>
+                      <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{d.matched.length} kapling</span>
+                      {d.unmatched.length > 0 && <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>{d.unmatched.length} tidak cocok</span>}
+                    </div>
+                  </div>
+                  {d.conflicts.length > 0 && (
+                    <div style={{ padding: '6px 8px', background: 'rgba(255,170,0,0.07)', borderRadius: 3, border: '1px solid rgba(255,170,0,0.18)' }}>
+                      <p style={{ fontFamily: 'monospace', fontSize: 10, color: '#ffaa00', marginBottom: 4 }}>{d.conflicts.length} konflik:</p>
+                      {d.conflicts.map(r => (
+                        <div key={r.id} style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.5)', display: 'flex', justifyContent: 'space-between' }}>
+                          <span>{r.no_kapling}</span>
+                          <span style={{ color: '#ffaa00' }}>DKHP {r.dkhp} → {d.dkhpNo}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {dkhpImportPreview.errors.map((err, i) => (
+                <div key={i} style={{ padding: '8px 12px', background: 'rgba(255,107,107,0.05)', border: '1px solid rgba(255,107,107,0.15)', borderRadius: 4, fontFamily: 'monospace', fontSize: 11, color: '#ff6b6b' }}>
+                  {err.fileName} — {err.message}
+                </div>
+              ))}
+            </div>
+
+            {(() => {
+              const totalConflicts = dkhpImportPreview.dkhpList.reduce((s, d) => s + d.conflicts.length, 0)
+              const totalMatched   = dkhpImportPreview.dkhpList.reduce((s, d) => s + d.matched.length, 0)
+              return (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                  <button onClick={() => setDkhpImportPreview(null)}
+                    style={{ padding: '7px 14px', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>
+                    batal
+                  </button>
+                  {totalConflicts > 0 && (
+                    <button onClick={() => handleDkhpImportSave(true)} disabled={dkhpImportSaving}
+                      style={{ padding: '7px 14px', background: 'rgba(255,170,0,0.1)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 3, color: '#ffaa00', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>
+                      lewati konflik ({totalConflicts})
+                    </button>
+                  )}
+                  <button onClick={() => handleDkhpImportSave(false)} disabled={dkhpImportSaving}
+                    style={{ padding: '7px 14px', background: '#00ff88', border: 'none', borderRadius: 3, color: '#0a0a0a', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {dkhpImportSaving ? <Loader2 size={12} className="animate-spin"/> : null}
+                    simpan {totalMatched - (dkhpImportSaving ? 0 : 0)} kapling
+                  </button>
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* DKHP Modal */}
+      {showDkhpModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => !dkhpSaving && setShowDkhpModal(false)}>
+          <div style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: 24, width: 440, maxHeight: '80vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#f0f0f0', fontSize: 13 }}>
+                <FileBarChart2 size={13} style={{ display: 'inline', marginRight: 8, color: '#00ff88' }}/>
+                Input DKHP
+              </span>
+              <button onClick={() => setShowDkhpModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}><X size={14}/></button>
+            </div>
+
+            {/* Kapling list */}
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+                {dkhpModalRows.length} kapling dipilih
+              </p>
+              <div style={{ maxHeight: 120, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {dkhpModalRows.map(r => (
+                  <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: 3, fontFamily: 'monospace', fontSize: 11 }}>
+                    <span style={{ color: 'rgba(255,255,255,0.7)' }}>{r.no_kapling}</span>
+                    {r.dkhp && (
+                      <span style={{ fontSize: 10, color: r.dkhp !== dkhpInput.trim() && dkhpInput.trim() ? '#ffaa00' : '#00ff88' }}>
+                        DKHP {r.dkhp}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {dkhpStep === 'input' && (
+              <>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.45)', display: 'block', marginBottom: 6 }}>No. DKHP</label>
+                  <input
+                    autoFocus
+                    value={dkhpInput}
+                    onChange={e => setDkhpInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleCheckDkhp()}
+                    placeholder="contoh: 9 atau 12"
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, padding: '8px 10px', color: '#f0f0f0', fontFamily: 'monospace', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                  <button onClick={() => setShowDkhpModal(false)}
+                    style={{ padding: '7px 14px', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>
+                    batal
+                  </button>
+                  <button onClick={handleCheckDkhp} disabled={!dkhpInput.trim()}
+                    style={{ padding: '7px 14px', background: dkhpInput.trim() ? '#00ff88' : 'rgba(0,255,136,0.2)', border: 'none', borderRadius: 3, color: '#0a0a0a', cursor: dkhpInput.trim() ? 'pointer' : 'default', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}>
+                    simpan
+                  </button>
+                </div>
+              </>
+            )}
+
+            {dkhpStep === 'confirm-conflicts' && (
+              <>
+                <div style={{ marginBottom: 16, padding: '10px 12px', background: 'rgba(255,170,0,0.07)', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 4 }}>
+                  <p style={{ fontFamily: 'monospace', fontSize: 11, color: '#ffaa00', marginBottom: 8, fontWeight: 700 }}>
+                    {dkhpConflicts.length} kapling sudah memiliki DKHP berbeda:
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {dkhpConflicts.map(r => (
+                      <div key={r.id} style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.6)', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{r.no_kapling}</span>
+                        <span style={{ color: '#ffaa00' }}>DKHP {r.dkhp} → {dkhpInput.trim()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                  <button onClick={() => setShowDkhpModal(false)}
+                    style={{ padding: '7px 14px', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>
+                    batal
+                  </button>
+                  <button onClick={() => handleSaveDkhp(true)} disabled={dkhpSaving}
+                    style={{ padding: '7px 14px', background: 'rgba(255,170,0,0.12)', border: '1px solid rgba(255,170,0,0.3)', borderRadius: 3, color: '#ffaa00', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>
+                    lewati yang konflik
+                  </button>
+                  <button onClick={() => handleSaveDkhp(false)} disabled={dkhpSaving}
+                    style={{ padding: '7px 14px', background: '#00ff88', border: 'none', borderRadius: 3, color: '#0a0a0a', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}>
+                    {dkhpSaving ? <Loader2 size={12} className="animate-spin"/> : 'update semua'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

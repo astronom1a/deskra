@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { ArrowLeft, FileBarChart2, ChevronDown, ChevronRight, Loader2, AlertCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import Toast, { useToast } from '../components/Toast'
@@ -31,8 +31,98 @@ function SummaryCard({ label, btg, m3 }) {
   )
 }
 
+function TotalCard({ btg, m3 }) {
+  return (
+    <div style={{
+      background: 'rgba(0,255,136,0.04)',
+      border: '1px solid rgba(0,255,136,0.15)',
+      borderRadius: 4,
+      padding: '14px 18px',
+      minWidth: 0,
+    }}>
+      <p style={{ fontSize: 10, color: '#00ff88', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+        Jumlah Pengurangan
+      </p>
+      <p style={{ fontSize: 22, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', lineHeight: 1 }}>
+        {fmt(btg)} <span style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>btg</span>
+      </p>
+      <p style={{ fontSize: 14, fontWeight: 600, color: '#379165', fontFamily: 'monospace', marginTop: 6 }}>
+        {fmt(m3, 3)} <span style={{ fontSize: 10, fontWeight: 400, color: 'rgba(55,145,101,0.6)' }}>m³</span>
+      </p>
+    </div>
+  )
+}
+
+function JenisCard({ jenis, btg, m3, sortimen }) {
+  const kb  = sortimen.filter(s => s.cat === 'KB'  && (s.btg || s.m3))
+  const tbn = sortimen.filter(s => s.cat === 'TBN' && (s.btg || s.m3))
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.02)',
+      border: '1px solid rgba(255,255,255,0.07)',
+      borderRadius: 4,
+      padding: '14px 16px',
+      minWidth: 0,
+    }}>
+      <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+        {jenis}
+      </p>
+      <p style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', lineHeight: 1 }}>
+        {fmt(btg)} <span style={{ fontSize: 10, fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>btg</span>
+      </p>
+      <p style={{ fontSize: 12, fontWeight: 600, color: '#379165', fontFamily: 'monospace', marginTop: 4, marginBottom: 12 }}>
+        {fmt(m3, 3)} <span style={{ fontSize: 10, fontWeight: 400, color: 'rgba(55,145,101,0.5)' }}>m³</span>
+      </p>
+      {[{ label: 'KB', rows: kb }, { label: 'TBN', rows: tbn }].filter(g => g.rows.length > 0).map(group => (
+        <div key={group.label} style={{ marginBottom: 8 }}>
+          <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
+            {group.label}
+          </p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, fontFamily: 'monospace' }}>
+            <tbody>
+              {group.rows.map(s => (
+                <tr key={s.code}>
+                  <td style={{ padding: '2px 0', color: 'rgba(255,255,255,0.45)', paddingRight: 8 }}>{s.label}</td>
+                  <td style={{ padding: '2px 0', textAlign: 'right', color: 'rgba(255,255,255,0.7)', fontWeight: 600, whiteSpace: 'nowrap' }}>{fmt(s.btg)}</td>
+                  <td style={{ padding: '2px 0 2px 6px', textAlign: 'right', color: 'rgba(55,145,101,0.8)', whiteSpace: 'nowrap' }}>{fmt(s.m3, 3)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function buildBreakdown(sbList) {
+  const jenisMap = {}
+  let totalBtg = 0, totalM3 = 0
+  for (const sb of sbList) {
+    const j = sb.jenis || 'Lainnya'
+    if (!jenisMap[j]) jenisMap[j] = { btg: 0, m3: 0, mutu: {} }
+    jenisMap[j].btg += sb.jumlah_total_btg || 0
+    jenisMap[j].m3  += sb.jumlah_total_m3  || 0
+    totalBtg += sb.jumlah_total_btg || 0
+    totalM3  += sb.jumlah_total_m3  || 0
+    for (const m of sb.tabel_dk310_surat_bukti_mutu || []) {
+      if (!jenisMap[j].mutu[m.mutu_code]) {
+        jenisMap[j].mutu[m.mutu_code] = { code: m.mutu_code, label: m.mutu_label, cat: m.kategori, btg: 0, m3: 0 }
+      }
+      jenisMap[j].mutu[m.mutu_code].btg += m.btg || 0
+      jenisMap[j].mutu[m.mutu_code].m3  += m.m3  || 0
+    }
+  }
+  return {
+    totalBtg, totalM3,
+    jenisList: Object.entries(jenisMap).map(([jenis, val]) => ({
+      jenis, btg: val.btg, m3: val.m3, sortimen: Object.values(val.mutu),
+    })),
+  }
+}
+
 const CARDS = [
-  { key: 'penambahan',          label: 'Penambahan' },
+  { key: 'penambahan',         label: 'Penambahan' },
   { key: 'sisa_lalu',          label: 'Sisa yang Lalu' },
   { key: 'jumlah_persediaan',  label: 'Jumlah Persediaan' },
   { key: 'jumlah_pengurangan', label: 'Jumlah Pengurangan' },
@@ -53,6 +143,8 @@ const TD_MUTU = { padding: '3px 12px 3px 0', fontSize: 11, whiteSpace: 'nowrap' 
 export default function Dk310Detail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const backPath = location.pathname.includes('pengurangan') ? '/dk310/pengurangan' : '/dk310/penambahan'
   const { toast, showToast } = useToast(3000)
 
   const [period,     setPeriod]     = useState(null)
@@ -115,7 +207,7 @@ export default function Dk310Detail() {
         {/* Header */}
         <div style={{ marginBottom: 20 }}>
           <button
-            onClick={() => navigate('/dk310/penambahan')}
+            onClick={() => navigate(backPath)}
             style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', padding: '0 0 12px 0' }}
           >
             <ArrowLeft size={14} /> Kembali
@@ -135,11 +227,23 @@ export default function Dk310Detail() {
         </div>
 
         {/* Summary Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 28 }}>
-          {CARDS.map(c => (
-            <SummaryCard key={c.key} label={c.label} btg={period[c.key + '_btg']} m3={period[c.key + '_m3']} />
-          ))}
-        </div>
+        {period.jenis === 'pengurangan' ? (() => {
+          const bd = buildBreakdown(sbList)
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: `200px repeat(${bd.jenisList.length}, minmax(200px, 1fr))`, gap: 10, marginBottom: 28 }}>
+              <TotalCard btg={bd.totalBtg} m3={bd.totalM3} />
+              {bd.jenisList.map(j => (
+                <JenisCard key={j.jenis} jenis={j.jenis} btg={j.btg} m3={j.m3} sortimen={j.sortimen} />
+              ))}
+            </div>
+          )
+        })() : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 28 }}>
+            {CARDS.map(c => (
+              <SummaryCard key={c.key} label={c.label} btg={period[c.key + '_btg']} m3={period[c.key + '_m3']} />
+            ))}
+          </div>
+        )}
 
         {/* Section label */}
         <p style={{ fontSize: 10, color: '#00ff88', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>

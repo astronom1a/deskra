@@ -22,17 +22,15 @@ const MUTU_COLS = [
   { code: 'JML_TBN',  label: 'Jumlah TBN',        cat: 'TBN', col: 21 },
 ]
 
+const MONTH_MAP = {
+  januari:1, februari:2, maret:3, april:4, mei:5, juni:6,
+  juli:7, agustus:8, september:9, oktober:10, november:11, desember:12,
+}
+
 function numOrNull(v) {
   if (v === null || v === undefined || v === '') return null
   const n = Number(v)
   return isNaN(n) ? null : n
-}
-
-function findRow(rows, keyword, startIdx = 10) {
-  for (let i = startIdx; i < rows.length; i++) {
-    if (rows[i]?.[0] && String(rows[i][0]).toLowerCase().includes(keyword.toLowerCase())) return i
-  }
-  return -1
 }
 
 function nextNonBlank(rows, fromIdx) {
@@ -41,34 +39,47 @@ function nextNonBlank(rows, fromIdx) {
   return j
 }
 
+function dayToDate(dayNum, masa_pembayaran) {
+  const m = masa_pembayaran.toLowerCase().match(/([a-z]+)\s+(\d{4})/)
+  if (!m) return String(dayNum)
+  const month = MONTH_MAP[m[1]] ?? 1
+  const year  = Number(m[2]) % 100
+  return `${String(dayNum).padStart(2,'0')}-${String(month).padStart(2,'0')}-${String(year).padStart(2,'0')}`
+}
+
 function parseHeader(rows) {
   const kph = String(rows[2]?.[1] || '').replace(/^:\s*/, '').trim()
   const masaRaw = String(rows[3]?.[18] || '')
   const masa_pembayaran = masaRaw.replace(/^Masa Pembayaran\s*:\s*/i, '').trim()
-  const tglRaw = String(rows[3]?.[24] || '')
-  const tglStr = tglRaw.replace(/^Tgl Cetak\s*:\s*/i, '').trim()
+  const tglRaw  = String(rows[3]?.[24] || '')
+  const tglStr  = tglRaw.replace(/^Tgl Cetak\s*:\s*/i, '').trim()
   const tglParts = tglStr.split('-')
   const tanggal_cetak = tglParts.length === 3
     ? `${tglParts[2]}-${tglParts[1]}-${tglParts[0]}`
     : null
   const masaMatch = masa_pembayaran.match(/^([IVXLC]+)\s*[-–]\s*\w+\s*(\d{4})/i)
   const periode = masaMatch ? `${masaMatch[1]}-${masaMatch[2]}` : masa_pembayaran
-  const bkphRow = rows.find((r, i) => i > 180 && r?.[0] && /^BKPH/i.test(String(r[0])))
+  const bkphRow = rows.find(r => r?.[0] && /^BKPH/i.test(String(r[0])))
   const bkph = bkphRow ? String(bkphRow[0]).trim() : ''
   return { kph, bkph, masa_pembayaran, periode, tanggal_cetak }
 }
 
-function parseSuratBukti(rows) {
+function parseSuratBukti(rows, masa_pembayaran) {
   const list = []
   let i = 10
   while (i < rows.length) {
     const btgRow = rows[i]
     if (!btgRow) { i++; continue }
     const col0 = btgRow[0]
-    if (col0 && /^(penambahan|sisa yang lalu|jumlah persediaan|jumlah pengurangan|sisa sekarang)/i.test(String(col0))) break
+    // stop at total row
+    if (col0 && /^t[\s.]*o[\s.]*t[\s.]*a[\s.]*l/i.test(String(col0))) break
+    // skip rows without a nomor_surat in col 2
     if (!col0 || !btgRow[2]) { i++; continue }
-    const jenis = String(col0).trim()
-    const tanggal = String(btgRow[1] || '').trim()
+    const jenis       = String(col0).trim()
+    const dayOrDate   = btgRow[1]
+    const tanggal     = typeof dayOrDate === 'number'
+      ? dayToDate(dayOrDate, masa_pembayaran)
+      : String(dayOrDate || '').trim()
     const nomor_surat = String(btgRow[2]).trim()
     let j = i + 1
     while (j < rows.length && (!rows[j] || rows[j].every(v => v === null))) j++
@@ -95,37 +106,37 @@ function parseSuratBukti(rows) {
 }
 
 function parseSummary(rows) {
-  const penIdx          = findRow(rows, 'jumlah penambahan')
-  const sisaLaluIdx     = findRow(rows, 'sisa yang lalu')
-  const persIdx         = findRow(rows, 'jumlah persediaan')
-  const penguranganIdx  = findRow(rows, 'jumlah pengurangan')
-  const sisaIdx         = findRow(rows, 'sisa sekarang')
-  const g = (idx) => idx >= 0 ? numOrNull(rows[idx]?.[22]) : null
+  const totalIdx = rows.findIndex(
+    r => r?.[0] && /^t[\s.]*o[\s.]*t[\s.]*a[\s.]*l/i.test(String(r[0]))
+  )
+  if (totalIdx < 0) return { jumlah_pengurangan_btg: null, jumlah_pengurangan_m3: null }
+  const btgRow = rows[totalIdx]
+  const m3Idx  = nextNonBlank(rows, totalIdx + 1)
   return {
-    penambahan_btg:         g(penIdx),
-    penambahan_m3:          g(nextNonBlank(rows, penIdx + 1)),
-    sisa_lalu_btg:          g(sisaLaluIdx),
-    sisa_lalu_m3:           g(nextNonBlank(rows, sisaLaluIdx + 1)),
-    jumlah_persediaan_btg:  g(persIdx),
-    jumlah_persediaan_m3:   g(nextNonBlank(rows, persIdx + 1)),
-    jumlah_pengurangan_btg: g(penguranganIdx),
-    jumlah_pengurangan_m3:  g(nextNonBlank(rows, penguranganIdx + 1)),
-    sisa_sekarang_btg:      g(sisaIdx),
-    sisa_sekarang_m3:       g(nextNonBlank(rows, sisaIdx + 1)),
+    penambahan_btg:         null,
+    penambahan_m3:          null,
+    sisa_lalu_btg:          null,
+    sisa_lalu_m3:           null,
+    jumlah_persediaan_btg:  null,
+    jumlah_persediaan_m3:   null,
+    jumlah_pengurangan_btg: numOrNull(btgRow[22]),
+    jumlah_pengurangan_m3:  numOrNull(rows[m3Idx]?.[22]),
+    sisa_sekarang_btg:      null,
+    sisa_sekarang_m3:       null,
   }
 }
 
-export function parseDk310(file) {
+export function parseDk310m(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = (e) => {
       try {
-        const wb = XLSX.read(e.target.result, { type: 'binary', raw: true })
-        const ws = wb.Sheets[wb.SheetNames[0]]
+        const wb   = XLSX.read(e.target.result, { type: 'binary', raw: true })
+        const ws   = wb.Sheets[wb.SheetNames[0]]
         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null })
-        const header = parseHeader(rows)
-        const suratBuktiList = parseSuratBukti(rows)
-        const summary = parseSummary(rows)
+        const header        = parseHeader(rows)
+        const suratBuktiList = parseSuratBukti(rows, header.masa_pembayaran)
+        const summary       = parseSummary(rows)
         resolve({ periodData: { ...header, ...summary }, suratBuktiList })
       } catch (err) {
         reject(err)

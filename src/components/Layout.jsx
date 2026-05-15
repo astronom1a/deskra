@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Link2, Users, Users2, Layers, Package,
   ChevronDown, ChevronRight, ClipboardList, Wallet, ScrollText,
   Settings as SettingsIcon, Building2, ShieldCheck, LogOut,
-  ArrowLeft, FileBarChart2,
+  ArrowLeft, FileBarChart2, ScanLine,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
@@ -18,11 +18,12 @@ const operatorNavItems = [
   { label: 'Dashboard',       path: '/dashboard',       icon: LayoutDashboard },
   { label: 'Register Kapling',path: '/register-kapling',icon: ClipboardList },
   { label: 'DKHP SKSHHK',    path: '/dkhp-skshhk',     icon: ScrollText },
+  { label: 'Kayu Bernomor',  path: '/kayu-bernomor',   icon: ScanLine },
   {
     label: 'DK310', icon: FileBarChart2,
     children: [
-      { label: 'DK310 Penambahan',  path: '/dk310/penambahan',  icon: FileBarChart2 },
-      { label: 'DK310 Pengurangan', path: '/dk310/pengurangan', icon: FileBarChart2 },
+      { label: 'DK310', path: '/dk310/penambahan',  icon: FileBarChart2, indicator: '+' },
+      { label: 'DK310', path: '/dk310/pengurangan', icon: FileBarChart2, indicator: '-' },
     ],
   },
   {
@@ -128,7 +129,15 @@ function SidebarItem({ item }) {
       className={({ isActive }) => `sb-link ${isActive ? 'sb-link-active' : ''}`}
     >
       {item.icon && <item.icon size={14} />}
-      <span className="font-mono">{item.label}</span>
+      <span className="font-mono flex items-center gap-0.5">
+        {item.label}
+        {item.indicator && (
+          <span style={{
+            fontFamily: 'monospace', fontWeight: 700, fontSize: 13,
+            color: item.indicator === '+' ? '#00ff88' : '#ff6b6b',
+          }}>{item.indicator}</span>
+        )}
+      </span>
     </NavLink>
   )
 }
