@@ -141,10 +141,11 @@ export default function Dk310() {
       await supabase.from('tabel_dk310_periods').delete().eq('id', period.id)
       setImporting(false); showToast(mutuErr.message, 'error'); return
     }
+    const importedCount = preview.suratBuktiList.length
     setPreview(null)
     await fetchPeriods()
     setImporting(false)
-    showToast(`Berhasil import: ${preview.suratBuktiList.length} surat bukti`)
+    showToast(`Berhasil import: ${importedCount} surat bukti`)
   }
 
   const totals = periods.reduce((acc, p) => {
