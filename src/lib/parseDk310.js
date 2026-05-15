@@ -28,11 +28,17 @@ function numOrNull(v) {
   return isNaN(n) ? null : n
 }
 
-function findRow(rows, keyword, startIdx = 180) {
-  for (let i = startIdx; i < Math.min(startIdx + 25, rows.length); i++) {
+function findRow(rows, keyword, startIdx = 150) {
+  for (let i = startIdx; i < Math.min(startIdx + 80, rows.length); i++) {
     if (rows[i]?.[0] && String(rows[i][0]).toLowerCase().includes(keyword.toLowerCase())) return i
   }
   return -1
+}
+
+function nextNonBlank(rows, fromIdx) {
+  let j = fromIdx
+  while (j < rows.length && (!rows[j] || rows[j].every(v => v === null))) j++
+  return j
 }
 
 function parseHeader(rows) {
@@ -97,15 +103,15 @@ function parseSummary(rows) {
   const g = (idx) => idx >= 0 ? numOrNull(rows[idx]?.[22]) : null
   return {
     penambahan_btg:         g(penIdx),
-    penambahan_m3:          g(penIdx + 1),
+    penambahan_m3:          g(nextNonBlank(rows, penIdx + 1)),
     sisa_lalu_btg:          g(sisaLaluIdx),
-    sisa_lalu_m3:           g(sisaLaluIdx + 1),
+    sisa_lalu_m3:           g(nextNonBlank(rows, sisaLaluIdx + 1)),
     jumlah_persediaan_btg:  g(persIdx),
-    jumlah_persediaan_m3:   g(persIdx + 1),
+    jumlah_persediaan_m3:   g(nextNonBlank(rows, persIdx + 1)),
     jumlah_pengurangan_btg: g(penguranganIdx),
-    jumlah_pengurangan_m3:  g(penguranganIdx + 1),
+    jumlah_pengurangan_m3:  g(nextNonBlank(rows, penguranganIdx + 1)),
     sisa_sekarang_btg:      g(sisaIdx),
-    sisa_sekarang_m3:       g(sisaIdx + 1),
+    sisa_sekarang_m3:       g(nextNonBlank(rows, sisaIdx + 1)),
   }
 }
 
