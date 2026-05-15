@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FileBarChart2, Upload, Loader2, AlertCircle, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -123,7 +123,10 @@ export default function Dk310() {
       .from('tabel_dk310_surat_bukti')
       .insert(sbPayload)
       .select('id')
-    if (sbErr) { setImporting(false); showToast(sbErr.message, 'error'); return }
+    if (sbErr) {
+      await supabase.from('tabel_dk310_periods').delete().eq('id', period.id)
+      setImporting(false); showToast(sbErr.message, 'error'); return
+    }
 
     const mutuPayload = []
     preview.suratBuktiList.forEach((sb, idx) => {
@@ -134,11 +137,14 @@ export default function Dk310() {
       }
     })
     const { error: mutuErr } = await supabase.from('tabel_dk310_surat_bukti_mutu').insert(mutuPayload)
-    setImporting(false)
-    if (mutuErr) { showToast(mutuErr.message, 'error'); return }
-    showToast(`Berhasil import: ${preview.suratBuktiList.length} surat bukti`)
+    if (mutuErr) {
+      await supabase.from('tabel_dk310_periods').delete().eq('id', period.id)
+      setImporting(false); showToast(mutuErr.message, 'error'); return
+    }
     setPreview(null)
-    fetchPeriods()
+    await fetchPeriods()
+    setImporting(false)
+    showToast(`Berhasil import: ${preview.suratBuktiList.length} surat bukti`)
   }
 
   const totals = periods.reduce((acc, p) => {
@@ -249,10 +255,10 @@ export default function Dk310() {
                   <th style={TH_SUB}></th>
                   <th style={TH_SUB}></th>
                   {CARDS.map(c => (
-                    <>
-                      <th key={c.key + '_btg'} style={{ ...TH_SUB, color: 'rgba(255,255,255,0.5)' }}>Btg</th>
-                      <th key={c.key + '_m3'}  style={{ ...TH_SUB, color: 'rgba(55,145,101,0.8)' }}>m³</th>
-                    </>
+                    <Fragment key={c.key}>
+                      <th style={{ ...TH_SUB, color: 'rgba(255,255,255,0.5)' }}>Btg</th>
+                      <th style={{ ...TH_SUB, color: 'rgba(55,145,101,0.8)' }}>m³</th>
+                    </Fragment>
                   ))}
                   <th style={TH_SUB}></th>
                 </tr>
@@ -269,10 +275,10 @@ export default function Dk310() {
                     <td style={TD}>{idx + 1}</td>
                     <td style={{ ...TD, color: '#00ff88', fontWeight: 600 }}>{p.periode}</td>
                     {CARDS.map(c => (
-                      <>
-                        <td key={c.key + '_btg'} style={{ ...TD, textAlign: 'right', color: '#f0f0f0' }}>{fmt(p[c.key + '_btg'])}</td>
-                        <td key={c.key + '_m3'}  style={{ ...TD, textAlign: 'right', color: '#379165' }}>{fmt(p[c.key + '_m3'], 3)}</td>
-                      </>
+                      <Fragment key={c.key}>
+                        <td style={{ ...TD, textAlign: 'right', color: '#f0f0f0' }}>{fmt(p[c.key + '_btg'])}</td>
+                        <td style={{ ...TD, textAlign: 'right', color: '#379165' }}>{fmt(p[c.key + '_m3'], 3)}</td>
+                      </Fragment>
                     ))}
                     <td style={{ ...TD, color: 'rgba(255,255,255,0.2)', textAlign: 'right' }}>
                       <ChevronRight size={14} />
