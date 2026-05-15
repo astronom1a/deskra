@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Link2, Users, Users2, Layers, Package,
   ChevronDown, ChevronRight, ClipboardList, Wallet, ScrollText,
   Settings as SettingsIcon, Building2, ShieldCheck, LogOut,
-  ArrowLeft,
+  ArrowLeft, FileBarChart2,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
@@ -18,6 +18,7 @@ const operatorNavItems = [
   { label: 'Dashboard',       path: '/dashboard',       icon: LayoutDashboard },
   { label: 'Register Kapling',path: '/register-kapling',icon: ClipboardList },
   { label: 'DKHP SKSHHK',    path: '/dkhp-skshhk',     icon: ScrollText },
+  { label: 'DK310',           path: '/dk310',            icon: FileBarChart2 },
   {
     label: 'Uang Kerja', icon: Wallet,
     children: [
