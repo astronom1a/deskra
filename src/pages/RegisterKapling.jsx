@@ -1193,7 +1193,7 @@ export default function RegisterKapling() {
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>data register kapling dari file dp kapling (.xlsx)</p>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
-          <button onClick={() => dkhpImportRef.current?.click()} title="Import DKHP dari PDF"
+          <button onClick={() => dkhpImportRef.current?.click()} title="Import DKHP dari Excel"
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '7px 9px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.07)'; e.currentTarget.style.color = '#00ff88'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.2)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
@@ -1244,7 +1244,7 @@ export default function RegisterKapling() {
         </div>
         <input ref={fileRef}   type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange}/>
         <input ref={invoisRef} type="file" accept=".pdf" multiple className="hidden" onChange={handleInvoisFileChange}/>
-        <input ref={dkhpImportRef} type="file" accept=".pdf" multiple className="hidden" onChange={handleDkhpImportFiles}/>
+        <input ref={dkhpImportRef} type="file" accept=".xlsx" multiple className="hidden" onChange={handleDkhpImportFiles}/>
       </div>
 
       {/* Summary cards */}
