@@ -820,35 +820,62 @@ export default function RegisterKapling() {
     const rowsByKapling = new Map(rows.map(r => [r.no_kapling, r]))
     const dkhpList = []
     const errors = []
+
     for (const file of files) {
       try {
         const arrayBuffer = await file.arrayBuffer()
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
-        let fullText = ''
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i)
-          const content = await page.getTextContent()
-          fullText += content.items.map(it => it.str).join(' ') + '\n'
+        const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true })
+        const ws = wb.Sheets[wb.SheetNames[0]]
+        const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null })
+
+        const dkhpCell = String(raw[6]?.[0] ?? '')
+        const dkhpMatch = dkhpCell.match(/2631602[.\s]*(\d+)/)
+        if (!dkhpMatch) {
+          errors.push({ fileName: file.name, message: 'Nomor DKHP tidak ditemukan' })
+          continue
         }
-        const dkhpMatch = fullText.match(/2631602[.\s]*(\d+)/)
-        if (!dkhpMatch) { errors.push({ fileName: file.name, message: 'Nomor DKHP tidak ditemukan' }); continue }
         const dkhpNo = String(parseInt(dkhpMatch[1], 10))
-        const kaplingNums = [...new Set(fullText.match(/2621302\d{6}/g) || [])]
+
+        const dataRows = raw.filter(row => Number.isFinite(row?.[0]))
+        if (!dataRows.length) {
+          errors.push({ fileName: file.name, message: 'Tidak ada data kayu ditemukan' })
+          continue
+        }
+
+        const sorts = new Set(dataRows.map(r => String(r[4] ?? '').trim().toUpperCase()))
+        const isAIII = sorts.has('AIII')
+
+        const normRange = (val) => {
+          if (!val && val !== 0) return ''
+          if (val instanceof Date) return `${val.getMonth() + 1}-${val.getDate()}`
+          return String(val).replace(/\//g, '-')
+        }
+
+        const kaplingNums = [...new Set(dataRows.map(r => String(r[1] ?? '').trim()).filter(Boolean))]
         const matched = kaplingNums.map(k => rowsByKapling.get(k)).filter(Boolean)
         const unmatched = kaplingNums.filter(k => !rowsByKapling.has(k))
         const conflicts = matched.filter(r => r.dkhp && String(r.dkhp) !== dkhpNo)
-        const aiiiPattern = /(2621302\d{6})\s+(2621302[\dA-Z]+)\w*\s+\w+\s+\w+\s+AIII\s+\w+\s+([\d.]+)\s+(\d+)\s+1\s+([\d.]+)/g
+
         const aiiiBatang = []
-        let bm
-        while ((bm = aiiiPattern.exec(fullText)) !== null) {
-          aiiiBatang.push({ no_kapling: bm[1], no_batang: bm[2], panjang: parseFloat(bm[3]), diameter: parseInt(bm[4], 10), volume: parseFloat(bm[5]) })
+        if (isAIII) {
+          for (const row of dataRows) {
+            const noKapling = String(row[1] ?? '').trim()
+            const noBatang  = String(row[2] ?? '').trim()
+            const panjang   = parseFloat(row[6])
+            const diameter  = parseInt(row[7], 10)
+            const volume    = parseFloat(row[9])
+            if (!noKapling || !noBatang) continue
+            aiiiBatang.push({ no_kapling: noKapling, no_batang: noBatang, panjang, diameter, volume })
+          }
         }
+
         dkhpList.push({ dkhpNo, matched, unmatched, conflicts, aiiiBatang, fileName: file.name })
       } catch {
-        errors.push({ fileName: file.name, message: 'Gagal membaca PDF' })
+        errors.push({ fileName: file.name, message: 'Gagal membaca Excel' })
       }
     }
-    if (!dkhpList.length) { toast('Tidak ada PDF DKHP yang bisa dibaca', 'error'); return }
+
+    if (!dkhpList.length) { toast('Tidak ada file Excel DKHP yang bisa dibaca', 'error'); return }
     setDkhpImportPreview({ dkhpList, errors })
   }
 
