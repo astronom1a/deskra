@@ -842,7 +842,7 @@ export default function RegisterKapling() {
         }
         const dkhpNo = String(parseInt(dkhpMatch[1], 10))
 
-        const dataRows = raw.filter(row => Number.isFinite(row?.[0]))
+        const dataRows = raw.filter(row => Number.isFinite(row?.[0]) && /^2621302\d{6}$/.test(String(row?.[1] ?? '').trim()))
         if (!dataRows.length) {
           errors.push({ fileName: file.name, message: 'Tidak ada data kayu ditemukan' })
           continue
