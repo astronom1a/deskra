@@ -821,6 +821,12 @@ export default function RegisterKapling() {
     const dkhpList = []
     const errors = []
 
+    const normRange = (val) => {
+      if (!val && val !== 0) return ''
+      if (val instanceof Date) return `${val.getMonth() + 1}-${val.getDate()}`
+      return String(val).replace(/\//g, '-')
+    }
+
     for (const file of files) {
       try {
         const arrayBuffer = await file.arrayBuffer()
@@ -844,12 +850,6 @@ export default function RegisterKapling() {
 
         const sorts = new Set(dataRows.map(r => String(r[4] ?? '').trim().toUpperCase()))
         const isAIII = sorts.has('AIII')
-
-        const normRange = (val) => {
-          if (!val && val !== 0) return ''
-          if (val instanceof Date) return `${val.getMonth() + 1}-${val.getDate()}`
-          return String(val).replace(/\//g, '-')
-        }
 
         const kaplingNums = [...new Set(dataRows.map(r => String(r[1] ?? '').trim()).filter(Boolean))]
         const matched = kaplingNums.map(k => rowsByKapling.get(k)).filter(Boolean)
