@@ -403,10 +403,7 @@ export default function Login() {
         </div>
 
         {/* Footer */}
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>
-            v{appVersion}
-          </p>
+        <div className="mt-6 text-center">
           <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>
             ©{' '}
             <a
