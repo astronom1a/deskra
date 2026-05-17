@@ -96,6 +96,10 @@ export default function Login() {
         }
         @keyframes mark-orbit { to { transform: rotate(360deg); } }
         @keyframes mark-pulse { 0%,100%{opacity:.35} 50%{opacity:.9} }
+        @keyframes badge-glow {
+          0%,100% { box-shadow: 0 0 0 0 rgba(0,255,136,0.2); }
+          50%      { box-shadow: 0 0 0 4px rgba(0,255,136,0); }
+        }
         .mark-spin  { transform-origin: 50% 50%; animation: mark-orbit 18s linear infinite; }
         .mark-pulse { animation: mark-pulse 2.4s ease-in-out infinite; }
         .login-input::placeholder { color: rgba(255,255,255,0.2); }
@@ -165,6 +169,105 @@ export default function Login() {
 
       {/* ── Content ─────────────────────────────────────────────────────────── */}
       <div className="relative z-10 w-full max-w-sm">
+
+        {/* Changelog badge */}
+        <div ref={changelogRef} style={{ position: 'absolute', top: 0, right: 0, zIndex: 40 }}>
+          <button
+            onClick={() => setShowChangelog(v => !v)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              background: showChangelog ? 'rgba(0,255,136,0.14)' : 'rgba(0,255,136,0.08)',
+              border: '1px solid rgba(0,255,136,0.22)',
+              borderRadius: 20,
+              padding: '5px 10px 5px 8px',
+              fontSize: 10,
+              color: '#00ff88',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              fontFamily: 'inherit',
+              animation: showChangelog ? 'none' : 'badge-glow 2.5s ease-in-out infinite',
+            }}
+          >
+            <span style={{ fontSize: 11 }}>✦</span>
+            <span style={{ fontSize: 9, opacity: 0.75 }}>v{appVersion}</span>
+          </button>
+
+          {showChangelog && (
+            <div style={{
+              position: 'absolute',
+              top: 38,
+              right: 0,
+              width: 220,
+              background: '#141414',
+              border: '1px solid rgba(0,255,136,0.18)',
+              borderRadius: 6,
+              padding: 14,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            }}>
+              {/* Popup header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <span style={{ fontSize: 9, letterSpacing: '1.5px', textTransform: 'uppercase', color: '#00ff88' }}>
+                  What's new
+                </span>
+                <span style={{
+                  fontSize: 8,
+                  background: 'rgba(0,255,136,0.1)',
+                  border: '1px solid rgba(0,255,136,0.2)',
+                  color: '#00ff88',
+                  padding: '2px 7px',
+                  borderRadius: 10,
+                }}>
+                  v{appVersion}
+                </span>
+              </div>
+
+              {/* Popup items */}
+              {latestChangelog.items.map((item, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  gap: 7,
+                  alignItems: 'flex-start',
+                  padding: '5px 0',
+                  borderBottom: i < latestChangelog.items.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                  fontSize: 10,
+                  color: 'rgba(255,255,255,0.6)',
+                  lineHeight: 1.4,
+                }}>
+                  <span style={{
+                    flexShrink: 0,
+                    fontWeight: 700,
+                    width: 12,
+                    textAlign: 'center',
+                    color: item.type === 'feat' ? '#00ff88' : 'rgba(255,255,255,0.3)',
+                  }}>
+                    {item.type === 'feat' ? '+' : '✦'}
+                  </span>
+                  <span>
+                    {item.text}
+                    {item.type === 'fix' && (
+                      <span style={{
+                        display: 'inline-block',
+                        fontSize: 8,
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: 'rgba(255,255,255,0.35)',
+                        padding: '0 4px',
+                        borderRadius: 2,
+                        marginLeft: 4,
+                        verticalAlign: 'middle',
+                        letterSpacing: '0.5px',
+                      }}>
+                        FIX
+                      </span>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Brand */}
         <div className="flex flex-col items-center mb-8">
