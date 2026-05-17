@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { version as appVersion } from '../../package.json'
+import { latestChangelog } from '../changelog'
 import { gsap } from 'gsap'
 
 export default function Login() {
@@ -12,8 +13,10 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState('')
+  const [showChangelog, setShowChangelog] = useState(false)
 
   const rootRef = useRef(null)
+  const changelogRef = useRef(null)
 
   // ── GSAP entrance ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -28,6 +31,18 @@ export default function Login() {
     }, rootRef)
     return () => ctx.revert()
   }, [])
+
+  // ── Click-outside handler for changelog popup ──────────────────────────────
+  useEffect(() => {
+    if (!showChangelog) return
+    const handleClickOutside = (e) => {
+      if (changelogRef.current && !changelogRef.current.contains(e.target)) {
+        setShowChangelog(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showChangelog])
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
