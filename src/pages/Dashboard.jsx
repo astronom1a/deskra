@@ -558,10 +558,10 @@ export default function Dashboard() {
               <table className="w-full">
                 <thead style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   <tr>
-                    <th className="text-left px-5 py-3 text-xs font-mono tracking-widest" style={{ color: '#3a3a3a' }}>PERIODE</th>
-                    <th className="hidden sm:table-cell text-left px-5 py-3 text-xs font-mono tracking-widest" style={{ color: '#3a3a3a' }}>TANGGAL</th>
-                    <th className="text-right px-5 py-3 text-xs font-mono tracking-widest" style={{ color: '#3a3a3a' }}>TOTAL UK</th>
-                    <th className="text-center px-5 py-3 text-xs font-mono tracking-widest" style={{ color: '#3a3a3a' }}>STATUS</th>
+                    <th className="text-left px-5 py-3 text-xs font-mono tracking-widest w-full" style={{ color: '#3a3a3a' }}>PERIODE</th>
+                    <th className="hidden sm:table-cell text-left px-5 py-3 text-xs font-mono tracking-widest whitespace-nowrap" style={{ color: '#3a3a3a' }}>TANGGAL</th>
+                    <th className="text-right px-5 py-3 text-xs font-mono tracking-widest whitespace-nowrap" style={{ color: '#3a3a3a' }}>TOTAL UK</th>
+                    <th className="text-center px-5 py-3 text-xs font-mono tracking-widest whitespace-nowrap" style={{ color: '#3a3a3a' }}>STATUS</th>
                   </tr>
                 </thead>
                 <tbody>
