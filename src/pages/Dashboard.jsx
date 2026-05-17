@@ -69,7 +69,7 @@ export default function Dashboard() {
     })
   }
 
-  const maskRupiah = v => hideAmount ? 'Rp ••••••••' : formatRupiah(v)
+  const maskRupiah = v => hideAmount ? '••••••' : formatRupiah(v)
 
   useEffect(() => {
     if (!tpkId) return
