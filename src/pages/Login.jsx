@@ -168,7 +168,7 @@ export default function Login() {
       </div>
 
       {/* ── Content ─────────────────────────────────────────────────────────── */}
-      <div className="relative z-10 w-full max-w-sm">
+      <div className="relative z-10 w-full max-w-sm" style={{ overflow: 'visible' }}>
 
         {/* Changelog badge */}
         <div ref={changelogRef} style={{ position: 'absolute', top: 0, right: 0, zIndex: 40 }}>
