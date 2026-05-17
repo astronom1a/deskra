@@ -572,18 +572,18 @@ export default function Dashboard() {
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                     >
-                      <td className="px-5 py-3.5 font-mono font-medium text-sm" style={{ color: '#f0f0f0' }}>{p.periode}</td>
-                      <td className="hidden sm:table-cell px-5 py-3.5 font-mono text-xs" style={{ color: '#4a4a4a' }}>
+                      <td className="px-5 py-3.5 font-mono font-medium text-sm align-middle" style={{ color: '#f0f0f0' }}>{p.periode}</td>
+                      <td className="hidden sm:table-cell px-5 py-3.5 font-mono text-xs align-middle" style={{ color: '#4a4a4a' }}>
                         {p.tgl_awal && p.tgl_akhir
                           ? `${new Date(p.tgl_awal).toLocaleDateString('id-ID')} – ${new Date(p.tgl_akhir).toLocaleDateString('id-ID')}`
                           : '—'}
                       </td>
-                      <td className="px-5 py-3.5 text-right font-mono font-semibold text-sm" style={{ color: '#00ff88' }}>
+                      <td className="px-5 py-3.5 text-right font-mono font-semibold text-sm align-middle" style={{ color: '#00ff88' }}>
                         {maskRupiah(p.total_uk)}
                       </td>
-                      <td className="px-5 py-3.5 text-center">
+                      <td className="px-5 py-3.5 text-center align-middle">
                         <span
-                          className="inline-block px-2 py-0.5 text-xs font-mono"
+                          className="inline-flex items-center px-2 py-0.5 text-xs font-mono"
                           style={{
                             borderRadius: 2,
                             background: p.status === 'aktif' ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.04)',
