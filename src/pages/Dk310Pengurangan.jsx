@@ -8,6 +8,7 @@ import { requireTpkId } from '../lib/tenantScope'
 import { parseDk310m } from '../lib/parseDk310m'
 import Toast, { useToast } from '../components/Toast'
 import TpkRequiredState from '../components/TpkRequiredState'
+import { TableSkeleton } from '../components/LoadingState'
 
 function fmt(n, dec = 0) {
   if (n == null) return '—'
@@ -327,9 +328,7 @@ export default function Dk310Pengurangan() {
 
         {/* Table */}
         {loading ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-            <Loader2 size={14} className="animate-spin" /> Memuat...
-          </div>
+          <TableSkeleton rows={5} columns={6} />
         ) : periods.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.2)', fontSize: 13, padding: '24px 0' }}>
             <AlertCircle size={14} /> Belum ada data. Import file Excel DK310M untuk memulai.

@@ -12,6 +12,7 @@ import { requireTpkId } from '../lib/tenantScope'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import ThemedSelect from '../components/ThemedSelect'
 import TpkRequiredState from '../components/TpkRequiredState'
+import { TableSkeleton } from '../components/LoadingState'
 
 const MONTH_FULL_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 const MONTH_SHORT_ID = ['JAN','FEB','MAR','APR','MEI','JUN','JUL','AGS','SEP','OKT','NOV','DES']
@@ -1058,9 +1059,7 @@ export default function DkhpSkshhk() {
 
       <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 12, fontFamily: 'monospace' }}>
-            <Loader2 size={14} className="animate-spin" style={{ marginRight: 8 }}/> memuat…
-          </div>
+          <TableSkeleton rows={8} columns={9} />
         ) : !sorted.length ? (
           <div style={{ padding: 40, textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.22)', fontFamily: 'monospace' }}>
             belum ada data — klik <span style={{ color: '#00ff88' }}>import excel</span> atau <span style={{ color: '#00ff88' }}>tambah</span> untuk mulai

@@ -10,6 +10,7 @@ import { useAccount } from '../lib/useAccount'
 import { useAuth } from '../lib/AuthProvider'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import TpkRequiredState from '../components/TpkRequiredState'
+import { TableSkeleton } from '../components/LoadingState'
 
 const SORTIMENS = ['AI', 'AII', 'AIII']
 
@@ -54,6 +55,7 @@ export default function Dashboard() {
   const [lastDkhpPerni,setLastDkhpPerni] = useState(null)
   const [lastKapling,  setLastKapling]  = useState(null)
   const [kaplingRows,  setKaplingRows]  = useState([])
+  const [expandedCard, setExpandedCard] = useState(null)
   const [hideAmount,  setHideAmount]  = useState(() => {
     try { return localStorage.getItem('deskra_dashboard_hide_amount') === '1' } catch { return false }
   })
@@ -137,11 +139,7 @@ export default function Dashboard() {
             .from('tabel_dkhp_skshhk')
             .select('no_dkhp, tanggal')
             .eq('tpk_id', tpkId)
-            .not('no_dkhp', 'ilike', '%perni%')
-            .order('tanggal', { ascending: false })
-            .order('id', { ascending: false })
-            .limit(1)
-            .maybeSingle(),
+            .not('no_dkhp', 'ilike', '%perni%'),
           supabase
             .from('tabel_dkhp_skshhk')
             .select('no_dkhp, tanggal')
@@ -152,7 +150,14 @@ export default function Dashboard() {
             .limit(1)
             .maybeSingle(),
         ])
-        if (dkhpNoRes.data) setLastDkhpNo(dkhpNoRes.data)
+        if (dkhpNoRes.data && dkhpNoRes.data.length > 0) {
+          const maxRow = dkhpNoRes.data.reduce((best, row) => {
+            const n = parseInt(row.no_dkhp) || 0
+            const b = parseInt(best.no_dkhp) || 0
+            return n > b ? row : best
+          })
+          setLastDkhpNo(maxRow)
+        }
         if (dkhpPerniRes.data) setLastDkhpPerni(dkhpPerniRes.data)
       } finally {
         setStatsLoading(false)
@@ -171,6 +176,9 @@ export default function Dashboard() {
   const unsoldVolume      = unsoldRows.reduce((s, r) => s + Number(r.volume || 0), 0)
   const unsoldSortBatang  = Object.fromEntries(SORTIMENS.map(m => [m, unsoldRows.filter(r => (r.sortimen || '').toUpperCase() === m).reduce((s, r) => s + (r.batang || 0), 0)]))
   const unsoldSortVolume  = Object.fromEntries(SORTIMENS.map(m => [m, unsoldRows.filter(r => (r.sortimen || '').toUpperCase() === m).reduce((s, r) => s + Number(r.volume || 0), 0)]))
+
+  const soldSortVolume = Object.fromEntries(SORTIMENS.map(m => [m, sortVolume[m] - unsoldSortVolume[m]]))
+  const soldSortBatang = Object.fromEntries(SORTIMENS.map(m => [m, sortBatang[m] - unsoldSortBatang[m]]))
 
   const totalAll = periodes.reduce((sum, p) => sum + (p.total_uk || 0), 0)
 
@@ -348,13 +356,17 @@ export default function Dashboard() {
             — statistik
           </p>
           {statsLoading ? (
-            <div className="text-xs font-mono py-4" style={{ color: '#3a3a3a' }}>memuat...</div>
+            <TableSkeleton rows={3} columns={3} />
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 12, alignItems: 'stretch' }}>
 
               {/* DKHP */}
-              <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, flex: 1 }}>
+              <div
+                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease', cursor: 'default' }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
+              >
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
                     <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>DKHP TERAKHIR</p>
                     <p style={{ fontSize: 22, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', lineHeight: 1 }}>
@@ -368,59 +380,124 @@ export default function Dashboard() {
                     </p>
                   </div>
                 </div>
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', fontFamily: 'monospace', marginTop: 12 }}>
-                  {lastDkhpNo?.tanggal
-                    ? new Date(lastDkhpNo.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-                    : ' '}
-                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+                    {lastDkhpNo?.tanggal
+                      ? new Date(lastDkhpNo.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+                      : ' '}
+                  </p>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', fontFamily: 'monospace', textTransform: 'uppercase', paddingLeft: 12, borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
+                    {lastDkhpPerni?.tanggal
+                      ? new Date(lastDkhpPerni.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+                      : ' '}
+                  </p>
+                </div>
               </div>
 
               {/* Total Kapling */}
-              <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '16px 20px', display: 'flex', gap: 16 }}>
-                <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>TOTAL KAPLING</p>
-                  <div>
-                    <p style={{ fontSize: 22, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', lineHeight: 1 }}>{totalVolume.toFixed(3)} <span style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.3)' }}>m³</span></p>
-                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', marginTop: 4 }}>{totalBatang.toLocaleString('id')} btg</p>
+              <div
+                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 0, transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease', cursor: 'pointer' }}
+                onClick={() => setExpandedCard(expandedCard === 'kapling' ? null : 'kapling')}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
+              >
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>TOTAL KAPLING</p>
+                    <div>
+                      <p style={{ fontSize: 22, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', lineHeight: 1 }}>{totalVolume.toFixed(3)} <span style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.3)' }}>m³</span></p>
+                      <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', marginTop: 4 }}>{totalBatang.toLocaleString('id')} btg</p>
+                    </div>
+                    <div style={{ marginTop: 12 }}>
+                      <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em' }}>KAPLING TERAKHIR</p>
+                      {lastKapling && <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace', marginTop: 2 }}>{lastKapling}</p>}
+                    </div>
                   </div>
-                  <div style={{ marginTop: 12 }}>
-                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em' }}>KAPLING TERAKHIR</p>
-                    {lastKapling && <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace', marginTop: 2 }}>{lastKapling}</p>}
+                  <div style={{ flex: 1, borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center' }}>
+                    {SORTIMENS.map(m => (
+                      <div key={m} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', minWidth: 24, paddingTop: 1 }}>{m}</span>
+                        <div>
+                          <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.65)', fontFamily: 'monospace', lineHeight: 1 }}>{sortVolume[m].toFixed(3)} <span style={{ fontSize: 9, fontWeight: 400, color: 'rgba(255,255,255,0.25)' }}>m³</span></p>
+                          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', marginTop: 2 }}>{sortBatang[m].toLocaleString('id')} btg</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div style={{ flex: 1, borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center' }}>
-                  {SORTIMENS.map(m => (
-                    <div key={m} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', minWidth: 24, paddingTop: 1 }}>{m}</span>
-                      <div>
-                        <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.65)', fontFamily: 'monospace', lineHeight: 1 }}>{sortVolume[m].toFixed(3)} <span style={{ fontSize: 9, fontWeight: 400, color: 'rgba(255,255,255,0.25)' }}>m³</span></p>
-                        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', marginTop: 2 }}>{sortBatang[m].toLocaleString('id')} btg</p>
-                      </div>
+                <div style={{ overflow: 'hidden', maxHeight: expandedCard === 'kapling' ? 200 : 0, transition: 'max-height 0.3s ease', marginTop: expandedCard === 'kapling' ? 12 : 0 }}>
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
+                    <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>proporsi volume per sortimen</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {SORTIMENS.map(m => {
+                        const pct = totalVolume > 0 ? (sortVolume[m] / totalVolume) * 100 : 0
+                        return (
+                          <div key={m}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <span style={{ fontSize: 10, fontWeight: 600, fontFamily: 'monospace', color: 'rgba(255,255,255,0.5)' }}>{m}</span>
+                              <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.35)' }}>{sortVolume[m].toFixed(3)} m³ · {pct.toFixed(1)}%</span>
+                            </div>
+                            <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: 'rgba(255,255,255,0.25)', borderRadius: 2, transition: 'width 0.4s ease' }} />
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
 
               {/* Sisa Persediaan */}
-              <div style={{ background: 'rgba(255,170,0,0.04)', border: '1px solid rgba(255,170,0,0.15)', borderRadius: 4, padding: '16px 20px', display: 'flex', gap: 16 }}>
-                <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div
+                style={{ background: 'rgba(255,170,0,0.04)', border: '1px solid rgba(255,170,0,0.15)', borderRadius: 4, padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease', cursor: 'pointer' }}
+                onClick={() => setExpandedCard(expandedCard === 'sisa' ? null : 'sisa')}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(255,170,0,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,170,0,0.28)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = 'rgba(255,170,0,0.15)' }}
+              >
+                <div>
                   <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.55)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>SISA PERSEDIAAN</p>
-                  <div>
-                    <p style={{ fontSize: 22, fontWeight: 700, color: '#ffaa00', fontFamily: 'monospace', lineHeight: 1 }}>{unsoldVolume.toFixed(3)} <span style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,170,0,0.45)' }}>m³</span></p>
-                    <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.45)', fontFamily: 'monospace', marginTop: 4 }}>{unsoldBatang.toLocaleString('id')} btg</p>
-                  </div>
-                  <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.2)', fontFamily: 'monospace', marginTop: 12 }}>&nbsp;</p>
+                  <p style={{ fontSize: 22, fontWeight: 700, color: '#ffaa00', fontFamily: 'monospace', lineHeight: 1 }}>{unsoldVolume.toFixed(3)} <span style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,170,0,0.45)' }}>m³</span></p>
+                  <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.45)', fontFamily: 'monospace', marginTop: 4 }}>{unsoldBatang.toLocaleString('id')} btg</p>
                 </div>
-                <div style={{ flex: 1, borderLeft: '1px solid rgba(255,170,0,0.12)', paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center' }}>
+                <div style={{ borderTop: '1px solid rgba(255,170,0,0.12)', marginTop: 12, paddingTop: 12, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                   {SORTIMENS.map(m => (
-                    <div key={m} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,170,0,0.4)', fontFamily: 'monospace', minWidth: 24, paddingTop: 1 }}>{m}</span>
-                      <div>
-                        <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,170,0,0.75)', fontFamily: 'monospace', lineHeight: 1 }}>{unsoldSortVolume[m].toFixed(3)} <span style={{ fontSize: 9, fontWeight: 400, color: 'rgba(255,170,0,0.35)' }}>m³</span></p>
-                        <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.45)', fontFamily: 'monospace', marginTop: 2 }}>{unsoldSortBatang[m].toLocaleString('id')} btg</p>
-                      </div>
+                    <div key={m}>
+                      <p style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,170,0,0.4)', fontFamily: 'monospace', marginBottom: 4 }}>{m}</p>
+                      <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,170,0,0.75)', fontFamily: 'monospace', lineHeight: 1 }}>{unsoldSortVolume[m].toFixed(3)} <span style={{ fontSize: 9, fontWeight: 400, color: 'rgba(255,170,0,0.35)' }}>m³</span></p>
+                      <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.45)', fontFamily: 'monospace', marginTop: 2 }}>{unsoldSortBatang[m].toLocaleString('id')} btg</p>
                     </div>
                   ))}
+                </div>
+                <div style={{ overflow: 'hidden', maxHeight: expandedCard === 'sisa' ? 220 : 0, transition: 'max-height 0.3s ease', marginTop: expandedCard === 'sisa' ? 12 : 0 }}>
+                  <div style={{ borderTop: '1px solid rgba(255,170,0,0.12)', paddingTop: 12 }}>
+                    <p style={{ fontSize: 9, color: 'rgba(255,170,0,0.3)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>terjual vs sisa per sortimen</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {SORTIMENS.map(m => {
+                        const total = sortVolume[m]
+                        const sold = soldSortVolume[m]
+                        const sisa = unsoldSortVolume[m]
+                        const soldPct = total > 0 ? (sold / total) * 100 : 0
+                        return (
+                          <div key={m}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <span style={{ fontSize: 10, fontWeight: 600, fontFamily: 'monospace', color: 'rgba(255,170,0,0.7)' }}>{m}</span>
+                              <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.3)' }}>
+                                <span style={{ color: 'rgba(0,255,136,0.6)' }}>{sold.toFixed(3)}</span> / <span style={{ color: 'rgba(255,170,0,0.6)' }}>{sisa.toFixed(3)}</span> m³
+                              </span>
+                            </div>
+                            <div style={{ height: 5, background: 'rgba(255,170,0,0.12)', borderRadius: 2, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${soldPct}%`, background: 'rgba(0,255,136,0.45)', borderRadius: 2, transition: 'width 0.4s ease' }} />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+                              <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgba(0,255,136,0.45)' }}>terjual {soldPct.toFixed(1)}%</span>
+                              <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgba(255,170,0,0.45)' }}>sisa {(100 - soldPct).toFixed(1)}%</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -459,11 +536,12 @@ export default function Dashboard() {
             border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: 4,
             overflow: 'hidden',
+            maxHeight: expandedCard ? 100 : 2000,
+            transition: 'max-height 0.35s ease',
           }}>
+            <div style={{ paddingTop: expandedCard ? 8 : 0, paddingBottom: expandedCard ? 8 : 0, transition: 'padding 0.35s ease' }}>
             {loading ? (
-              <div className="p-8 text-center text-xs font-mono" style={{ color: '#3a3a3a' }}>
-                memuat data...
-              </div>
+              <TableSkeleton rows={6} columns={4} />
             ) : error ? (
               <div className="p-6 flex items-center gap-3 text-sm font-mono" style={{ color: '#ff6b6b' }}>
                 <AlertCircle size={15}/> {error}
@@ -521,6 +599,7 @@ export default function Dashboard() {
                 </tbody>
               </table>
             )}
+            </div>
           </div>
         </section>
 

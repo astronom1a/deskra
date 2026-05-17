@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { computeTotalUK } from '../../lib/rekapPekerjaan'
 import { Building2, CheckCircle2, XCircle, CalendarDays, ChevronRight } from 'lucide-react'
 import { gsap } from 'gsap'
+import { TableSkeleton } from '../../components/LoadingState'
 
 // Angka acak cepat selama ~650 ms, lalu count-up smooth ke nilai asli.
 // `delay` (detik) memungkinkan stagger antar card.
@@ -164,7 +165,7 @@ export default function AdminDashboard() {
 
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
             {loading ? (
-              <div className="p-8 text-center text-sm font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>Memuat data...</div>
+              <TableSkeleton rows={5} columns={6} />
             ) : error ? (
               <div className="p-6 text-sm font-mono" style={{ color: '#ff6b6b' }}>{error}</div>
             ) : tpkList.length === 0 ? (

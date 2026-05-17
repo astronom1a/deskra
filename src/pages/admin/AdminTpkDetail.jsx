@@ -8,6 +8,7 @@ import {
   CheckCircle2, XCircle, Mail, RefreshCw, AlertCircle,
   UserPlus, Eye, EyeOff, X, Trash2,
 } from 'lucide-react'
+import { InlineLoader, PageLoader, TableSkeleton } from '../../components/LoadingState'
 
 const TABS = [
   { id: 'info', label: 'Info', icon: Info },
@@ -199,7 +200,7 @@ export default function AdminTpkDetail() {
   const fmt = v => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Math.round(v || 0))
   const formatTanggal = s => s ? new Date(s).toLocaleDateString('id-ID') : '-'
 
-  if (loading) return <div style={{ minHeight: '100%', background: '#0a0a0a', color: 'rgba(255,255,255,0.35)', padding: 24, fontFamily: 'monospace', fontSize: 12 }}>Memuat...</div>
+  if (loading) return <PageLoader />
   if (error && !tpk) return <div style={{ minHeight: '100%', background: '#0a0a0a', color: '#ff6b6b', padding: 24, fontFamily: 'monospace', fontSize: 12 }}>{error}</div>
 
   return (
@@ -306,7 +307,7 @@ export default function AdminTpkDetail() {
                 <h3 className="text-sm font-mono font-semibold" style={{ color: '#f0f0f0' }}>Riwayat Periode</h3>
               </div>
               {periodeLoading ? (
-                <div className="p-6 text-sm text-center font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>Memuat...</div>
+                <TableSkeleton rows={4} columns={4} />
               ) : periodes.length === 0 ? (
                 <div className="p-6 text-sm text-center font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>Belum ada periode.</div>
               ) : (
@@ -352,7 +353,7 @@ export default function AdminTpkDetail() {
             )}
 
             {operators === null ? (
-              <div className="text-sm font-mono py-2" style={{ color: 'rgba(255,255,255,0.3)' }}>Memuat...</div>
+              <div className="py-2"><InlineLoader /></div>
             ) : operators.length === 0 ? (
               <div className="text-sm font-mono py-2" style={{ color: 'rgba(255,255,255,0.3)' }}>Belum ada akun terdaftar.</div>
             ) : (

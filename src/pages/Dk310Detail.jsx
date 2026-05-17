@@ -1,8 +1,9 @@
 import { Fragment, useEffect, useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { ArrowLeft, FileBarChart2, ChevronDown, ChevronRight, Loader2, AlertCircle } from 'lucide-react'
+import { ArrowLeft, FileBarChart2, ChevronDown, ChevronRight, AlertCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import Toast, { useToast } from '../components/Toast'
+import { PageLoader } from '../components/LoadingState'
 
 function fmt(n, dec = 0) {
   if (n == null) return '—'
@@ -185,9 +186,7 @@ export default function Dk310Detail() {
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100%', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <Loader2 size={20} style={{ color: 'rgba(255,255,255,0.3)' }} className="animate-spin" />
-    </div>
+    <PageLoader label="memuat detail DK310..." />
   )
 
   if (!period) return (

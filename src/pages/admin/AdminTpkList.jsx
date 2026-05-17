@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { computeTotalUK } from '../../lib/rekapPekerjaan'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import { TableSkeleton } from '../../components/LoadingState'
 import { Plus, CheckCircle2, XCircle, Search, ChevronRight, Trash2, AlertCircle } from 'lucide-react'
 
 export default function AdminTpkList() {
@@ -139,7 +140,7 @@ export default function AdminTpkList() {
 
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
           {loading ? (
-            <div className="p-8 text-center text-sm font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>Memuat data...</div>
+            <TableSkeleton rows={6} columns={7} />
           ) : filtered.length === 0 ? (
             <div className="p-8 text-center text-sm font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>
               {search ? 'Tidak ada TPK yang cocok.' : 'Belum ada TPK terdaftar.'}

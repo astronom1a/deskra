@@ -2,6 +2,7 @@ import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/AuthProvider'
 import Layout from './components/Layout'
+import { PageLoader } from './components/LoadingState'
 import Login from './pages/Login'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminTpkList from './pages/admin/AdminTpkList'
@@ -45,11 +46,7 @@ function ProtectedRoute({ children }) {
   const location = useLocation()
 
   if (loading || (session && !profile)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <span className="inline-block w-6 h-6 border-2 border-primary-300 border-t-primary-600 rounded-full animate-spin" />
-      </div>
-    )
+    return <PageLoader label="memuat sesi..." />
   }
 
   if (!session) {
@@ -68,11 +65,7 @@ function AdminRoute({ children }) {
   const location = useLocation()
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <span className="inline-block w-6 h-6 border-2 border-primary-300 border-t-primary-600 rounded-full animate-spin" />
-      </div>
-    )
+    return <PageLoader label="memuat admin..." />
   }
 
   if (!session) return <Navigate to="/login" state={{ from: location }} replace />
@@ -84,7 +77,7 @@ function AdminRoute({ children }) {
 function PublicRoute({ children }) {
   const { session, isAdmin, activeTpkId, loading, profile } = useAuth()
 
-  if (loading || (session && !profile)) return null
+  if (loading || (session && !profile)) return <PageLoader label="memuat halaman..." />
 
   if (session) {
     return <Navigate to={getAuthenticatedHomePath({ isAdmin, activeTpkId })} replace />
@@ -95,7 +88,7 @@ function PublicRoute({ children }) {
 
 function SmartRedirect() {
   const { session, isAdmin, activeTpkId, profile, loading } = useAuth()
-  if (loading || (session && !profile)) return null
+  if (loading || (session && !profile)) return <PageLoader label="memuat halaman..." />
   return <Navigate to={getAuthenticatedHomePath({ isAdmin, activeTpkId })} replace />
 }
 

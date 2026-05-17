@@ -4,7 +4,9 @@ import { useAuth } from '../lib/AuthProvider'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import ConfirmDialog from '../components/ConfirmDialog'
 import TpkRequiredState from '../components/TpkRequiredState'
-import { Plus, Pencil, Trash2, X, CheckCircle2, AlertCircle } from 'lucide-react'
+import Toast from '../components/Toast'
+import { TableSkeleton } from '../components/LoadingState'
+import { Plus, Pencil, Trash2, X } from 'lucide-react'
 
 const POSISI_OPTIONS = [
   { value: 'TENAGA_BANTU', label: 'Tenaga Bantu' },
@@ -165,11 +167,7 @@ export default function DatabaseTenaga() {
         .dtk-pos-card:hover { transform: translateY(-1px); }
       `}</style>
 
-      {toast && (
-        <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 50, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 3, fontSize: 12, fontFamily: 'monospace', background: toast.type === 'error' ? 'rgba(255,107,107,0.12)' : 'rgba(0,255,136,0.10)', border: `1px solid ${toast.type === 'error' ? 'rgba(255,107,107,0.3)' : 'rgba(0,255,136,0.3)'}`, color: toast.type === 'error' ? '#ff6b6b' : '#00ff88' }}>
-          {toast.type === 'error' ? <AlertCircle size={13}/> : <CheckCircle2 size={13}/>} {toast.msg}
-        </div>
-      )}
+      <Toast toast={toast} />
 
       <ConfirmDialog
         open={!!deleteRow}
@@ -327,7 +325,7 @@ export default function DatabaseTenaga() {
       {/* Tabel */}
       <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', fontSize: 11 }}>Memuat...</div>
+          <TableSkeleton rows={5} columns={7} />
         ) : data.length === 0 ? (
           <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', fontSize: 11, fontStyle: 'italic' }}>Belum ada data tenaga kerja.</div>
         ) : (

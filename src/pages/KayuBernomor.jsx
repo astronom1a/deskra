@@ -1,21 +1,50 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Search, Loader2, ScanLine } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsUpDown,
+  Search, ScanLine, X,
+} from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import TpkRequiredState from '../components/TpkRequiredState'
+import { TableSkeleton } from '../components/LoadingState'
 
 const PAGE = 500
+const COLS = [
+  { key: 'no_kapling', label: 'No. Kapling' },
+  { key: 'no_batang', label: 'No. Batang' },
+  { key: 'dkhp', label: 'DKHP', num: true },
+  { key: 'skshhk', label: 'SKSHHK' },
+  { key: 'no_invois', label: 'No. Invois' },
+  { key: 'panjang', label: 'Panjang', num: true },
+  { key: 'diameter', label: 'Ø (cm)', num: true },
+  { key: 'volume', label: 'Volume', num: true },
+]
+
+const PAGE_SIZES = [
+  { label: '10', value: 10 },
+  { label: '20', value: 20 },
+  { label: '50', value: 50 },
+  { label: '100', value: 100 },
+  { label: '500', value: 500 },
+  { label: 'Semua', value: 0 },
+]
 
 export default function KayuBernomor() {
   const { profile, isAdmin, activeTpkId } = useAuth()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
+  const colDropdownRef = useRef(null)
 
   const [batang, setBatang]     = useState([])
   const [kaplingMap, setKaplingMap] = useState({})
   const [loading, setLoading]   = useState(false)
   const [search, setSearch]     = useState('')
+  const [searchCol, setSearchCol] = useState('all')
+  const [showColDropdown, setShowColDropdown] = useState(false)
   const [filterDkhp, setFilterDkhp] = useState('')
+  const [sorts, setSorts]       = useState([{ key: 'no_kapling', dir: 'asc' }])
+  const [pageSize, setPageSize] = useState(50)
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     if (!tpkId) return
@@ -26,6 +55,7 @@ export default function KayuBernomor() {
     setLoading(true)
     let all = []
     let from = 0
+    setKaplingMap({})
     while (true) {
       const { data } = await supabase
         .from('tabel_batang_aiii')
@@ -54,32 +84,96 @@ export default function KayuBernomor() {
     setLoading(false)
   }
 
+  useEffect(() => { setCurrentPage(1) }, [search, searchCol, filterDkhp])
+
+  useEffect(() => {
+    if (!showColDropdown) return
+    function onClickOutside(e) {
+      if (colDropdownRef.current && !colDropdownRef.current.contains(e.target)) setShowColDropdown(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [showColDropdown])
+
   const dkhpOptions = useMemo(() => {
     const set = new Set(Object.values(kaplingMap).map(k => k.dkhp).filter(Boolean))
     return [...set].sort((a, b) => Number(a) - Number(b))
   }, [kaplingMap])
 
+  function getKapling(row) {
+    return kaplingMap[row.no_kapling] || {}
+  }
+
+  function getDisplayVal(row, key) {
+    const kap = getKapling(row)
+    if (key === 'dkhp') return kap.dkhp || ''
+    if (key === 'skshhk') return kap.skshhk || ''
+    if (key === 'no_invois') return kap.no_invois || ''
+    if (key === 'pembeli') return kap.pembeli || ''
+    if (key === 'volume') return Number(row.volume || 0).toFixed(3)
+    return String(row[key] ?? '')
+  }
+
+  function getSortVal(row, key) {
+    const col = COLS.find(c => c.key === key)
+    const val = getDisplayVal(row, key)
+    if (col?.num) return Number(val) || 0
+    return val.toLowerCase()
+  }
+
+  function toggleSort(key) {
+    setSorts(prev => {
+      if (prev[0]?.key === key) {
+        const newDir = prev[0].dir === 'asc' ? 'desc' : 'asc'
+        return [{ key, dir: newDir }]
+      }
+      return [{ key, dir: 'asc' }]
+    })
+    setCurrentPage(1)
+  }
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return batang.filter(b => {
-      const kap = kaplingMap[b.no_kapling] || {}
+      const kap = getKapling(b)
       if (filterDkhp && kap.dkhp !== filterDkhp) return false
       if (!q) return true
-      return (
-        b.no_kapling.includes(q) ||
-        b.no_batang.toLowerCase().includes(q) ||
-        (kap.no_invois || '').toLowerCase().includes(q) ||
-        (kap.pembeli || '').toLowerCase().includes(q)
-      )
+      if (searchCol === 'all') return [...COLS, { key: 'pembeli' }].some(c => getDisplayVal(b, c.key).toLowerCase().includes(q))
+      return getDisplayVal(b, searchCol).toLowerCase().includes(q)
     })
-  }, [batang, kaplingMap, search, filterDkhp])
+  }, [batang, kaplingMap, search, searchCol, filterDkhp])
+
+  const sortedRows = useMemo(() => {
+    if (!sorts.length) return filtered
+    return [...filtered].sort((a, b) => {
+      for (const s of sorts) {
+        const col = COLS.find(c => c.key === s.key)
+        const av = getSortVal(a, s.key)
+        const bv = getSortVal(b, s.key)
+        const cmp = col?.num ? av - bv : av < bv ? -1 : av > bv ? 1 : 0
+        if (cmp !== 0) return s.dir === 'asc' ? cmp : -cmp
+      }
+      return 0
+    })
+  }, [filtered, sorts])
 
   const totalVolume = useMemo(() => filtered.reduce((s, b) => s + (Number(b.volume) || 0), 0), [filtered])
+  const totalPages = pageSize === 0 ? 1 : Math.ceil(sortedRows.length / pageSize)
+  const safePage = Math.min(currentPage, totalPages || 1)
+  const displayedRows = pageSize === 0
+    ? sortedRows
+    : sortedRows.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   if (!tpkId) return <TpkRequiredState />
 
   return (
-    <div style={{ padding: 24, minHeight: '100vh', background: '#0a0a0a', color: '#f0f0f0', fontFamily: 'monospace' }}>
+    <div style={{ padding: 24, height: '100vh', boxSizing: 'border-box', overflow: 'hidden', background: '#0a0a0a', color: '#f0f0f0', fontFamily: 'monospace', display: 'flex', flexDirection: 'column' }}>
+      <style>{`
+        .kbn-th:hover { background: rgba(255,255,255,0.04) !important; }
+        .kbn-input:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
+        .kbn-input::placeholder { color: rgba(255,255,255,0.22); }
+        .kbn-select option { background: #111; color: #f0f0f0; }
+      `}</style>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
@@ -94,7 +188,7 @@ export default function KayuBernomor() {
       </div>
 
       {/* Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 16 }}>
         {[
           { label: 'Total Batang', value: filtered.length.toLocaleString('id'), color: '#00ff88' },
           { label: 'Total Volume', value: `${totalVolume.toFixed(3)} m³`, color: '#60a5fa' },
@@ -108,48 +202,123 @@ export default function KayuBernomor() {
       </div>
 
       {/* Toolbar */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-          <Search size={12} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-          <input
-            value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Cari no. batang, kapling, invois, pembeli..."
-            style={{ width: '100%', paddingLeft: 30, padding: '7px 10px 7px 30px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: '#f0f0f0', fontSize: 12, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
-          />
+      {!loading && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', margin: 0 }}>
+              menampilkan{' '}
+              <span style={{ fontWeight: 700, color: 'rgba(255,255,255,0.68)' }}>{displayedRows.length.toLocaleString('id')}</span>
+              {' '}dari{' '}
+              <span style={{ fontWeight: 700, color: 'rgba(255,255,255,0.68)' }}>{sortedRows.length.toLocaleString('id')}</span>
+              {search.trim() && <span style={{ color: 'rgba(255,255,255,0.24)' }}>{' '}(total {batang.length.toLocaleString('id')})</span>}
+              {' '}batang
+            </p>
+            {pageSize > 0 && totalPages > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+                  style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 8px', fontSize: 11, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', cursor: safePage === 1 ? 'not-allowed' : 'pointer', opacity: safePage === 1 ? 0.4 : 1, fontFamily: 'monospace' }}
+                ><ChevronLeft size={10}/> prev</button>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', padding: '0 6px' }}>{safePage} / {totalPages}</span>
+                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+                  style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 8px', fontSize: 11, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', cursor: safePage === totalPages ? 'not-allowed' : 'pointer', opacity: safePage === totalPages ? 0.4 : 1, fontFamily: 'monospace' }}
+                >next <ChevronRight size={10}/></button>
+              </div>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div ref={colDropdownRef} style={{ position: 'relative' }}>
+              <button onClick={() => setShowColDropdown(v => !v)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, height: 28, padding: '0 8px', background: 'rgba(255,255,255,0.03)', border: `1px solid ${showColDropdown ? 'rgba(0,255,136,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 3, color: searchCol === 'all' ? 'rgba(255,255,255,0.45)' : '#00ff88', fontFamily: 'monospace', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: showColDropdown ? '0 0 0 2px rgba(0,255,136,0.07)' : 'none' }}
+              >
+                {searchCol === 'all' ? 'Semua Kolom' : (COLS.find(c => c.key === searchCol)?.label || searchCol)}
+                <ChevronDown size={10} style={{ opacity: 0.45 }}/>
+              </button>
+              {showColDropdown && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 200, background: '#111', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, overflow: 'hidden', minWidth: '100%', boxShadow: '0 8px 24px rgba(0,0,0,0.7)' }}>
+                  {[{ key: 'all', label: 'Semua Kolom' }, ...COLS, { key: 'pembeli', label: 'Pembeli' }].map(c => {
+                    const active = searchCol === c.key
+                    return (
+                      <div key={c.key} onClick={() => { setSearchCol(c.key); setShowColDropdown(false) }}
+                        style={{ padding: '6px 12px', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', color: active ? '#00ff88' : 'rgba(255,255,255,0.65)', background: active ? 'rgba(0,255,136,0.08)' : 'transparent', borderLeft: `2px solid ${active ? '#00ff88' : 'transparent'}` }}
+                      >{c.label}</div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <Search size={11} style={{ position: 'absolute', left: 8, color: 'rgba(255,255,255,0.3)', pointerEvents: 'none' }} />
+              <input
+                value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="cari..."
+                className="kbn-input"
+                style={{ height: 28, width: 170, padding: `0 ${search ? 24 : 9}px 0 24px`, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: '#f0f0f0', fontSize: 11, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+              />
+              {search && (
+                <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', padding: 0, lineHeight: 0 }}><X size={10}/></button>
+              )}
+            </div>
+            <select
+              value={filterDkhp} onChange={e => { setFilterDkhp(e.target.value); setCurrentPage(1) }}
+              className="kbn-select"
+              style={{ height: 28, padding: '0 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: filterDkhp ? '#f0f0f0' : 'rgba(255,255,255,0.38)', fontSize: 11, fontFamily: 'monospace', cursor: 'pointer' }}
+            >
+              <option value="">Semua DKHP</option>
+              {dkhpOptions.map(d => <option key={d} value={d}>DKHP {d}</option>)}
+            </select>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>tampilkan:</span>
+            <div style={{ display: 'flex', gap: 3 }}>
+              {PAGE_SIZES.map(p => (
+                <button key={p.value} onClick={() => { setPageSize(p.value); setCurrentPage(1) }}
+                  style={{ padding: '3px 8px', fontSize: 11, borderRadius: 3, fontWeight: 600, fontFamily: 'monospace', cursor: 'pointer', border: pageSize === p.value ? 'none' : '1px solid rgba(255,255,255,0.08)', background: pageSize === p.value ? '#00ff88' : 'rgba(255,255,255,0.04)', color: pageSize === p.value ? '#0a0a0a' : 'rgba(255,255,255,0.4)' }}
+                >{p.label}</button>
+              ))}
+            </div>
+          </div>
         </div>
-        <select
-          value={filterDkhp} onChange={e => setFilterDkhp(e.target.value)}
-          style={{ padding: '7px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: filterDkhp ? '#f0f0f0' : 'rgba(255,255,255,0.35)', fontSize: 12, fontFamily: 'monospace', cursor: 'pointer' }}
-        >
-          <option value="">Semua DKHP</option>
-          {dkhpOptions.map(d => <option key={d} value={d}>DKHP {d}</option>)}
-        </select>
-      </div>
+      )}
 
       {/* Table */}
-      {loading ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
-          <Loader2 size={14} className="animate-spin" /> Memuat data...
-        </div>
-      ) : (
-        <div style={{ overflowX: 'auto', borderRadius: 4, border: '1px solid rgba(255,255,255,0.07)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-            <thead>
+      <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 3, overflow: 'hidden' }}>
+        {loading ? (
+          <TableSkeleton rows={6} columns={8} />
+        ) : batang.length === 0 ? (
+          <div style={{ padding: 44, textAlign: 'center', color: 'rgba(255,255,255,0.24)', fontSize: 12 }}>Belum ada data kayu bernomor.</div>
+        ) : (
+        <div style={{ flex: '1 1 auto', minHeight: 0, overflow: 'auto', scrollbarGutter: 'stable both-edges' }}>
+          <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
               <tr style={{ background: '#111', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                {['No. Kapling', 'No. Batang', 'DKHP', 'SKSHHK', 'No. Invois', 'Panjang', 'Ø (cm)', 'Volume'].map(h => (
-                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap' }}>{h}</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.3)', whiteSpace: 'nowrap', width: 42 }}>No</th>
+                {COLS.map(c => (
+                  <th key={c.key} onClick={() => toggleSort(c.key)} className="kbn-th"
+                    style={{ padding: '8px 12px', textAlign: c.num ? 'right' : 'left', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none' }}
+                  >
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                      {c.label}
+                      {(() => {
+                        const idx = sorts.findIndex(s => s.key === c.key)
+                        if (idx === -1) return <ChevronsUpDown size={10} style={{ color: 'rgba(255,255,255,0.15)' }}/>
+                        const s = sorts[idx]
+                        return s.dir === 'asc'
+                          ? <ChevronUp size={10} style={{ color: '#00ff88' }}/>
+                          : <ChevronDown size={10} style={{ color: '#00ff88' }}/>
+                      })()}
+                    </span>
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
-                <tr><td colSpan={8} style={{ padding: '24px 12px', textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>Tidak ada data</td></tr>
-              ) : filtered.map(b => {
+              {displayedRows.length === 0 ? (
+                <tr><td colSpan={9} style={{ padding: '24px 12px', textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>Tidak ada data yang cocok.</td></tr>
+              ) : displayedRows.map((b, i) => {
                 const kap = kaplingMap[b.no_kapling] || {}
                 return (
                   <tr key={b.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.025)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                    <td style={{ padding: '7px 12px', color: 'rgba(255,255,255,0.22)', fontSize: 11 }}>{(safePage - 1) * (pageSize || 0) + i + 1}</td>
                     <td style={{ padding: '7px 12px', color: 'rgba(255,255,255,0.6)' }}>{b.no_kapling}</td>
                     <td style={{ padding: '7px 12px', color: '#00ff88', fontWeight: 600 }}>{b.no_batang}</td>
                     <td style={{ padding: '7px 12px' }}>
@@ -167,7 +336,7 @@ export default function KayuBernomor() {
             {filtered.length > 0 && (
               <tfoot style={{ background: 'rgba(255,255,255,0.02)', borderTop: '2px solid rgba(255,255,255,0.08)' }}>
                 <tr>
-                  <td colSpan={7} style={{ padding: '7px 12px', fontWeight: 700, color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>
+                  <td colSpan={8} style={{ padding: '7px 12px', fontWeight: 700, color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>
                     TOTAL · {filtered.length.toLocaleString('id')} batang
                   </td>
                   <td style={{ padding: '7px 12px', textAlign: 'right', fontWeight: 700, color: '#60a5fa' }}>{totalVolume.toFixed(3)}</td>
@@ -176,7 +345,8 @@ export default function KayuBernomor() {
             )}
           </table>
         </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
