@@ -46,11 +46,12 @@ export default function Dashboard() {
   const { profile, tpk, activeTpkId } = useAuth()
   const tpkId     = getEffectiveTpkId({ activeTpkId, profile })
   const [activeTpkName, setActiveTpkName] = useState('')
-  const namaTpk   = activeTpkName || tpk?.namatpk || account.namaTpk || 'TPK Wongsorejo'
+  const namaTpk   = activeTpkName || tpk?.namatpk || 'TPK Wongsorejo'
   const [periodes,    setPeriodes]    = useState([])
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState(null)
   const [statsLoading,  setStatsLoading]  = useState(true)
+  const [statsError,    setStatsError]    = useState(null)
   const [lastDkhpNo,   setLastDkhpNo]   = useState(null)
   const [lastDkhpPerni,setLastDkhpPerni] = useState(null)
   const [lastKapling,  setLastKapling]  = useState(null)
@@ -112,18 +113,22 @@ export default function Dashboard() {
     async function fetchStats() {
       try {
         const PAGE = 1000
-        const all = []
-        for (let from = 0; ; from += PAGE) {
-          const { data } = await supabase
-            .from('tabel_register_kapling')
-            .select('no_kapling, sortimen, batang, volume, no_invois')
-            .eq('tpk_id', tpkId)
-            .order('no_kapling', { ascending: true })
-            .range(from, from + PAGE - 1)
-          if (!data || data.length === 0) break
-          all.push(...data)
-          if (data.length < PAGE) break
-        }
+        const { count } = await supabase
+          .from('tabel_register_kapling')
+          .select('*', { count: 'exact', head: true })
+          .eq('tpk_id', tpkId)
+        const pages = Math.ceil((count || 0) / PAGE)
+        const results = await Promise.all(
+          Array.from({ length: pages }, (_, i) =>
+            supabase
+              .from('tabel_register_kapling')
+              .select('no_kapling, sortimen, batang, volume, no_invois')
+              .eq('tpk_id', tpkId)
+              .order('no_kapling', { ascending: true })
+              .range(i * PAGE, (i + 1) * PAGE - 1)
+          )
+        )
+        const all = results.flatMap(r => r.data || [])
         setKaplingRows(all)
         if (all.length > 0) {
           const sorted = [...all].sort((a, b) => {
@@ -139,7 +144,11 @@ export default function Dashboard() {
             .from('tabel_dkhp_skshhk')
             .select('no_dkhp, tanggal')
             .eq('tpk_id', tpkId)
-            .not('no_dkhp', 'ilike', '%perni%'),
+            .not('no_dkhp', 'ilike', '%perni%')
+            .order('tanggal', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
           supabase
             .from('tabel_dkhp_skshhk')
             .select('no_dkhp, tanggal')
@@ -150,15 +159,10 @@ export default function Dashboard() {
             .limit(1)
             .maybeSingle(),
         ])
-        if (dkhpNoRes.data && dkhpNoRes.data.length > 0) {
-          const maxRow = dkhpNoRes.data.reduce((best, row) => {
-            const n = parseInt(row.no_dkhp) || 0
-            const b = parseInt(best.no_dkhp) || 0
-            return n > b ? row : best
-          })
-          setLastDkhpNo(maxRow)
-        }
+        if (dkhpNoRes.data) setLastDkhpNo(dkhpNoRes.data)
         if (dkhpPerniRes.data) setLastDkhpPerni(dkhpPerniRes.data)
+      } catch (err) {
+        setStatsError(err.message)
       } finally {
         setStatsLoading(false)
       }
@@ -191,20 +195,6 @@ export default function Dashboard() {
 
   return (
     <div style={{ minHeight: '100%', background: '#0a0a0a', position: 'relative', overflow: 'hidden' }}>
-
-      {/* CSS keyframes */}
-      <style>{`
-        @keyframes db-rot-cw   { to { transform: rotate(360deg);  } }
-        @keyframes db-rot-ccw  { to { transform: rotate(-360deg); } }
-        @keyframes db-float {
-          0%,100% { transform: translateY(0px);   }
-          50%      { transform: translateY(-14px); }
-        }
-        @keyframes db-pulse {
-          0%,100% { opacity: 0.04; }
-          50%      { opacity: 0.11; }
-        }
-      `}</style>
 
       {/* Dot grid */}
       <svg aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
@@ -536,10 +526,8 @@ export default function Dashboard() {
             border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: 4,
             overflow: 'hidden',
-            maxHeight: expandedCard ? 100 : 2000,
-            transition: 'max-height 0.35s ease',
           }}>
-            <div style={{ paddingTop: expandedCard ? 8 : 0, paddingBottom: expandedCard ? 8 : 0, transition: 'padding 0.35s ease' }}>
+            <div>
             {loading ? (
               <TableSkeleton rows={6} columns={4} />
             ) : error ? (
