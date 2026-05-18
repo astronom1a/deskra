@@ -101,7 +101,7 @@ function SidebarItem({ item }) {
         <button
           onClick={() => setOpen(o => !o)}
           className="w-full flex items-center justify-between px-3 py-2 text-xs font-mono tracking-widest uppercase transition-colors sb-btn"
-          style={{ color: open ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.22)' }}
+          style={{ color: 'rgba(255,255,255,0.38)' }}
         >
           <span className="flex items-center gap-2">
             {item.icon && <item.icon size={12} />}

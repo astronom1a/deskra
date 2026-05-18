@@ -130,6 +130,7 @@ function KwitansiDoc({ periode }) {
   const grand      = item._grandOverride !== undefined
     ? Math.round(item._grandOverride)
     : Math.round(totalFisik * tarif)
+  const itemNumber = getKwitansiItemNumber(itemKey, item, data.rows)
 
   // Hitung breakdown sub-rows per jenis
   const subRows = computeSubRows(cfg.subSrc, data, totalFisik)
@@ -166,7 +167,10 @@ function KwitansiDoc({ periode }) {
           </div>
         </div>
         <div className="col-span-5 p-2 text-[10.5px]">
-          <p className="font-bold border-b border-black pb-0.5 mb-1">KUITANSI PEMBAYARAN</p>
+          <p className="font-bold border-b border-black pb-0.5 mb-1 flex items-center justify-between gap-2">
+            <span>KUITANSI PEMBAYARAN</span>
+            <span>No. {itemNumber}</span>
+          </p>
           <p>Masa / Periode : <span className="font-bold">{periode.periode}</span></p>
           <p>Nomor Bukti :</p>
           <p className="mt-1">Kode Rekening dan Rupiah :</p>
@@ -509,6 +513,20 @@ function KodeRow({ digits, amount, bold }) {
       <span className={`flex-1 text-right tabular-nums ${bold ? 'font-bold' : ''}`}>{amount || ''}</span>
     </div>
   )
+}
+
+function getKwitansiItemNumber(itemKey, item, rows) {
+  if (itemKey === 'tumpuk') {
+    return rows.find(r => r._key === 'tumpuk_jati')?.no ?? '-'
+  }
+  if (itemKey === 'barcode') {
+    return rows
+      .filter(r => ['barcode_jati', 'barcode_mahoni', 'barcode_kedawung'].includes(r._key))
+      .map(r => r.no)
+      .filter(n => typeof n === 'number')
+      .sort((a, b) => a - b)[0] ?? '-'
+  }
+  return item.no ?? '-'
 }
 
 function computeSubRows(subSrc, data, totalFisik) {

@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { computeTotalUK } from '../lib/rekapPekerjaan'
 import {
-  Link2, Users, Layers, Package, Clock,
-  TrendingUp, AlertCircle, Eye, EyeOff, FileText, BookOpen,
+  Clock, TrendingUp, AlertCircle, Eye, EyeOff,
 } from 'lucide-react'
 import { useAccount } from '../lib/hooks/useAccount'
 import { useAuth } from '../lib/AuthProvider'
@@ -13,15 +11,6 @@ import TpkRequiredState from '../components/layout/TpkRequiredState'
 import { TableSkeleton } from '../components/ui/LoadingState'
 
 const SORTIMENS = ['AI', 'AII', 'AIII']
-
-const shortcuts = [
-  { label: 'Main Link',        desc: 'Rekap uang kerja otomatis per periode',          icon: Link2,    path: '/main-link' },
-  { label: 'Tumpuk Kapling',   desc: 'Input volume per jenis & sortimen kapling',       icon: Layers,   path: '/tumpuk-kapling' },
-  { label: 'Detail Pekerjaan', desc: 'Tanda Laku, Barcode, Tenaga Bantu, dan lainnya', icon: Package,  path: '/detail-pekerjaan' },
-  { label: 'DKHP SKSHHK',     desc: 'Arsip dokumen DKHP SKSHHK',                      icon: FileText, path: '/dkhp-skshhk' },
-  { label: 'Register Kapling', desc: 'Kelola register kapling',                         icon: BookOpen, path: '/register-kapling' },
-  { label: 'Database Pejabat', desc: 'Kelola data nama & jabatan pejabat',              icon: Users,    path: '/database/pejabat' },
-]
 
 function formatRupiah(value) {
   return new Intl.NumberFormat('id-ID', {
@@ -40,7 +29,6 @@ function useDateTime() {
 }
 
 export default function Dashboard() {
-  const navigate  = useNavigate()
   const now       = useDateTime()
   const { account } = useAccount()
   const { profile, tpk, activeTpkId } = useAuth()
@@ -295,49 +283,6 @@ export default function Dashboard() {
             </p>
           </div>
         </div>
-
-        {/* Quick Access */}
-        <section className="mb-10">
-          <p className="text-xs font-mono tracking-widest uppercase mb-4" style={{ color: '#00ff88' }}>
-            — quick access
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {shortcuts.map(s => (
-              <button
-                key={s.path}
-                onClick={() => navigate(s.path)}
-                className="flex items-start gap-4 p-4 text-left transition-all"
-                style={{
-                  background: 'rgba(255,255,255,0.025)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 4,
-                  transition: 'border-color 0.2s, background 0.2s',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = 'rgba(0,255,136,0.3)'
-                  e.currentTarget.style.background   = 'rgba(0,255,136,0.04)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'
-                  e.currentTarget.style.background   = 'rgba(255,255,255,0.025)'
-                }}
-              >
-                <div style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  borderRadius: 3,
-                  padding: 8,
-                  flexShrink: 0,
-                }}>
-                  <s.icon size={16} style={{ color: 'rgba(255,255,255,0.45)' }}/>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: '#f0f0f0' }}>{s.label}</p>
-                  <p className="text-xs mt-0.5 leading-snug" style={{ color: '#4a4a4a' }}>{s.desc}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
 
         {/* statistik */}
         <section className="mb-10">

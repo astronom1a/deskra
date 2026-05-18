@@ -108,7 +108,7 @@ export default function MainLink() {
     if (['tumpuk_jati','tumpuk_mahoni','tumpuk_kedawung','brongkol'].includes(r._key)) return 'tumpuk'
     return r._key
   }
-  const LAMPIRAN31_KEYS = new Set(['penomoran','sabuk','tanda_laku','slaghammer','barcode','kebersihan','listrik','tumpuk','tenaga'])
+  const LAMPIRAN31_KEYS = new Set(['penomoran','sabuk','tanda_laku','slaghammer','barcode','kebersihan','tumpuk','tenaga'])
   function isLampiran31Available(r) {
     if (r._key.startsWith('custom_')) return false
     return LAMPIRAN31_KEYS.has(kwitansiKeyFor(r))
