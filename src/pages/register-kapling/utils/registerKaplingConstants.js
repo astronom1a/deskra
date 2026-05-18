@@ -75,3 +75,14 @@ export const PAGE_SIZES = [
 ]
 
 export const SORTIMENS = ['AI', 'AII', 'AIII']
+
+export const INVOIS_PREFIX_MAP = {
+  ECR: { bg: 'rgba(0,180,255,0.1)',   color: 'rgba(0,180,255,0.95)',  border: 'rgba(0,180,255,0.28)',  desc: 'Retail' },
+  ECK: { bg: 'rgba(0,255,136,0.08)',  color: '#00ff88',               border: 'rgba(0,255,136,0.22)',  desc: 'DK318'  },
+  EKK: { bg: 'rgba(170,80,255,0.1)',  color: 'rgba(170,80,255,0.9)',  border: 'rgba(170,80,255,0.28)', desc: 'Khusus' },
+}
+
+export const RK_BADGE_BASE = {
+  display: 'inline-block', padding: '2px 6px', borderRadius: 3,
+  fontSize: 10, fontWeight: 600, fontFamily: 'monospace',
+}

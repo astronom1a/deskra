@@ -1,4 +1,34 @@
-import { buildInvoiceKaplingUpdates } from '../lib/tenantScope.js'
+import * as pdfjsLib from 'pdfjs-dist'
+import { buildInvoiceKaplingUpdates } from '../../../lib/tenantScope.js'
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).href
+
+export async function parsePdfInvoice(file) {
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+  let fullText = ''
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const content = await page.getTextContent()
+    fullText += content.items.map(item => item.str).join(' ') + '\n'
+  }
+
+  const invoiceMatch = fullText.match(/NO INVOICE\s*:\s*(\S+)/i)
+  const noInvois = invoiceMatch ? invoiceMatch[1].trim() : null
+
+  const pembeliMatch = fullText.match(/(?:Sudah|Telah)\s+Terima\s+Dari\s*:\s*([^\n]+)/i)
+  const pembeli = pembeliMatch
+    ? pembeliMatch[1].replace(/\s+/g, ' ').replace(/Recived from.*/i, '').trim()
+    : null
+
+  const kaplingMatches = [...fullText.matchAll(/\b(\d{13})\b/g)]
+  const kaplingList = [...new Set(kaplingMatches.map(m => m[1]))]
+
+  return { noInvois, pembeli, kaplingList }
+}
 
 export function summarizeInvoiceParseResult({
   fileName,

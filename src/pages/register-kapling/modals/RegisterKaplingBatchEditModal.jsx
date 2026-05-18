@@ -1,5 +1,5 @@
 import { Loader2, Pencil, X } from 'lucide-react'
-import ThemedSelect from '../components/ThemedSelect'
+import ThemedSelect from '../../../components/ui/ThemedSelect'
 
 const inputStyle = {
   background: 'rgba(255,255,255,0.04)',

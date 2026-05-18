@@ -6,8 +6,8 @@ import {
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
-import TpkRequiredState from '../components/TpkRequiredState'
-import { TableSkeleton } from '../components/LoadingState'
+import TpkRequiredState from '../components/layout/TpkRequiredState'
+import { TableSkeleton } from '../components/ui/LoadingState'
 
 const PAGE = 500
 const COLS = [

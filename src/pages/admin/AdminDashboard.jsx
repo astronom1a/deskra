@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { computeTotalUK } from '../../lib/rekapPekerjaan'
 import { Building2, CheckCircle2, XCircle, CalendarDays, ChevronRight } from 'lucide-react'
 import { gsap } from 'gsap'
-import { TableSkeleton } from '../../components/LoadingState'
+import { TableSkeleton } from '../../components/ui/LoadingState'
 
 // Angka acak cepat selama ~650 ms, lalu count-up smooth ke nilai asli.
 // `delay` (detik) memungkinkan stagger antar card.

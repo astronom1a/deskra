@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp, X } from 'lucide-react'
-import ThemedSelect from '../components/ThemedSelect'
+import ThemedSelect from '../../../components/ui/ThemedSelect'
 
 export default function RegisterKaplingSortPanel({
   columns,

@@ -1,9 +1,9 @@
 import { Fragment, useEffect, useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { ArrowLeft, FileBarChart2, ChevronDown, ChevronRight, AlertCircle } from 'lucide-react'
-import { supabase } from '../lib/supabase'
-import Toast, { useToast } from '../components/Toast'
-import { PageLoader } from '../components/LoadingState'
+import { supabase } from '../../lib/supabase'
+import Toast, { useToast } from '../../components/ui/Toast'
+import { PageLoader } from '../../components/ui/LoadingState'
 
 function fmt(n, dec = 0) {
   if (n == null) return '—'

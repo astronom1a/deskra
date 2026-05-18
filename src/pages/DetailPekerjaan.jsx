@@ -3,12 +3,12 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
 import { requireTpkId } from '../lib/tenantScope'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
-import TpkRequiredState from '../components/TpkRequiredState'
+import TpkRequiredState from '../components/layout/TpkRequiredState'
 import {
   Save, CalendarDays, Plus, Trash2,
   TreePine, Barcode, Users, Sparkles, Zap, Package, Lock
 } from 'lucide-react'
-import Toast, { useToast } from '../components/Toast'
+import Toast, { useToast } from '../components/ui/Toast'
 
 const DEFAULT_JENIS = ['JATI', 'RIMBA', 'MAHONI']
 const DEFAULT_JENIS_BARCODE = ['JATI', 'MAHONI', 'KEDAWUNG']

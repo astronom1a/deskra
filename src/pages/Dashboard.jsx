@@ -6,11 +6,11 @@ import {
   Link2, Users, Layers, Package, Clock,
   TrendingUp, AlertCircle, Eye, EyeOff, FileText, BookOpen,
 } from 'lucide-react'
-import { useAccount } from '../lib/useAccount'
+import { useAccount } from '../lib/hooks/useAccount'
 import { useAuth } from '../lib/AuthProvider'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
-import TpkRequiredState from '../components/TpkRequiredState'
-import { TableSkeleton } from '../components/LoadingState'
+import TpkRequiredState from '../components/layout/TpkRequiredState'
+import { TableSkeleton } from '../components/ui/LoadingState'
 
 const SORTIMENS = ['AI', 'AII', 'AIII']
 

@@ -8,7 +8,7 @@ import {
   CheckCircle2, XCircle, Mail, RefreshCw, AlertCircle,
   UserPlus, Eye, EyeOff, X, Trash2,
 } from 'lucide-react'
-import { InlineLoader, PageLoader, TableSkeleton } from '../../components/LoadingState'
+import { InlineLoader, PageLoader, TableSkeleton } from '../../components/ui/LoadingState'
 
 const TABS = [
   { id: 'info', label: 'Info', icon: Info },

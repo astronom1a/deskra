@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { useAuth } from '../lib/AuthProvider'
-import { getEffectiveTpkId } from '../lib/effectiveTpk'
-import ConfirmDialog from '../components/ConfirmDialog'
-import TpkRequiredState from '../components/TpkRequiredState'
-import Toast from '../components/Toast'
-import { TableSkeleton } from '../components/LoadingState'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../lib/AuthProvider'
+import { getEffectiveTpkId } from '../../lib/effectiveTpk'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import TpkRequiredState from '../../components/layout/TpkRequiredState'
+import Toast from '../../components/ui/Toast'
+import { TableSkeleton } from '../../components/ui/LoadingState'
 import { Plus, Pencil, Trash2, X } from 'lucide-react'
 
 const emptyForm = { kode_rek: '', uraian: '', satuan: '', tarif: '', aktif: true }

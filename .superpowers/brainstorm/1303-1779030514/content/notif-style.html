@@ -1,0 +1,316 @@
+<style>
+  .preview-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .login-mockup {
+    position: relative;
+    background: #0a0a0a;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 28px 24px 20px;
+    min-height: 160px;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+  }
+  .login-mockup::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
+  }
+  .mock-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .mock-logo {
+    width: 32px; height: 32px;
+    background: #00ff88;
+    border-radius: 50%;
+    margin-bottom: 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .mock-title { color: #f0f0f0; font-size: 15px; font-weight: 700; letter-spacing: -0.5px; }
+  .mock-sub { color: #00ff88; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+  .mock-card {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 16px;
+  }
+  .mock-input {
+    height: 32px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 3px;
+    margin-bottom: 8px;
+  }
+  .mock-btn {
+    height: 32px;
+    background: rgba(0,255,136,0.15);
+    border-radius: 3px;
+  }
+  .mock-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.2);
+  }
+
+  /* === Variant A: Bell icon top-right === */
+  .bell-btn {
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .bell-dot {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 8px; height: 8px;
+    background: #00ff88;
+    border-radius: 50%;
+    border: 2px solid #0a0a0a;
+  }
+  .bell-icon { color: rgba(255,255,255,0.5); font-size: 13px; }
+  .bell-popup {
+    position: absolute;
+    top: 46px; right: 12px;
+    width: 200px;
+    background: #141414;
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 6px;
+    padding: 12px;
+    z-index: 10;
+  }
+  .bell-popup-header {
+    font-size: 9px;
+    color: #00ff88;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .bell-version-tag {
+    font-size: 8px;
+    background: rgba(0,255,136,0.1);
+    color: #00ff88;
+    border: 1px solid rgba(0,255,136,0.2);
+    padding: 1px 6px;
+    border-radius: 10px;
+  }
+  .bell-item {
+    font-size: 10px;
+    color: rgba(255,255,255,0.65);
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex; gap: 6px; align-items: flex-start;
+  }
+  .bell-item:last-child { border-bottom: none; }
+  .bell-item-dot { color: #00ff88; margin-top: 1px; flex-shrink: 0; }
+
+  /* === Variant B: Floating pill badge === */
+  .pill-badge {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.25);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 10px;
+    color: #00ff88;
+    display: flex; align-items: center; gap: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .pill-dot-anim {
+    width: 5px; height: 5px;
+    background: #00ff88;
+    border-radius: 50%;
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
+  }
+  .pill-drawer {
+    position: absolute;
+    top: 46px; right: 14px;
+    width: 210px;
+    background: #141414;
+    border: 1px solid rgba(0,255,136,0.15);
+    border-radius: 6px;
+    padding: 12px;
+    z-index: 10;
+  }
+
+  /* === Variant C: Version text expandable === */
+  .version-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+  }
+  .version-text { color: rgba(255,255,255,0.2); font-size: 10px; }
+  .version-badge {
+    background: rgba(0,255,136,0.12);
+    border: 1px solid rgba(0,255,136,0.2);
+    color: #00ff88;
+    font-size: 8px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+  }
+  .version-tooltip {
+    position: absolute;
+    bottom: 52px; left: 12px;
+    width: 200px;
+    background: #141414;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    z-index: 10;
+  }
+  .tooltip-title {
+    color: #00ff88;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .tooltip-item {
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex; gap: 5px;
+    color: rgba(255,255,255,0.5);
+  }
+  .tooltip-item:last-child { border-bottom: none; }
+</style>
+
+<h2>Bagaimana notifikasi update ditampilkan?</h2>
+<p class="subtitle">Pilih tampilan yang paling cocok dengan desain login Deskra</p>
+
+<div class="options" style="margin-top:0">
+
+  <!-- Option A -->
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Bell Icon — pojok kanan atas</h3>
+      <p>Ikon lonceng kecil dengan titik hijau. Klik buka popup changelog vertikal. Familiar dan tidak mengganggu.</p>
+      <div class="preview-wrap">
+        <div class="login-mockup" style="height:200px">
+          <div class="bell-btn">
+            <span class="bell-icon">🔔</span>
+            <div class="bell-dot"></div>
+          </div>
+          <div class="bell-popup">
+            <div class="bell-popup-header">
+              <span>What's new</span>
+              <span class="bell-version-tag">v0.31.0</span>
+            </div>
+            <div class="bell-item"><span class="bell-item-dot">+</span> Import DKHP dari Excel (.xlsx)</div>
+            <div class="bell-item"><span class="bell-item-dot">+</span> Register Kapling: sort & batch edit</div>
+            <div class="bell-item"><span class="bell-item-dot">✦</span> Perbaikan parser DK310</div>
+          </div>
+          <div class="mock-brand">
+            <div class="mock-logo"></div>
+            <div class="mock-title">Deskra</div>
+            <div class="mock-sub">sistem administrasi</div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-input"></div>
+            <div class="mock-input"></div>
+            <div class="mock-btn"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Floating Pill Badge</h3>
+      <p>Chip "✦ New in v0.31" di kanan atas dengan titik pulsing hijau. Lebih menonjol, cocok untuk highlight update penting.</p>
+      <div class="preview-wrap">
+        <div class="login-mockup" style="height:200px">
+          <div class="pill-badge">
+            <div class="pill-dot-anim"></div>
+            ✦ New in v0.31
+          </div>
+          <div class="pill-drawer">
+            <div class="bell-popup-header">
+              <span>What's new</span>
+              <span class="bell-version-tag">v0.31.0</span>
+            </div>
+            <div class="bell-item"><span class="bell-item-dot">+</span> Import DKHP dari Excel (.xlsx)</div>
+            <div class="bell-item"><span class="bell-item-dot">+</span> Register Kapling: sort & batch edit</div>
+            <div class="bell-item"><span class="bell-item-dot">✦</span> Perbaikan parser DK310</div>
+          </div>
+          <div class="mock-brand" style="margin-top:20px">
+            <div class="mock-logo"></div>
+            <div class="mock-title">Deskra</div>
+            <div class="mock-sub">sistem administrasi</div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-input"></div>
+            <div class="mock-input"></div>
+            <div class="mock-btn"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option C -->
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Version Badge di Footer</h3>
+      <p>Badge "NEW" kecil di samping versi yang sudah ada (v0.31.0). Klik buka tooltip ke atas. Paling subtle — tidak mengganggu sama sekali.</p>
+      <div class="preview-wrap">
+        <div class="login-mockup" style="height:200px">
+          <div class="mock-brand">
+            <div class="mock-logo"></div>
+            <div class="mock-title">Deskra</div>
+            <div class="mock-sub">sistem administrasi</div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-input"></div>
+            <div class="mock-input"></div>
+            <div class="mock-btn"></div>
+          </div>
+          <div class="mock-footer">
+            <div class="version-chip">
+              <span class="version-text">v0.31.0</span>
+              <span class="version-badge">NEW</span>
+            </div>
+            <span>© AstroLabs Studio</span>
+          </div>
+          <div class="version-tooltip">
+            <div class="tooltip-title">v0.31.0 — What's new</div>
+            <div class="tooltip-item"><span style="color:#00ff88">+</span> Import DKHP dari Excel (.xlsx)</div>
+            <div class="tooltip-item"><span style="color:#00ff88">+</span> Register Kapling: sort & batch edit</div>
+            <div class="tooltip-item"><span style="color:#aaa">✦</span> Perbaikan parser DK310</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

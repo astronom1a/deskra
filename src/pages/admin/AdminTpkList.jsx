@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { computeTotalUK } from '../../lib/rekapPekerjaan'
-import ConfirmDialog from '../../components/ConfirmDialog'
-import { TableSkeleton } from '../../components/LoadingState'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import { TableSkeleton } from '../../components/ui/LoadingState'
 import { Plus, CheckCircle2, XCircle, Search, ChevronRight, Trash2, AlertCircle } from 'lucide-react'
 
 export default function AdminTpkList() {

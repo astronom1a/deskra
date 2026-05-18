@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp, ChevronsUpDown, FileBarChart2, FileSpreadsheet, Pencil, Trash2 } from 'lucide-react'
-import { TableSkeleton } from '../components/LoadingState'
-import { displayDate, getMutuLabel, getPembeliName } from './registerKaplingUtils'
+import { TableSkeleton } from '../../../components/ui/LoadingState'
+import { displayDate, getMutuLabel, getPembeliName } from '../utils/registerKaplingUtils'
 
 const INVOIS_PREFIX_MAP = {
   ECR: { bg: 'rgba(0,180,255,0.1)',   color: 'rgba(0,180,255,0.95)',  border: 'rgba(0,180,255,0.28)',  desc: 'Retail' },

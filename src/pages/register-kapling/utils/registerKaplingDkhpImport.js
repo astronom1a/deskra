@@ -1,3 +1,12 @@
+import * as XLSX from 'xlsx'
+
+export async function readDkhpWorkbookRows(file) {
+  const arrayBuffer = await file.arrayBuffer()
+  const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true })
+  const ws = wb.Sheets[wb.SheetNames[0]]
+  return XLSX.utils.sheet_to_json(ws, { header: 1, defval: null })
+}
+
 export function summarizeDkhpWorkbookRows({
   fileName,
   rawRows,

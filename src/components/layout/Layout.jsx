@@ -7,11 +7,11 @@ import {
   ArrowLeft, FileBarChart2, ScanLine,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { useAccount } from '../lib/useAccount'
-import { useAuth } from '../lib/AuthProvider'
-import { canUseOperatorRoutes } from '../lib/adminOperatorContext'
-import { version as appVersion } from '../../package.json'
+import { supabase } from '../../lib/supabase'
+import { useAccount } from '../../lib/hooks/useAccount'
+import { useAuth } from '../../lib/AuthProvider'
+import { canUseOperatorRoutes } from '../../lib/adminOperatorContext'
+import { version as appVersion } from '../../../package.json'
 import { gsap } from 'gsap'
 
 const operatorNavItems = [
