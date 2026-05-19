@@ -515,7 +515,7 @@ export default function Dashboard() {
                       <td className="px-5 py-3.5 text-right font-mono font-semibold text-sm align-middle" style={{ color: '#00ff88' }}>
                         {maskRupiah(p.total_uk)}
                       </td>
-                      <td className="px-5 py-3.5 text-center align-middle">
+                      <td className="inline-flex px-5 py-3.5 text-center align-middle">
                         <span
                           className="inline-flex items-center px-2 py-0.5 text-xs font-mono"
                           style={{

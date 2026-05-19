@@ -146,7 +146,8 @@ function KwitansiDoc({ periode }) {
   return (
     <div className="text-[11px] leading-snug text-black" style={TIMES}>
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="text-center mb-2">
+      <div className="relative text-center mb-2">
+        <img src="/logo-perhutani.png" alt="Logo Perhutani" className="absolute left-0 top-0" style={{ height: 56 }} />
         <p className="font-bold text-[13px]">PERUSAHAAN UMUM KEHUTANAN NEGARA</p>
         <p className="font-bold text-[12px]">( PERUM PERHUTANI )</p>
         <p className="font-bold text-[12px]">DIVISI REGIONAL JAWA TIMUR</p>
@@ -217,64 +218,70 @@ function KwitansiDoc({ periode }) {
             <>
               {/* Title row */}
               <tr>
-                <td className="border border-black text-center align-top px-1 py-1"/>
-                <td className="border border-black align-top px-2 py-1">
+                <td className="border-l border-black text-center align-top px-1 py-1"/>
+                <td className="border-l border-black align-top px-2 py-1">
                   <p className="font-bold">Bantuan Transport Tenaga Bantu Mandor</p>
                 </td>
-                <td className="border border-black"/>
-                <td className="border border-black"/>
-                <td className="border border-black text-center">-</td>
-                <td className="border border-black"/>
-                <td className="border border-black"/>
-                <td className="border border-black"/>
-                <td className="border border-black"/>
+                <td className="border-l border-black"/>
+                <td className="border-l border-black"/>
+                <td className="border-l border-black text-center">-</td>
+                <td className="border-l border-black"/>
+                <td className="border-l border-black"/>
+                <td className="border-l border-black"/>
+                <td className="border-l border-black"/>
               </tr>
               {/* Per-tenaga rows */}
               {(data.tenagaKerja||[]).map((tn,i) => (
                 <tr key={tn.id}>
-                  <td className="border border-black text-center align-top px-1 py-1"/>
-                  <td className="border border-black align-top px-2 py-1">a/n {tn.nama}</td>
-                  <td className="border border-black text-right align-top px-1 py-1">1 bln</td>
-                  <td className="border border-black text-right align-top px-1 py-1">{formatAngka(tarif)}</td>
-                  <td className="border border-black text-right align-top px-1 py-1">{formatAngka(tarif)}</td>
-                  <td className="border border-black"/>
-                  <td className="border border-black text-right align-top px-1 py-1">{formatAngka(tarif)}</td>
-                  <td className="border border-black"/>
-                  <td className="border border-black text-right align-top px-1 py-1">{formatAngka(tarif)}</td>
+                  <td className="border-l border-black text-center align-top px-1 py-1"/>
+                  <td className="border-l border-black align-top px-2 py-1">a/n {tn.nama}</td>
+                  <td className="border-l border-black text-right align-top px-1 py-1">1 bln</td>
+                  <td className="border-l border-black text-right align-top px-1 py-1">{formatAngka(tarif)}</td>
+                  <td className="border-l border-black text-right align-top px-1 py-1">{formatAngka(tarif)}</td>
+                  <td className="border-l border-black"/>
+                  <td className="border-l border-black text-right align-top px-1 py-1">{formatAngka(tarif)}</td>
+                  <td className="border-l border-black"/>
+                  <td className="border-l border-black text-right align-top px-1 py-1">{formatAngka(tarif)}</td>
                 </tr>
               ))}
               {/* Footer info di kolom Uraian */}
               <tr>
-                <td className="border border-black"/>
-                <td className="border border-black px-2 py-1 align-top">
+                <td className="border-l border-black"/>
+                <td className="border-l border-black px-2 py-1 align-top">
                   <p>{bulanTahun}</p>
                   <p>(Surat terlampir)</p>
                 </td>
-                <td className="border border-black"/>
-                <td className="border border-black"/>
-                <td className="border border-black"/>
-                <td className="border border-black"/>
-                <td className="border border-black"/>
-                <td className="border border-black"/>
-                <td className="border border-black"/>
+                <td className="border-l border-black"/>
+                <td className="border-l border-black"/>
+                <td className="border-l border-black"/>
+                <td className="border-l border-black"/>
+                <td className="border-l border-black"/>
+                <td className="border-l border-black"/>
+                <td className="border-l border-black"/>
               </tr>
               {/* Spacer */}
-              <tr><td colSpan={9} className="border border-black h-4"/></tr>
+              <tr>
+                <td className="border-l border-black h-4"/><td className="border-l border-black"/>
+                <td className="border-l border-black"/><td className="border-l border-black"/>
+                <td className="border-l border-black"/><td className="border-l border-black"/>
+                <td className="border-l border-black"/><td className="border-l border-black"/>
+                <td className="border-l border-black"/>
+              </tr>
               {/* Jumlah */}
               <tr className="font-bold">
-                <td colSpan={4} className="border border-black px-2 py-1 text-right">Jumlah Rp.</td>
-                <td className="border border-black text-center">-</td>
-                <td className="border border-black text-center">-</td>
-                <td className="border border-black text-right px-1">{formatAngka(grand)}</td>
-                <td className="border border-black text-center">-</td>
-                <td className="border border-black text-right px-1">{formatAngka(grand)}</td>
+                <td colSpan={4} className="border-l border-t border-black px-2 py-1 text-right">Jumlah Rp.</td>
+                <td className="border-l border-t border-black text-center">-</td>
+                <td className="border-l border-t border-black text-center">-</td>
+                <td className="border-l border-t border-black text-right px-1">{formatAngka(grand)}</td>
+                <td className="border-l border-t border-black text-center">-</td>
+                <td className="border-l border-t border-black text-right px-1">{formatAngka(grand)}</td>
               </tr>
             </>
           ) : (
             <>
               <tr>
-                <td className="border border-black text-center align-top px-1 py-1"></td>
-                <td className="border border-black align-top px-2 py-1">
+                <td className="border-l border-black text-center align-top px-1 py-1"></td>
+                <td className="border-l border-black align-top px-2 py-1">
                   <p className="font-semibold">{cfg.title} :</p>
                   {subRows && subRows.length > 0 && (
                     <div className="mt-1">
@@ -287,24 +294,30 @@ function KwitansiDoc({ periode }) {
                     </div>
                   )}
                 </td>
-                <td className="border border-black text-right align-bottom px-1 py-1 tabular-nums">
+                <td className="border-l border-black text-right align-bottom px-1 py-1 tabular-nums">
                   {formatAngkaFisik(totalFisik)}
                 </td>
-                <td className="border border-black text-right align-bottom px-1 py-1">{formatAngka(tarif)}</td>
-                <td className="border border-black text-right align-bottom px-1 py-1">{formatAngka(grand)}</td>
-                <td className="border border-black text-center align-bottom px-1 py-1">-</td>
-                <td className="border border-black text-right align-bottom px-1 py-1">{formatAngka(grand)}</td>
-                <td className="border border-black text-center align-bottom px-1 py-1">-</td>
-                <td className="border border-black text-right align-bottom px-1 py-1">{formatAngka(grand)}</td>
+                <td className="border-l border-black text-right align-bottom px-1 py-1">{formatAngka(tarif)}</td>
+                <td className="border-l border-black text-right align-bottom px-1 py-1">{formatAngka(grand)}</td>
+                <td className="border-l border-black text-center align-bottom px-1 py-1">-</td>
+                <td className="border-l border-black text-right align-bottom px-1 py-1">{formatAngka(grand)}</td>
+                <td className="border-l border-black text-center align-bottom px-1 py-1">-</td>
+                <td className="border-l border-black text-right align-bottom px-1 py-1">{formatAngka(grand)}</td>
               </tr>
-              <tr><td colSpan={9} className="border border-black h-44"/></tr>
+              <tr>
+                <td className="border-l border-black h-44"/><td className="border-l border-black"/>
+                <td className="border-l border-black"/><td className="border-l border-black"/>
+                <td className="border-l border-black"/><td className="border-l border-black"/>
+                <td className="border-l border-black"/><td className="border-l border-black"/>
+                <td className="border-l border-black"/>
+              </tr>
               <tr className="font-bold">
-                <td colSpan={4} className="border border-black px-2 py-1 text-right">Jumlah Rp.</td>
-                <td className="border border-black text-center">-</td>
-                <td className="border border-black text-center">-</td>
-                <td className="border border-black text-right px-1">{formatAngka(grand)}</td>
-                <td className="border border-black text-center">-</td>
-                <td className="border border-black text-right px-1">{formatAngka(grand)}</td>
+                <td colSpan={4} className="border-l border-t border-black px-2 py-1 text-right">Jumlah Rp.</td>
+                <td className="border-l border-t border-black text-center">-</td>
+                <td className="border-l border-t border-black text-center">-</td>
+                <td className="border-l border-t border-black text-right px-1">{formatAngka(grand)}</td>
+                <td className="border-l border-t border-black text-center">-</td>
+                <td className="border-l border-t border-black text-right px-1">{formatAngka(grand)}</td>
               </tr>
             </>
           )}
@@ -312,9 +325,9 @@ function KwitansiDoc({ periode }) {
       </table>
 
       {/* ── Highlighted total ──────────────────────────── */}
-      <div className="flex items-center gap-3 mt-2 mb-3">
+      <div className="inline-flex items-center align-middle gap-3 mt-2 mb-3">
         <span className="ml-8">Jumlah Rp.</span>
-        <div className="bg-emerald-100 border border-emerald-700 px-6 py-1 font-bold text-[12px]">
+        <div className="bg-emerald-100 border border-emerald-700 px-6 py-1 align-middle font-bold text-[12px] min-w-[240px] text-right">
           {formatAngka(grand)}
         </div>
       </div>
@@ -412,15 +425,15 @@ function TumpukKaplingBody({ data, grand, formatAngka, formatAngkaFisik }) {
     <>
       {/* Title row */}
       <tr>
-        <td className="border border-black text-center align-top px-1 py-1"/>
-        <td className="border border-black align-top px-2 py-1 font-semibold">BIAYA TUMPUK KAPLING</td>
-        <td className="border border-black"/>
-        <td className="border border-black"/>
-        <td className="border border-black"/>
-        <td className="border border-black"/>
-        <td className="border border-black"/>
-        <td className="border border-black"/>
-        <td className="border border-black"/>
+        <td className="border-l border-black text-center align-top px-1 py-1"/>
+        <td className="border-l border-black align-top px-2 py-1 font-semibold">BIAYA TUMPUK KAPLING</td>
+        <td className="border-l border-black"/>
+        <td className="border-l border-black"/>
+        <td className="border-l border-black"/>
+        <td className="border-l border-black"/>
+        <td className="border-l border-black"/>
+        <td className="border-l border-black"/>
+        <td className="border-l border-black"/>
       </tr>
 
       {/* Per jenis */}
@@ -428,41 +441,41 @@ function TumpukKaplingBody({ data, grand, formatAngka, formatAngkaFisik }) {
         <Frag key={g.jenis}>
           {/* Jenis header */}
           <tr>
-            <td className="border border-black"/>
-            <td className="border border-black px-2 py-1 font-semibold">{g.label}</td>
-            <td className="border border-black"/>
-            <td className="border border-black"/>
-            <td className="border border-black"/>
-            <td className="border border-black"/>
-            <td className="border border-black"/>
-            <td className="border border-black"/>
-            <td className="border border-black"/>
+            <td className="border-l border-black"/>
+            <td className="border-l border-black px-2 py-1 font-semibold">{g.label}</td>
+            <td className="border-l border-black"/>
+            <td className="border-l border-black"/>
+            <td className="border-l border-black"/>
+            <td className="border-l border-black"/>
+            <td className="border-l border-black"/>
+            <td className="border-l border-black"/>
+            <td className="border-l border-black"/>
           </tr>
           {/* Per sortimen */}
           {g.items.map((s) => (
             <tr key={s.sortimen}>
-              <td className="border border-black"/>
-              <td className="border border-black px-2 py-1 pl-8">{SORTIMEN_LABEL[s.sortimen] || s.sortimen}</td>
-              <td className="border border-black text-right px-1 py-1 tabular-nums">{formatAngkaFisik(s.volume)}</td>
-              <td className="border border-black text-right px-1 py-1">{formatAngka(s.tarif)}</td>
-              <td className="border border-black text-right px-1 py-1">{formatAngka(Math.round(s.volume * s.tarif))}</td>
-              <td className="border border-black"/>
-              <td className="border border-black"/>
-              <td className="border border-black"/>
-              <td className="border border-black"/>
+              <td className="border-l border-black"/>
+              <td className="border-l border-black px-2 py-1 pl-8">{SORTIMEN_LABEL[s.sortimen] || s.sortimen}</td>
+              <td className="border-l border-black text-right px-1 py-1 tabular-nums">{formatAngkaFisik(s.volume)}</td>
+              <td className="border-l border-black text-right px-1 py-1">{formatAngka(s.tarif)}</td>
+              <td className="border-l border-black text-right px-1 py-1">{formatAngka(Math.round(s.volume * s.tarif))}</td>
+              <td className="border-l border-black"/>
+              <td className="border-l border-black"/>
+              <td className="border-l border-black"/>
+              <td className="border-l border-black"/>
             </tr>
           ))}
           {/* Subtotal jenis */}
           <tr className="font-semibold">
-            <td className="border border-black"/>
-            <td className="border border-black"/>
-            <td className="border border-black text-right px-1 py-1 border-t-2 tabular-nums">{formatAngkaFisik(g.subVol)}</td>
-            <td className="border border-black"/>
-            <td className="border border-black text-right px-1 py-1 border-t-2">{formatAngka(Math.round(g.subNilai))}</td>
-            <td className="border border-black"/>
-            <td className="border border-black text-right px-1 py-1">{formatAngka(Math.round(g.subNilai))}</td>
-            <td className="border border-black"/>
-            <td className="border border-black text-right px-1 py-1">{formatAngka(Math.round(g.subNilai))}</td>
+            <td className="border-l border-black"/>
+            <td className="border-l border-black"/>
+            <td className="border-l border-black text-right px-1 py-1 tabular-nums">{formatAngkaFisik(g.subVol)}</td>
+            <td className="border-l border-black"/>
+            <td className="border-l border-black text-right px-1 py-1">{formatAngka(Math.round(g.subNilai))}</td>
+            <td className="border-l border-black"/>
+            <td className="border-l border-black text-right px-1 py-1">{formatAngka(Math.round(g.subNilai))}</td>
+            <td className="border-l border-black"/>
+            <td className="border-l border-black text-right px-1 py-1">{formatAngka(Math.round(g.subNilai))}</td>
           </tr>
         </Frag>
       ))}
@@ -470,29 +483,35 @@ function TumpukKaplingBody({ data, grand, formatAngka, formatAngkaFisik }) {
       {/* Brongkol (KA) */}
       {showBrongkol && (
         <tr>
-          <td className="border border-black"/>
-          <td className="border border-black px-2 py-1 font-semibold">KA</td>
-          <td className="border border-black text-right px-1 py-1 tabular-nums">{formatAngkaFisik(brongkolVol)}</td>
-          <td className="border border-black text-right px-1 py-1">{formatAngka(brongkolTarif)}</td>
-          <td className="border border-black text-right px-1 py-1">{formatAngka(Math.round(brongkolNilai))}</td>
-          <td className="border border-black"/>
-          <td className="border border-black text-right px-1 py-1">{formatAngka(Math.round(brongkolNilai))}</td>
-          <td className="border border-black"/>
-          <td className="border border-black text-right px-1 py-1">{formatAngka(Math.round(brongkolNilai))}</td>
+          <td className="border-l border-black"/>
+          <td className="border-l border-black px-2 py-1 font-semibold">KA</td>
+          <td className="border-l border-black text-right px-1 py-1 tabular-nums">{formatAngkaFisik(brongkolVol)}</td>
+          <td className="border-l border-black text-right px-1 py-1">{formatAngka(brongkolTarif)}</td>
+          <td className="border-l border-black text-right px-1 py-1">{formatAngka(Math.round(brongkolNilai))}</td>
+          <td className="border-l border-black"/>
+          <td className="border-l border-black text-right px-1 py-1">{formatAngka(Math.round(brongkolNilai))}</td>
+          <td className="border-l border-black"/>
+          <td className="border-l border-black text-right px-1 py-1">{formatAngka(Math.round(brongkolNilai))}</td>
         </tr>
       )}
 
       {/* Spacer */}
-      <tr><td colSpan={9} className="border border-black h-3"/></tr>
+      <tr>
+        <td className="border-l border-black h-3"/><td className="border-l border-black"/>
+        <td className="border-l border-black"/><td className="border-l border-black"/>
+        <td className="border-l border-black"/><td className="border-l border-black"/>
+        <td className="border-l border-black"/><td className="border-l border-black"/>
+        <td className="border-l border-black"/>
+      </tr>
 
       {/* Jumlah Rp */}
       <tr className="font-bold">
-        <td colSpan={4} className="border border-black px-2 py-1 text-right">Jumlah Rp.</td>
-        <td className="border border-black text-right px-1">{formatAngka(grand)}</td>
-        <td className="border border-black text-center">-</td>
-        <td className="border border-black text-right px-1">{formatAngka(grand)}</td>
-        <td className="border border-black text-center">-</td>
-        <td className="border border-black text-right px-1">{formatAngka(grand)}</td>
+        <td colSpan={4} className="border-l border-t border-black px-2 py-1 text-right">Jumlah Rp.</td>
+        <td className="border-l border-t border-black text-right px-1">{formatAngka(grand)}</td>
+        <td className="border-l border-t border-black text-center">-</td>
+        <td className="border-l border-t border-black text-right px-1">{formatAngka(grand)}</td>
+        <td className="border-l border-t border-black text-center">-</td>
+        <td className="border-l border-t border-black text-right px-1">{formatAngka(grand)}</td>
       </tr>
     </>
   )

@@ -161,5 +161,5 @@ export function analyzeKapling(rows) {
     }
   }
 
-  return { last, missing, shorten }
+  return { last, missing, shorten, total: nums.length }
 }
