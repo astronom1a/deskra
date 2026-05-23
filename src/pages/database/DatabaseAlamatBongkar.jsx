@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthProvider'
 import { getEffectiveTpkId } from '../../lib/effectiveTpk'
@@ -6,7 +7,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import TpkRequiredState from '../../components/layout/TpkRequiredState'
 import Toast from '../../components/ui/Toast'
 import { TableSkeleton } from '../../components/ui/LoadingState'
-import { Plus, Pencil, Trash2, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, Upload, X } from 'lucide-react'
 
 const emptyForm = { label: '', end_user: '', alamat_lengkap: '', kota: '' }
 
@@ -21,6 +22,9 @@ export default function DatabaseAlamatBongkar() {
   const [toast, setToast] = useState(null)
   const [deleteRow, setDeleteRow] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [importPreview, setImportPreview] = useState(null) // { rows, fileName }
+  const [importing, setImporting] = useState(false)
+  const fileRef = useRef()
 
   useEffect(() => {
     if (tpkId) fetchData()
@@ -90,6 +94,52 @@ export default function DatabaseAlamatBongkar() {
     fetchData()
   }
 
+  function pick(row, ...keys) {
+    for (const k of keys) {
+      const v = row[k] ?? row[k.toLowerCase()] ?? row[k.toUpperCase()]
+      if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim()
+    }
+    return ''
+  }
+
+  function handleFileChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    e.target.value = ''
+    const reader = new FileReader()
+    reader.onload = evt => {
+      const wb  = XLSX.read(evt.target.result, { type: 'binary' })
+      const ws  = wb.Sheets[wb.SheetNames[0]]
+      const raw = XLSX.utils.sheet_to_json(ws, { defval: '' })
+      const rows = raw
+        .map(r => ({
+          label:         pick(r, 'Label', 'label', 'LABEL', 'Nama', 'nama'),
+          end_user:      pick(r, 'End User', 'end_user', 'EndUser', 'End user', 'END USER'),
+          alamat_lengkap: pick(r, 'Alamat Lengkap', 'alamat_lengkap', 'Alamat', 'alamat', 'ALAMAT'),
+          kota:          pick(r, 'Kota', 'kota', 'KOTA', 'Kabupaten', 'kabupaten'),
+        }))
+        .filter(r => r.label)
+      if (!rows.length) {
+        showToast('Tidak ada data valid. Pastikan file memiliki kolom "Label".', 'error')
+        return
+      }
+      setImportPreview({ rows, fileName: file.name })
+    }
+    reader.readAsBinaryString(file)
+  }
+
+  async function handleImport() {
+    if (!importPreview || !tpkId) return
+    setImporting(true)
+    const payload = importPreview.rows.map(r => ({ ...r, tpk_id: tpkId }))
+    const { error } = await supabase.from('tabel_alamat_bongkar').insert(payload)
+    setImporting(false)
+    if (error) { showToast(error.message, 'error'); return }
+    showToast(`${payload.length} alamat berhasil diimpor`)
+    setImportPreview(null)
+    fetchData()
+  }
+
   const INP = {
     background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)',
     color: '#f0f0f0', borderRadius: 3, outline: 'none', fontFamily: 'monospace',
@@ -124,11 +174,19 @@ export default function DatabaseAlamatBongkar() {
           <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>Database Alamat Bongkar</h1>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>Kelola daftar alamat bongkar/tujuan yang sering digunakan</p>
         </div>
-        <button onClick={openAdd}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700, flexShrink: 0 }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-        ><Plus size={13}/> tambah alamat</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => fileRef.current?.click()}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', borderRadius: 3, cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, flexShrink: 0 }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.07)'; e.currentTarget.style.color = '#00ff88'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.2)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)' }}
+          ><Upload size={13}/> import excel</button>
+          <button onClick={openAdd}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700, flexShrink: 0 }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          ><Plus size={13}/> tambah alamat</button>
+        </div>
+        <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange} />
       </div>
 
       {/* Form */}
@@ -169,6 +227,66 @@ export default function DatabaseAlamatBongkar() {
               {editId ? 'perbarui' : 'simpan'}
             </button>
             <button onClick={() => setShowForm(false)} style={{ padding: '7px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>batal</button>
+          </div>
+        </div>
+      )}
+
+      {/* Import preview */}
+      {importPreview && (
+        <div style={{ background: 'rgba(0,255,136,0.04)', border: '1px solid rgba(0,255,136,0.18)', borderRadius: 3, padding: 20, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div>
+              <p style={{ fontFamily: 'monospace', fontSize: 12, color: '#00ff88', fontWeight: 600 }}>
+                preview import — {importPreview.fileName}
+              </p>
+              <p style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
+                {importPreview.rows.length} baris valid ditemukan
+              </p>
+            </div>
+            <button onClick={() => setImportPreview(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', lineHeight: 0 }}
+              onMouseEnter={e => e.currentTarget.style.color = '#f0f0f0'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+            ><X size={15}/></button>
+          </div>
+
+          <div style={{ overflowX: 'auto', marginBottom: 16 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, fontFamily: 'monospace' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(0,255,136,0.15)' }}>
+                  {['Label', 'End User', 'Alamat Lengkap', 'Kota'].map(h => (
+                    <th key={h} style={{ padding: '5px 10px', textAlign: 'left', fontSize: 10, color: 'rgba(0,255,136,0.7)', fontWeight: 600 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {importPreview.rows.slice(0, 5).map((r, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '5px 10px', color: '#f0f0f0', fontWeight: 500 }}>{r.label}</td>
+                    <td style={{ padding: '5px 10px', color: 'rgba(255,255,255,0.55)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.end_user || '—'}</td>
+                    <td style={{ padding: '5px 10px', color: 'rgba(255,255,255,0.45)', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.alamat_lengkap || '—'}</td>
+                    <td style={{ padding: '5px 10px', color: 'rgba(255,255,255,0.4)' }}>{r.kota || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {importPreview.rows.length > 5 && (
+              <p style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.25)', padding: '6px 10px' }}>
+                ... dan {importPreview.rows.length - 5} baris lainnya
+              </p>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={handleImport} disabled={importing}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', background: importing ? 'rgba(0,255,136,0.3)' : '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: importing ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}
+            >
+              {importing
+                ? <span style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.2)', borderTopColor: '#0a0a0a', display: 'inline-block' }} className="animate-spin" />
+                : <Upload size={12} />}
+              {importing ? 'mengimpor...' : `impor ${importPreview.rows.length} alamat`}
+            </button>
+            <button onClick={() => setImportPreview(null)}
+              style={{ padding: '7px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>batal</button>
           </div>
         </div>
       )}
