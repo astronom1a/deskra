@@ -85,7 +85,7 @@ Operator dapat mengubah nama tampilan dan mereset password sendiri dari dalam ap
 
 **File yang dimodifikasi:** `src/pages/Settings.jsx`
 
-- Hapus pengaturan tema dari Settings.jsx — tema dark dijadikan default permanen. Hook `useTheme` tetap ada di `src/lib/hooks/useTheme.js` karena masih dipakai komponen lain (Layout); hanya referensinya di Settings yang dihapus.
+- Hapus seluruh sistem tema: hook `useTheme`, toggle di manapun, dan semua referensinya. Tema dark (yang saat ini aktif) dijadikan satu-satunya tema permanen — tidak ada lagi light mode. Komponen yang sebelumnya pakai `useTheme` di-hardcode ke nilai dark-nya.
 - Tambah section baru "Akun Saya" berisi:
   - Field `nama_operator` — pre-filled dari `profile.nama_operator`, simpan via `AuthProvider.updateProfile({ nama_operator })`
   - Tombol "Kirim Link Reset Password" — call `supabase.auth.resetPasswordForEmail(session.user.email)`, konfirmasi via Toast
