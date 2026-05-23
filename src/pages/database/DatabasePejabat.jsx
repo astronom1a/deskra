@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthProvider'
 import { getEffectiveTpkId } from '../../lib/effectiveTpk'
+import { logActivity, buildDiff } from '../../lib/activityLog'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import TpkRequiredState from '../../components/layout/TpkRequiredState'
 import Toast from '../../components/ui/Toast'
@@ -53,13 +54,23 @@ export default function DatabasePejabat() {
     if (!tpkId) return showToast('TPK aktif tidak ditemukan. Coba pilih TPK atau login ulang.', 'error')
     if (!form.nama || !form.jabatan) return showToast('Nama dan jabatan wajib diisi', 'error')
     if (editId) {
+      const oldRow = data.find(r => r.id === editId)
       const { error } = await supabase.from('tabel_pejabat').update(form).eq('tpk_id', tpkId).eq('id', editId)
       if (error) return showToast(error.message, 'error')
       showToast('Data pejabat diperbarui')
+      logActivity({
+        action: 'update', entityType: 'pejabat', entityId: editId, entityLabel: form.nama,
+        diff: oldRow ? buildDiff(oldRow, form, [
+          { key: 'nama', label: 'Nama' }, { key: 'npk', label: 'NPK' },
+          { key: 'jabatan', label: 'Jabatan' }, { key: 'aktif', label: 'Aktif' },
+        ]) : null,
+        tpkId, profile,
+      })
     } else {
       const { error } = await supabase.from('tabel_pejabat').insert({ ...form, tpk_id: tpkId })
       if (error) return showToast(error.message, 'error')
       showToast('Pejabat berhasil ditambahkan')
+      logActivity({ action: 'create', entityType: 'pejabat', entityLabel: form.nama, tpkId, profile })
     }
     setShowForm(false)
     fetchData()
@@ -68,12 +79,14 @@ export default function DatabasePejabat() {
   async function handleDelete() {
     if (!tpkId) return showToast('TPK aktif tidak ditemukan. Coba pilih TPK atau login ulang.', 'error')
     if (!deleteRow) return
+    const snapshot = { ...deleteRow }
     setDeleting(true)
     const { error } = await supabase.from('tabel_pejabat').delete().eq('tpk_id', tpkId).eq('id', deleteRow.id)
     setDeleting(false)
     if (error) return showToast(error.message, 'error')
     setDeleteRow(null)
     showToast('Data berhasil dihapus')
+    logActivity({ action: 'delete', entityType: 'pejabat', entityId: snapshot.id, entityLabel: snapshot.nama, tpkId, profile })
     fetchData()
   }
 
