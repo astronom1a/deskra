@@ -119,9 +119,8 @@ export default function ActivityLog() {
   const [logs,         setLogs]         = useState([])
   const [loading,      setLoading]      = useState(true)
 
-  if (!tpkId) return <TpkRequiredState />
-
   useEffect(() => {
+    if (!tpkId) { setLogs([]); setLoading(false); return }
     async function load() {
       setLoading(true)
       let q = supabase
@@ -138,6 +137,8 @@ export default function ActivityLog() {
     }
     load()
   }, [dateFrom, dateTo, moduleFilter, tpkId])
+
+  if (!tpkId) return <TpkRequiredState />
 
   const panelStyle = {
     background: 'rgba(255,255,255,0.025)',
