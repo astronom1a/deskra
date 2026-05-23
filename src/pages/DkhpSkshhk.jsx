@@ -215,15 +215,16 @@ function formatTanggalTerbit(isoDate) {
 }
 
 function buildQrString(form) {
+  const clean = v => (v || '').replace(/#/g, '')
   return [
-    `KB.C.${form.noSkshhk}`,
+    `KB.C.${clean(form.noSkshhk)}`,
     'PERUM PERHUTANI',
-    form.tpkLabel,
-    form.endUser,
-    form.alamatBongkar,
+    clean(form.tpkLabel),
+    clean(form.endUser),
+    clean(form.alamatBongkar),
     formatMasaAktif(form.tanggalAwal, form.durasiHari),
-    form.penerbit,
-    form.tanggalTerbit,
+    clean(form.penerbit),
+    clean(form.tanggalTerbit),
   ].join('#')
 }
 
@@ -363,25 +364,30 @@ export default function DkhpSkshhk() {
 
   useEffect(() => {
     if (!qrRow || !tpkId) return
+    let stale = false
     supabase
       .from('tabel_pejabat')
       .select('nama, jabatan')
       .eq('tpk_id', tpkId)
       .eq('aktif', true)
       .then(({ data }) => {
+        if (stale) return
         const p = (data || []).find(x => (x.jabatan || '').toLowerCase().includes('penerbit'))
         const nama = p?.nama || ''
         setQrPenerbit(nama)
         setQrForm(prev => prev ? { ...prev, penerbit: nama } : prev)
       })
+    return () => { stale = true }
   }, [qrRow, tpkId])
 
   useEffect(() => {
     if (!qrForm) { setQrDataUrl(''); return }
+    let cancelled = false
     const str = buildQrString(qrForm)
     QRCode.toDataURL(str, { errorCorrectionLevel: 'M', width: 300, margin: 1 })
-      .then(url => setQrDataUrl(url))
-      .catch(() => setQrDataUrl(''))
+      .then(url => { if (!cancelled) setQrDataUrl(url) })
+      .catch(() => { if (!cancelled) setQrDataUrl('') })
+    return () => { cancelled = true }
   }, [qrForm])
 
   const exportMonthOptions = useMemo(() => {
