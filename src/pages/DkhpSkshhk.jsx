@@ -1491,6 +1491,138 @@ export default function DkhpSkshhk() {
           </div>
         </div>
       )}
+      {qrRow && qrForm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 560, padding: 24, maxHeight: '92vh', overflowY: 'auto' }}>
+
+            {/* Header modal */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ padding: 8, background: 'rgba(0,255,136,0.08)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 3 }}>
+                  <QrCode size={14} style={{ color: '#00ff88' }}/>
+                </div>
+                <div>
+                  <p style={{ fontWeight: 600, color: '#f0f0f0', fontFamily: 'monospace', fontSize: 13 }}>cetak qr skshhk</p>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontFamily: 'monospace' }}>{qrRow.no_skshhk}</p>
+                </div>
+              </div>
+              <button onClick={() => { setQrRow(null); setQrForm(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
+            </div>
+
+            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+
+              {/* Preview QR */}
+              <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 180, height: 180, background: 'white', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  {qrDataUrl
+                    ? <img src={qrDataUrl} alt="QR Code" style={{ width: 164, height: 164 }}/>
+                    : <Loader2 size={24} style={{ color: '#ccc' }} className="animate-spin"/>
+                  }
+                </div>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', textAlign: 'center', maxWidth: 180, wordBreak: 'break-all' }}>
+                  KB.C.{qrForm.noSkshhk}
+                </p>
+              </div>
+
+              {/* Form edit */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+                {/* Read-only fields */}
+                {[
+                  { label: 'No. SKSHHK', value: `KB.C.${qrForm.noSkshhk}` },
+                  { label: 'Penerbit Surat', value: 'PERUM PERHUTANI' },
+                  { label: 'Nama TPK', value: qrForm.tpkLabel },
+                ].map(f => (
+                  <div key={f.label}>
+                    <label style={{ display: 'block', fontSize: 9, color: 'rgba(255,255,255,0.25)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{f.label}</label>
+                    <div style={{ padding: '6px 8px', fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 3 }}>{f.value}</div>
+                  </div>
+                ))}
+
+                {/* End user */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 9, color: 'rgba(255,255,255,0.38)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>End User / Perusahaan</label>
+                  <input
+                    type="text"
+                    value={qrForm.endUser}
+                    onChange={e => setQrForm(p => ({ ...p, endUser: e.target.value }))}
+                    className="dk-input"
+                    style={{ width: '100%', padding: '6px 8px', fontSize: 11, boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                {/* Alamat bongkar */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 9, color: 'rgba(255,255,255,0.38)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Alamat Bongkar</label>
+                  <textarea
+                    rows={2}
+                    value={qrForm.alamatBongkar}
+                    onChange={e => setQrForm(p => ({ ...p, alamatBongkar: e.target.value }))}
+                    style={{ width: '100%', padding: '6px 8px', fontSize: 11, fontFamily: 'monospace', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, color: '#f0f0f0', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                {/* Masa aktif */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 9, color: 'rgba(255,255,255,0.38)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Masa Aktif — mulai: {qrForm.tanggalAwal ? qrForm.tanggalAwal.split('-').reverse().join('-') : '—'}
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input
+                      type="number"
+                      min="1"
+                      value={qrForm.durasiHari}
+                      onChange={e => setQrForm(p => ({ ...p, durasiHari: Math.max(1, Number(e.target.value) || 1) }))}
+                      className="dk-input"
+                      style={{ width: 64, padding: '6px 8px', fontSize: 11, textAlign: 'center' }}
+                    />
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>
+                      hari → {formatMasaAktif(qrForm.tanggalAwal, qrForm.durasiHari)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Penerbit */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 9, color: 'rgba(255,255,255,0.38)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Penerbit</label>
+                  <input
+                    type="text"
+                    value={qrForm.penerbit}
+                    onChange={e => setQrForm(p => ({ ...p, penerbit: e.target.value }))}
+                    className="dk-input"
+                    style={{ width: '100%', padding: '6px 8px', fontSize: 11, boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                {/* Tanggal terbit */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 9, color: 'rgba(255,255,255,0.38)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tanggal Terbit Surat</label>
+                  <input
+                    type="text"
+                    value={qrForm.tanggalTerbit}
+                    onChange={e => setQrForm(p => ({ ...p, tanggalTerbit: e.target.value }))}
+                    className="dk-input"
+                    style={{ width: '100%', padding: '6px 8px', fontSize: 11, boxSizing: 'border-box' }}
+                  />
+                </div>
+
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+              <button onClick={() => { setQrRow(null); setQrForm(null) }} style={{ padding: '7px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>tutup</button>
+              <button
+                onClick={() => window.print()}
+                disabled={!qrDataUrl}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 11, borderRadius: 3, background: qrDataUrl ? '#00ff88' : 'rgba(0,255,136,0.15)', color: qrDataUrl ? '#0a0a0a' : 'rgba(0,255,136,0.4)', border: 'none', cursor: qrDataUrl ? 'pointer' : 'not-allowed', fontFamily: 'monospace', fontWeight: 700 }}
+              >
+                cetak QR
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Context menu */}
       {contextMenu && (
         <div
