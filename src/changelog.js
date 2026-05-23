@@ -1,6 +1,15 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.35.0',
+    date: '2026-05-23',
+    items: [
+      { type: 'feat', text: 'Tambah fitur generate & cetak QR code per SKSHHK di halaman DKHP SKSHHK' },
+      { type: 'feat', text: 'Modal preview QR dengan form edit (end user, alamat, masa aktif, penerbit)' },
+      { type: 'feat', text: 'Layout cetak QR A5 dengan logo SVLK Indonesia' },
+    ]
+  },
+  {
     version: '0.34.4',
     date: '2026-05-22',
     items: [
