@@ -1,6 +1,18 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.38.0',
+    date: '2026-05-24',
+    items: [
+      { type: 'feat', text: 'Import Excel alamat bongkar: preview popup dengan pagination 20 baris per halaman' },
+      { type: 'feat', text: 'Preview import menampilkan baris yang gagal di-parse dalam seksi terpisah' },
+      { type: 'feat', text: 'Audit trail lengkap: register kapling, pejabat, tenaga kerja, periode' },
+      { type: 'feat', text: 'Hapus sistem tema — aplikasi selalu gelap' },
+      { type: 'feat', text: 'Reset password via email di halaman Settings' },
+      { type: 'feat', text: 'Export Excel register kapling dan rekap periode' },
+    ]
+  },
+  {
     version: '0.37.0',
     date: '2026-05-23',
     items: [

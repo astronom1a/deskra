@@ -10,6 +10,7 @@ import { TableSkeleton } from '../../components/ui/LoadingState'
 import { Plus, Pencil, Trash2, Upload, X } from 'lucide-react'
 
 const emptyForm = { label: '', end_user: '', alamat_lengkap: '', kota: '' }
+const PAGE_SIZE  = 20
 
 export default function DatabaseAlamatBongkar() {
   const { profile, activeTpkId } = useAuth()
@@ -22,8 +23,9 @@ export default function DatabaseAlamatBongkar() {
   const [toast, setToast] = useState(null)
   const [deleteRow, setDeleteRow] = useState(null)
   const [deleting, setDeleting] = useState(false)
-  const [importPreview, setImportPreview] = useState(null) // { rows, fileName }
-  const [importing, setImporting] = useState(false)
+  const [importPreview, setImportPreview] = useState(null) // { rows, failed, fileName }
+  const [importing, setImporting]         = useState(false)
+  const [previewPage, setPreviewPage]     = useState(1)
   const fileRef = useRef()
 
   useEffect(() => {
@@ -127,16 +129,18 @@ export default function DatabaseAlamatBongkar() {
     e.target.value = ''
     const reader = new FileReader()
     reader.onload = evt => {
-      const wb   = XLSX.read(evt.target.result, { type: 'binary' })
-      const rows = []
+      const wb = XLSX.read(evt.target.result, { type: 'binary' })
+      const rows = [], failed = []
       for (const sheetName of wb.SheetNames) {
         const ws  = wb.Sheets[sheetName]
         // Baca sebagai array 2D — format asli: tiap baris punya 1 kolom berisi string penuh
         const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
         for (const row of raw) {
           for (const cell of row) {
-            const parsed = parseAlamatLine(cell)
+            const str    = String(cell ?? '').trim()
+            const parsed = parseAlamatLine(str)
             if (parsed) rows.push(parsed)
+            else if (str && !/^alamat$/i.test(str)) failed.push(str)
           }
         }
       }
@@ -144,7 +148,8 @@ export default function DatabaseAlamatBongkar() {
         showToast('Tidak ada data valid di file.', 'error')
         return
       }
-      setImportPreview({ rows, fileName: file.name })
+      setPreviewPage(1)
+      setImportPreview({ rows, failed, fileName: file.name })
     }
     reader.readAsBinaryString(file)
   }
@@ -252,65 +257,119 @@ export default function DatabaseAlamatBongkar() {
         </div>
       )}
 
-      {/* Import preview */}
-      {importPreview && (
-        <div style={{ background: 'rgba(0,255,136,0.04)', border: '1px solid rgba(0,255,136,0.18)', borderRadius: 3, padding: 20, marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div>
-              <p style={{ fontFamily: 'monospace', fontSize: 12, color: '#00ff88', fontWeight: 600 }}>
-                preview import — {importPreview.fileName}
-              </p>
-              <p style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
-                {importPreview.rows.length} baris valid ditemukan
-              </p>
+      {/* Import preview — modal */}
+      {importPreview && (() => {
+        const totalPages = Math.ceil(importPreview.rows.length / PAGE_SIZE)
+        const safePage   = Math.min(Math.max(previewPage, 1), totalPages)
+        const pageRows   = importPreview.rows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+        const hasFailed  = importPreview.failed && importPreview.failed.length > 0
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+            <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, width: '100%', maxWidth: 820, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+              {/* Modal header */}
+              <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexShrink: 0 }}>
+                <div>
+                  <p style={{ fontFamily: 'monospace', fontSize: 12, color: '#f0f0f0', fontWeight: 600, marginBottom: 6 }}>
+                    preview import — <span style={{ color: 'rgba(255,255,255,0.45)' }}>{importPreview.fileName}</span>
+                  </p>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 3, fontSize: 10, fontFamily: 'monospace', fontWeight: 700, background: 'rgba(0,255,136,0.1)', color: '#00ff88', border: '1px solid rgba(0,255,136,0.22)' }}>
+                      ✓ {importPreview.rows.length} siap diimpor
+                    </span>
+                    {hasFailed && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 3, fontSize: 10, fontFamily: 'monospace', fontWeight: 700, background: 'rgba(255,107,107,0.1)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.22)' }}>
+                        ✗ {importPreview.failed.length} gagal diparse
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button onClick={() => setImportPreview(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', lineHeight: 0, flexShrink: 0 }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#f0f0f0'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+                ><X size={15}/></button>
+              </div>
+
+              {/* Scrollable body */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 8px' }}>
+
+                {/* Data table */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, fontFamily: 'monospace' }}>
+                  <thead style={{ position: 'sticky', top: 0, background: '#111', zIndex: 1 }}>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                      <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 600, width: 40 }}>#</th>
+                      {['Label', 'End User', 'Alamat Lengkap', 'Kota'].map(h => (
+                        <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, color: 'rgba(0,255,136,0.7)', fontWeight: 600 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pageRows.map((r, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ padding: '6px 12px', color: 'rgba(255,255,255,0.2)', textAlign: 'right', fontSize: 10 }}>{(safePage - 1) * PAGE_SIZE + i + 1}</td>
+                        <td style={{ padding: '6px 12px', color: '#f0f0f0', fontWeight: 500 }}>{r.label}</td>
+                        <td style={{ padding: '6px 12px', color: 'rgba(255,255,255,0.5)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.end_user || '—'}</td>
+                        <td style={{ padding: '6px 12px', color: 'rgba(255,255,255,0.4)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.alamat_lengkap || '—'}</td>
+                        <td style={{ padding: '6px 12px', color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap' }}>{r.kota || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Failed rows */}
+                {hasFailed && (
+                  <div style={{ margin: '12px 0 4px', borderTop: '1px solid rgba(255,107,107,0.15)' }}>
+                    <p style={{ fontFamily: 'monospace', fontSize: 10, color: '#ff6b6b', fontWeight: 600, padding: '10px 14px 6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Baris yang tidak berhasil di-parse ({importPreview.failed.length})
+                    </p>
+                    <div style={{ maxHeight: 160, overflowY: 'auto' }}>
+                      {importPreview.failed.map((f, i) => (
+                        <div key={i} style={{ padding: '4px 14px', fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,107,107,0.7)', borderBottom: '1px solid rgba(255,107,107,0.06)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,107,107,0.02)' }}>
+                          {f}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Pagination + footer */}
+              <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexShrink: 0, flexWrap: 'wrap' }}>
+                {/* Pagination */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button onClick={() => setPreviewPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}
+                    style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: safePage <= 1 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.6)', cursor: safePage <= 1 ? 'default' : 'pointer', fontFamily: 'monospace', fontSize: 11 }}>
+                    ← prev
+                  </button>
+                  <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.4)', minWidth: 90, textAlign: 'center' }}>
+                    halaman {safePage} / {totalPages}
+                  </span>
+                  <button onClick={() => setPreviewPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}
+                    style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: safePage >= totalPages ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.6)', cursor: safePage >= totalPages ? 'default' : 'pointer', fontFamily: 'monospace', fontSize: 11 }}>
+                    next →
+                  </button>
+                </div>
+
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => setImportPreview(null)}
+                    style={{ padding: '7px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>
+                    batal
+                  </button>
+                  <button onClick={handleImport} disabled={importing}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', background: importing ? 'rgba(0,255,136,0.3)' : '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: importing ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}
+                  >
+                    {importing
+                      ? <span style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.2)', borderTopColor: '#0a0a0a', display: 'inline-block' }} className="animate-spin" />
+                      : <Upload size={12} />}
+                    {importing ? 'mengimpor...' : `impor ${importPreview.rows.length} alamat`}
+                  </button>
+                </div>
+              </div>
             </div>
-            <button onClick={() => setImportPreview(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', lineHeight: 0 }}
-              onMouseEnter={e => e.currentTarget.style.color = '#f0f0f0'}
-              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
-            ><X size={15}/></button>
           </div>
-
-          <div style={{ overflowX: 'auto', marginBottom: 16 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, fontFamily: 'monospace' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(0,255,136,0.15)' }}>
-                  {['Label', 'End User', 'Alamat Lengkap', 'Kota'].map(h => (
-                    <th key={h} style={{ padding: '5px 10px', textAlign: 'left', fontSize: 10, color: 'rgba(0,255,136,0.7)', fontWeight: 600 }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {importPreview.rows.slice(0, 5).map((r, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '5px 10px', color: '#f0f0f0', fontWeight: 500 }}>{r.label}</td>
-                    <td style={{ padding: '5px 10px', color: 'rgba(255,255,255,0.55)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.end_user || '—'}</td>
-                    <td style={{ padding: '5px 10px', color: 'rgba(255,255,255,0.45)', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.alamat_lengkap || '—'}</td>
-                    <td style={{ padding: '5px 10px', color: 'rgba(255,255,255,0.4)' }}>{r.kota || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {importPreview.rows.length > 5 && (
-              <p style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.25)', padding: '6px 10px' }}>
-                ... dan {importPreview.rows.length - 5} baris lainnya
-              </p>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={handleImport} disabled={importing}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', background: importing ? 'rgba(0,255,136,0.3)' : '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: importing ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}
-            >
-              {importing
-                ? <span style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.2)', borderTopColor: '#0a0a0a', display: 'inline-block' }} className="animate-spin" />
-                : <Upload size={12} />}
-              {importing ? 'mengimpor...' : `impor ${importPreview.rows.length} alamat`}
-            </button>
-            <button onClick={() => setImportPreview(null)}
-              style={{ padding: '7px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>batal</button>
-          </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Tabel */}
       <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
