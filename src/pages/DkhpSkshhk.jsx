@@ -4,7 +4,7 @@ import Toast, { useToast } from '../components/ui/Toast'
 import {
   Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2, Download,
   Plus, Pencil, Trash2, ScrollText, Search, ChevronUp, ChevronDown, ChevronsUpDown,
-  SlidersHorizontal, ChevronLeft, ChevronRight, QrCode,
+  SlidersHorizontal, ChevronLeft, ChevronRight, QrCode, Bookmark,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
@@ -311,6 +311,10 @@ export default function DkhpSkshhk() {
   const [qrForm, setQrForm]       = useState(null)
   const [qrDataUrl, setQrDataUrl] = useState('')
   const [qrPenerbit, setQrPenerbit] = useState('')
+  const [alamatOptions, setAlamatOptions] = useState([])
+  const [showSaveAlamat, setShowSaveAlamat] = useState(false)
+  const [saveAlamatLabel, setSaveAlamatLabel] = useState('')
+  const [saveAlamatTarget, setSaveAlamatTarget] = useState(null) // 'form' | 'qr'
   const [contextMenu, setContextMenu] = useState(null)
   const [exportMonth, setExportMonth] = useState(() => {
     const d = new Date()
@@ -379,6 +383,45 @@ export default function DkhpSkshhk() {
       })
     return () => { stale = true }
   }, [qrRow, tpkId])
+
+  async function fetchAlamatOptions() {
+    if (!tpkId) return
+    const { data } = await supabase
+      .from('tabel_alamat_bongkar')
+      .select('id, label, end_user, alamat_lengkap, kota')
+      .eq('tpk_id', tpkId)
+      .order('label', { ascending: true })
+    setAlamatOptions(data || [])
+  }
+
+  async function handleSaveAlamat() {
+    const label = saveAlamatLabel.trim()
+    if (!label) return showToast('Label wajib diisi', 'error')
+    let payload
+    if (saveAlamatTarget === 'form') {
+      payload = {
+        tpk_id: tpkId,
+        label,
+        alamat_lengkap: editRow?.tujuan || '',
+        kota: editRow?.kota_tujuan || '',
+        end_user: deriveEndUser(editRow?.tujuan, editRow?.kota_tujuan),
+      }
+    } else {
+      payload = {
+        tpk_id: tpkId,
+        label,
+        end_user: qrForm?.endUser || '',
+        alamat_lengkap: qrForm?.alamatBongkar || '',
+        kota: qrRow?.kota_tujuan || '',
+      }
+    }
+    const { error } = await supabase.from('tabel_alamat_bongkar').insert(payload)
+    if (error) return showToast(error.message, 'error')
+    showToast('Alamat berhasil disimpan ke database')
+    setShowSaveAlamat(false)
+    setSaveAlamatLabel('')
+    fetchAlamatOptions()
+  }
 
   useEffect(() => {
     if (!qrForm) { setQrDataUrl(''); return }
@@ -492,8 +535,14 @@ export default function DkhpSkshhk() {
     fetchData()
   }
 
-  function openAdd()      { setEditRow({ ...EMPTY_FORM, _new: true, _dateYear: new Date().getFullYear() }) }
-  function openEdit(row)  { setEditRow({ ...row, _dateYear: dateYear(row.tanggal) || dateYear(row.tanggal_dimatikan) || new Date().getFullYear() }) }
+  function openAdd() {
+    setEditRow({ ...EMPTY_FORM, _new: true, _dateYear: new Date().getFullYear() })
+    fetchAlamatOptions()
+  }
+  function openEdit(row) {
+    setEditRow({ ...row, _dateYear: dateYear(row.tanggal) || dateYear(row.tanggal_dimatikan) || new Date().getFullYear() })
+    fetchAlamatOptions()
+  }
 
   function openQr(row) {
     setQrRow(row)
@@ -508,6 +557,7 @@ export default function DkhpSkshhk() {
       tanggalTerbit: formatTanggalTerbit(row.tanggal),
     })
     setQrDataUrl('')
+    fetchAlamatOptions()
   }
 
   async function handleSave() {
@@ -1670,7 +1720,7 @@ export default function DkhpSkshhk() {
       )}
       {/* Area cetak — hanya tampil saat window.print() */}
       <div id="qr-print-area" style={{ display: 'none' }}>
-        <img src={svlkLogo} alt="SVLK Indonesia" style={{ width: 120 }}/>
+        <img src={svlkLogo} alt="SVLK Indonesia" style={{ width: 220 }}/>
         {qrDataUrl && <img src={qrDataUrl} alt="QR Code" style={{ width: 190, height: 190 }}/>}
         <p style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, letterSpacing: 1 }}>
           {qrForm ? `KB.C.${qrForm.noSkshhk}` : ''}
