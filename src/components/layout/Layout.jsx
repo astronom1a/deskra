@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Link2, Users, Users2, Layers, Package,
   ChevronDown, ChevronRight, ClipboardList, Wallet, ScrollText,
   Settings as SettingsIcon, Building2, ShieldCheck, LogOut,
-  ArrowLeft, FileBarChart2, ScanLine,
+  ArrowLeft, FileBarChart2, ScanLine, MapPin,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -37,8 +37,9 @@ const operatorNavItems = [
   {
     label: 'Database', icon: null,
     children: [
-      { label: 'Pejabat',      path: '/database/pejabat', icon: Users },
-      { label: 'Tenaga Kerja', path: '/database/tenaga',  icon: Users2 },
+      { label: 'Pejabat',        path: '/database/pejabat',        icon: Users },
+      { label: 'Tenaga Kerja',   path: '/database/tenaga',         icon: Users2 },
+      { label: 'Alamat Bongkar', path: '/database/alamat-bongkar', icon: MapPin },
     ],
   },
 ]

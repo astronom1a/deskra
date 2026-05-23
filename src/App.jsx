@@ -13,6 +13,7 @@ import MainLink from './pages/MainLink'
 import DatabasePejabat from './pages/database/DatabasePejabat'
 import DatabaseTarif from './pages/database/DatabaseTarif'
 import DatabaseTenaga from './pages/database/DatabaseTenaga'
+import DatabaseAlamatBongkar from './pages/database/DatabaseAlamatBongkar'
 import TumpukKapling from './pages/TumpukKapling'
 import DetailPekerjaan from './pages/DetailPekerjaan'
 import RegisterKapling from './pages/register-kapling'
@@ -182,6 +183,7 @@ function AppRoutes() {
         <Route path="database/pejabat" element={<DatabasePejabat />} />
         <Route path="database/tenaga" element={<DatabaseTenaga />} />
         <Route path="database/tarif" element={<DatabaseTarif />} />
+        <Route path="database/alamat-bongkar" element={<DatabaseAlamatBongkar />} />
         <Route path="settings" element={<Settings />} />
       </Route>
 
