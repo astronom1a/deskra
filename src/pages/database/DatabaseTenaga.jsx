@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthProvider'
 import { getEffectiveTpkId } from '../../lib/effectiveTpk'
+import { logActivity, buildDiff } from '../../lib/activityLog'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import TpkRequiredState from '../../components/layout/TpkRequiredState'
 import Toast from '../../components/ui/Toast'
 import { TableSkeleton } from '../../components/ui/LoadingState'
-import { Plus, Pencil, Trash2, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, CheckCircle2 } from 'lucide-react'
 
 const POSISI_OPTIONS = [
   { value: 'TENAGA_BANTU', label: 'Tenaga Bantu' },
@@ -120,13 +121,23 @@ export default function DatabaseTenaga() {
     }
 
     if (editId) {
+      const oldRow = data.find(r => r.id === editId)
       const { error } = await supabase.from('tabel_tenaga_kerja').update(payload).eq('tpk_id', tpkId).eq('id', editId)
       if (error) return showToast(error.message, 'error')
       showToast('Data tenaga diperbarui')
+      logActivity({
+        action: 'update', entityType: 'tenaga_kerja', entityId: editId, entityLabel: payload.nama,
+        diff: oldRow ? buildDiff(oldRow, payload, [
+          { key: 'nama', label: 'Nama' }, { key: 'nik', label: 'NIK' },
+          { key: 'jabatan', label: 'Jabatan' }, { key: 'aktif', label: 'Aktif' },
+        ]) : null,
+        tpkId, profile,
+      })
     } else {
       const { error } = await supabase.from('tabel_tenaga_kerja').insert({ ...payload, tpk_id: tpkId })
       if (error) return showToast(error.message, 'error')
       showToast('Tenaga kerja berhasil ditambahkan')
+      logActivity({ action: 'create', entityType: 'tenaga_kerja', entityLabel: payload.nama, tpkId, profile })
     }
 
     setShowForm(false)
@@ -137,11 +148,13 @@ export default function DatabaseTenaga() {
     if (!tpkId) return showToast('TPK aktif tidak ditemukan. Coba pilih TPK atau login ulang.', 'error')
     if (!deleteRow) return
     setDeleting(true)
+    const snapshot = { ...deleteRow }
     const { error } = await supabase.from('tabel_tenaga_kerja').delete().eq('tpk_id', tpkId).eq('id', deleteRow.id)
     setDeleting(false)
     if (error) return showToast(error.message, 'error')
     setDeleteRow(null)
     showToast('Data berhasil dihapus')
+    logActivity({ action: 'delete', entityType: 'tenaga_kerja', entityId: snapshot.id, entityLabel: snapshot.nama, tpkId, profile })
     fetchData()
   }
 
