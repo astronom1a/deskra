@@ -306,6 +306,10 @@ export default function DkhpSkshhk() {
   const [deleteRow, setDeleteRow]   = useState(null)
   const [deleting, setDeleting]     = useState(false)
   const { toast, showToast } = useToast(3000)
+  const [qrRow, setQrRow]         = useState(null)
+  const [qrForm, setQrForm]       = useState(null)
+  const [qrDataUrl, setQrDataUrl] = useState('')
+  const [qrPenerbit, setQrPenerbit] = useState('')
   const [contextMenu, setContextMenu] = useState(null)
   const [exportMonth, setExportMonth] = useState(() => {
     const d = new Date()
@@ -356,6 +360,29 @@ export default function DkhpSkshhk() {
     setLoading(false)
   }
   useEffect(() => { fetchData() }, [tpkId])
+
+  useEffect(() => {
+    if (!qrRow || !tpkId) return
+    supabase
+      .from('tabel_pejabat')
+      .select('nama, jabatan')
+      .eq('tpk_id', tpkId)
+      .eq('aktif', true)
+      .then(({ data }) => {
+        const p = (data || []).find(x => (x.jabatan || '').toLowerCase().includes('penerbit'))
+        const nama = p?.nama || ''
+        setQrPenerbit(nama)
+        setQrForm(prev => prev ? { ...prev, penerbit: nama } : prev)
+      })
+  }, [qrRow, tpkId])
+
+  useEffect(() => {
+    if (!qrForm) { setQrDataUrl(''); return }
+    const str = buildQrString(qrForm)
+    QRCode.toDataURL(str, { errorCorrectionLevel: 'M', width: 300, margin: 1 })
+      .then(url => setQrDataUrl(url))
+      .catch(() => setQrDataUrl(''))
+  }, [qrForm])
 
   const exportMonthOptions = useMemo(() => {
     const months = [...new Set(
@@ -461,6 +488,21 @@ export default function DkhpSkshhk() {
 
   function openAdd()      { setEditRow({ ...EMPTY_FORM, _new: true, _dateYear: new Date().getFullYear() }) }
   function openEdit(row)  { setEditRow({ ...row, _dateYear: dateYear(row.tanggal) || dateYear(row.tanggal_dimatikan) || new Date().getFullYear() }) }
+
+  function openQr(row) {
+    setQrRow(row)
+    setQrForm({
+      noSkshhk:      row.no_skshhk || '',
+      tpkLabel:      tpkName,
+      endUser:       deriveEndUser(row.tujuan, row.kota_tujuan),
+      alamatBongkar: row.tujuan || '',
+      tanggalAwal:   row.tanggal || '',
+      durasiHari:    1,
+      penerbit:      '',
+      tanggalTerbit: formatTanggalTerbit(row.tanggal),
+    })
+    setQrDataUrl('')
+  }
 
   async function handleSave() {
     if (!editRow) return
