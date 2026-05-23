@@ -123,6 +123,22 @@ export async function saveDeletedRow({ row, supabase, tpkId }) {
   }
 }
 
+export async function saveQuickInvoisRow({ row, noInvois, pembeli, supabase, tpkId }) {
+  const { error } = await supabase
+    .from('tabel_register_kapling')
+    .update({ no_invois: noInvois || null, pembeli: pembeli || null })
+    .eq('tpk_id', tpkId)
+    .eq('id', row.id)
+
+  if (error) return actionError(error.message)
+  return {
+    closeModal: true,
+    message: `Invois ${noInvois || '(kosong)'} disimpan untuk ${row.no_kapling}`,
+    refresh: true,
+    type: 'success',
+  }
+}
+
 function actionError(message) {
   return {
     closeEditor: false,

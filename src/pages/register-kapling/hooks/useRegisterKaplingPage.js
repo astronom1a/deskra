@@ -33,6 +33,7 @@ import {
   saveBatchEditRows,
   saveDeletedRow,
   saveEditedRow,
+  saveQuickInvoisRow,
 } from '../utils/registerKaplingCrud'
 import {
   fetchPenguranganInvoices,
@@ -111,6 +112,10 @@ export function useRegisterKaplingPage() {
 
   const [dkhpImportPreview, setDkhpImportPreview] = useState(null)
   const [dkhpImportSaving, setDkhpImportSaving]   = useState(false)
+
+  const [invoisRow, setInvoisRow]       = useState(null) // row yang sedang diedit invois-nya
+  const [invoisInput, setInvoisInput]   = useState({ no_invois: '', pembeli: '' })
+  const [invoisSavingQuick, setInvoisSavingQuick] = useState(false)
 
   const { toast, showToast } = useToast(3500)
 
@@ -361,6 +366,22 @@ export function useRegisterKaplingPage() {
     if (result.refresh) fetchData()
   }
 
+  // ── Quick invois edit ─────────────────────────────────────────────────────
+  function handleOpenInvoisModal(row) {
+    setInvoisRow(row)
+    setInvoisInput({ no_invois: row.no_invois || '', pembeli: row.pembeli || '' })
+  }
+
+  async function handleSaveQuickInvois() {
+    if (!invoisRow || !tpkId) return
+    setInvoisSavingQuick(true)
+    const result = await saveQuickInvoisRow({ row: invoisRow, noInvois: invoisInput.no_invois, pembeli: invoisInput.pembeli, supabase, tpkId })
+    setInvoisSavingQuick(false)
+    showToast(result.message, result.type)
+    if (result.closeModal) setInvoisRow(null)
+    if (result.refresh) fetchData()
+  }
+
   // ── Fix prefix ────────────────────────────────────────────────────────────
   function handleOpenFixPrefix() {
     setFixPrefixMap(buildFixPrefixMap({ invoicePrefixMap: INVOIS_PREFIX_MAP, penguranganInvoices, rows }))
@@ -441,6 +462,8 @@ export function useRegisterKaplingPage() {
     dkhpConflicts, dkhpStep, dkhpSaving, handleOpenDkhpModal, handleCheckDkhp, handleSaveDkhp,
     // dkhp import
     dkhpImportPreview, setDkhpImportPreview, dkhpImportSaving, handleDkhpImportFiles, handleDkhpImportSave,
+    // quick invois edit
+    invoisRow, setInvoisRow, invoisInput, setInvoisInput, invoisSavingQuick, handleOpenInvoisModal, handleSaveQuickInvois,
     // column settings
     colMap, draftMap, setDraftMap, excelHeaders, saveColMap, showSettings, setShowSettings,
     // table controls

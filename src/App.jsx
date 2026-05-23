@@ -41,6 +41,24 @@ function PrintFallback() {
   )
 }
 
+function PrintRoute({ children }) {
+  const { session, loading } = useAuth()
+  const location = useLocation()
+  if (loading) return <PrintFallback />
+  if (!session) return <Navigate to="/login" state={{ from: location }} replace />
+  return children
+}
+
+function PrintSuspense({ Component }) {
+  return (
+    <PrintRoute>
+      <Suspense fallback={<PrintFallback />}>
+        <Component />
+      </Suspense>
+    </PrintRoute>
+  )
+}
+
 function ProtectedRoute({ children }) {
   const { session, isAdmin, profile, activeTpkId, loading } = useAuth()
   const location = useLocation()
@@ -167,16 +185,16 @@ function AppRoutes() {
         <Route path="settings" element={<Settings />} />
       </Route>
 
-      {/* Halaman cetak — standalone, lazy-loaded */}
-      <Route path="cetak/biaya-tpk/:periodeId" element={<Suspense fallback={<PrintFallback />}><CetakBiayaTPK /></Suspense>} />
-      <Route path="cetak/gabungan-pembayaran/:periodeId" element={<Suspense fallback={<PrintFallback />}><CetakGabunganPembayaran /></Suspense>} />
-      <Route path="cetak/pj-uk/:periodeId" element={<Suspense fallback={<PrintFallback />}><CetakPjUk /></Suspense>} />
-      <Route path="cetak/permintaan-uk/:periodeId" element={<Suspense fallback={<PrintFallback />}><CetakPermintaanUk /></Suspense>} />
-      <Route path="cetak/kwitansi/:periodeId/:itemKey" element={<Suspense fallback={<PrintFallback />}><CetakKwitansi /></Suspense>} />
-      <Route path="cetak/lampiran-31/:periodeId/:itemKey" element={<Suspense fallback={<PrintFallback />}><CetakLampiran31 /></Suspense>} />
-      <Route path="cetak/lampiran-62/:periodeId/:itemKey" element={<Suspense fallback={<PrintFallback />}><CetakLampiran31 /></Suspense>} />
-      <Route path="cetak/absen/:periodeId" element={<Suspense fallback={<PrintFallback />}><CetakAbsen /></Suspense>} />
-      <Route path="cetak/absen/:periodeId/:itemKey" element={<Suspense fallback={<PrintFallback />}><CetakAbsen /></Suspense>} />
+      {/* Halaman cetak — standalone, lazy-loaded, dilindungi auth */}
+      <Route path="cetak/biaya-tpk/:periodeId"           element={<PrintSuspense Component={CetakBiayaTPK} />} />
+      <Route path="cetak/gabungan-pembayaran/:periodeId" element={<PrintSuspense Component={CetakGabunganPembayaran} />} />
+      <Route path="cetak/pj-uk/:periodeId"               element={<PrintSuspense Component={CetakPjUk} />} />
+      <Route path="cetak/permintaan-uk/:periodeId"       element={<PrintSuspense Component={CetakPermintaanUk} />} />
+      <Route path="cetak/kwitansi/:periodeId/:itemKey"   element={<PrintSuspense Component={CetakKwitansi} />} />
+      <Route path="cetak/lampiran-31/:periodeId/:itemKey" element={<PrintSuspense Component={CetakLampiran31} />} />
+      <Route path="cetak/lampiran-62/:periodeId/:itemKey" element={<PrintSuspense Component={CetakLampiran31} />} />
+      <Route path="cetak/absen/:periodeId"               element={<PrintSuspense Component={CetakAbsen} />} />
+      <Route path="cetak/absen/:periodeId/:itemKey"      element={<PrintSuspense Component={CetakAbsen} />} />
 
       <Route path="*" element={<SmartRedirect />} />
         </Routes>

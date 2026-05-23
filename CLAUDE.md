@@ -87,7 +87,18 @@ Gunakan pola feature folder untuk halaman baru yang memiliki lebih dari ~5 file 
    - `patch` (Z): bugfix
    - `minor` (Y): fitur baru, perubahan UI
    - `major` (X): breaking change atau restrukturisasi besar
-2. Commit perubahan dengan format di bawah, lalu push
+2. **Wajib update `src/changelog.js`** — tambahkan entry baru di bagian atas array `changelog` dengan format:
+   ```js
+   {
+     version: 'X.Y.Z',
+     date: 'YYYY-MM-DD',
+     items: [
+       { type: 'feat', text: 'Deskripsi singkat perubahan' },
+     ]
+   },
+   ```
+   Gunakan tipe yang sama dengan commit message (`feat`, `fix`, `refactor`, `style`, `chore`, dll).
+3. Commit perubahan dengan format di bawah, lalu push
 
 ### Commit Message
 ```

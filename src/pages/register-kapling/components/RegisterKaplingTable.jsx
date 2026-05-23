@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, ChevronsUpDown, FileBarChart2, FileSpreadsheet, Pencil, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, ChevronsUpDown, FileBarChart2, FileSpreadsheet, Pencil, Receipt, Trash2 } from 'lucide-react'
 import { TableSkeleton } from '../../../components/ui/LoadingState'
 import { displayDate, getMutuLabel, getPembeliName } from '../utils/registerKaplingUtils'
 
@@ -73,6 +73,7 @@ export default function RegisterKaplingTable({
   onEditRow,
   onOpenContextMenu,
   onOpenDkhpModal,
+  onOpenInvoisModal,
   onToggleSelectAll,
   onToggleSelectRow,
   onToggleSort,
@@ -147,6 +148,11 @@ export default function RegisterKaplingTable({
                         onMouseEnter={e => { e.currentTarget.style.color = '#00ff88'; e.currentTarget.style.background = 'rgba(0,255,136,0.07)' }}
                         onMouseLeave={e => { e.currentTarget.style.color = row.dkhp ? '#00ff88' : 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
                       ><FileBarChart2 size={12}/></button>
+                      <button onClick={() => onOpenInvoisModal(row)} title="Input Invois"
+                        style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: row.no_invois ? 'rgba(0,180,255,0.9)' : 'rgba(255,255,255,0.3)' }}
+                        onMouseEnter={e => { e.currentTarget.style.color = 'rgba(0,180,255,0.95)'; e.currentTarget.style.background = 'rgba(0,180,255,0.07)' }}
+                        onMouseLeave={e => { e.currentTarget.style.color = row.no_invois ? 'rgba(0,180,255,0.9)' : 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
+                      ><Receipt size={12}/></button>
                       <button onClick={() => onEditRow({ ...row })}
                         style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}
                         onMouseEnter={e => { e.currentTarget.style.color = '#f0f0f0'; e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}

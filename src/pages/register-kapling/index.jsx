@@ -11,6 +11,7 @@ import RegisterKaplingExcelImportPreview from './modals/RegisterKaplingExcelImpo
 import RegisterKaplingFixPrefixModal from './modals/RegisterKaplingFixPrefixModal.jsx'
 import RegisterKaplingHeader from './components/RegisterKaplingHeader.jsx'
 import RegisterKaplingInvoicePreview from './modals/RegisterKaplingInvoicePreview.jsx'
+import RegisterKaplingQuickInvoisModal from './modals/RegisterKaplingQuickInvoisModal.jsx'
 import RegisterKaplingMetricCards from './components/RegisterKaplingMetricCards.jsx'
 import RegisterKaplingSettingsModal from './modals/RegisterKaplingSettingsModal.jsx'
 import RegisterKaplingSortPanel from './components/RegisterKaplingSortPanel.jsx'
@@ -171,6 +172,18 @@ export default function RegisterKapling() {
         />
       )}
 
+      {page.invoisRow && (
+        <RegisterKaplingQuickInvoisModal
+          isSaving={page.invoisSavingQuick}
+          noInvois={page.invoisInput.no_invois}
+          onCancel={() => page.setInvoisRow(null)}
+          onChange={(key, value) => page.setInvoisInput(prev => ({ ...prev, [key]: value }))}
+          onSave={page.handleSaveQuickInvois}
+          pembeli={page.invoisInput.pembeli}
+          row={page.invoisRow}
+        />
+      )}
+
       {page.dkhpImportPreview && (
         <RegisterKaplingDkhpImportPreview
           isSaving={page.dkhpImportSaving}
@@ -236,6 +249,7 @@ export default function RegisterKapling() {
         onEditRow={page.setEditRow}
         onOpenContextMenu={(e, row) => { e.preventDefault(); page.setContextMenu({ x: e.clientX, y: e.clientY, row }) }}
         onOpenDkhpModal={page.handleOpenDkhpModal}
+        onOpenInvoisModal={page.handleOpenInvoisModal}
         onToggleSelectAll={page.toggleSelectAll}
         onToggleSelectRow={page.toggleSelectRow}
         onToggleSort={page.toggleSort}

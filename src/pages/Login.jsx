@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { version as appVersion } from '../../package.json'
-import { latestChangelog } from '../changelog'
+import { latestChangelog } from '../changelog.js'
 import { gsap } from 'gsap'
 
 export default function Login() {
