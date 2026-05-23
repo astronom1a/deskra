@@ -1639,6 +1639,27 @@ export default function DkhpSkshhk() {
                   </div>
                 ))}
 
+                {/* Dropdown pilih dari database alamat */}
+                {alamatOptions.length > 0 && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: 9, color: 'rgba(0,255,136,0.5)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pilih alamat tersimpan</label>
+                    <select
+                      value=""
+                      onChange={e => {
+                        const item = alamatOptions.find(a => a.id === e.target.value)
+                        if (!item) return
+                        setQrForm(p => ({ ...p, endUser: item.end_user || '', alamatBongkar: item.alamat_lengkap || '' }))
+                      }}
+                      style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(0,255,136,0.18)', borderRadius: 3, padding: '5px 8px', fontSize: 11, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', colorScheme: 'dark' }}
+                    >
+                      <option value="">— pilih dari database —</option>
+                      {alamatOptions.map(a => (
+                        <option key={a.id} value={a.id}>{a.label}{a.kota ? ` — ${a.kota}` : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 {/* End user */}
                 <div>
                   <label style={{ display: 'block', fontSize: 9, color: 'rgba(255,255,255,0.38)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>End User / Perusahaan</label>
@@ -1653,7 +1674,20 @@ export default function DkhpSkshhk() {
 
                 {/* Alamat bongkar */}
                 <div>
-                  <label style={{ display: 'block', fontSize: 9, color: 'rgba(255,255,255,0.38)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Alamat Bongkar</label>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                    <label style={{ fontSize: 9, color: 'rgba(255,255,255,0.38)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Alamat Bongkar</label>
+                    <button
+                      type="button"
+                      onClick={() => { setSaveAlamatTarget('qr'); setSaveAlamatLabel((qrForm?.endUser || '').slice(0, 20).trim()); setShowSaveAlamat(true) }}
+                      disabled={!qrForm?.alamatBongkar?.trim()}
+                      title="Simpan alamat ini ke database"
+                      style={{ background: 'none', border: 'none', cursor: qrForm?.alamatBongkar?.trim() ? 'pointer' : 'not-allowed', color: 'rgba(0,255,136,0.4)', opacity: qrForm?.alamatBongkar?.trim() ? 1 : 0.3, padding: 0, lineHeight: 0 }}
+                      onMouseEnter={e => { if (qrForm?.alamatBongkar?.trim()) e.currentTarget.style.color = '#00ff88' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'rgba(0,255,136,0.4)' }}
+                    >
+                      <Bookmark size={11}/>
+                    </button>
+                  </div>
                   <textarea
                     rows={2}
                     value={qrForm.alamatBongkar}
