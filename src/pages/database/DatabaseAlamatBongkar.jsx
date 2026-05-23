@@ -114,8 +114,11 @@ export default function DatabaseAlamatBongkar() {
       ? str.slice(dotIdx + 1, lastComma).trim()
       : str.slice(dotIdx + 1).trim()
 
-    // end_user = nama penerima (sama dengan label, dipakai untuk QR)
-    return { label, end_user: label, alamat_lengkap, kota }
+    // end_user: PT/CV/UD → pakai label apa adanya; selainnya → "END USER [kota]"
+    const isBadan = /^(PT|CV|UD)\b/i.test(label)
+    const end_user = isBadan ? label : `END USER ${kota}`
+
+    return { label, end_user, alamat_lengkap, kota }
   }
 
   function handleFileChange(e) {
