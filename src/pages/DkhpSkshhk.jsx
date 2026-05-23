@@ -1236,6 +1236,10 @@ export default function DkhpSkshhk() {
                           onMouseEnter={e => { e.currentTarget.style.color = '#f0f0f0'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
                           onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
                         ><Pencil size={12}/></button>
+                        <button onClick={() => openQr(row)} style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}
+                          onMouseEnter={e => { e.currentTarget.style.color = '#00ff88'; e.currentTarget.style.background = 'rgba(0,255,136,0.08)' }}
+                          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
+                        ><QrCode size={12}/></button>
                         <button onClick={() => setDeleteRow(row)} style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}
                           onMouseEnter={e => { e.currentTarget.style.color = '#ff6b6b'; e.currentTarget.style.background = 'rgba(255,107,107,0.08)' }}
                           onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
@@ -1500,6 +1504,14 @@ export default function DkhpSkshhk() {
             onMouseLeave={e => e.currentTarget.style.background = 'none'}
           >
             <Pencil size={12} style={{ color: 'rgba(255,255,255,0.3)' }}/> edit
+          </button>
+          <button
+            onClick={() => { openQr(contextMenu.row); setContextMenu(null) }}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '7px 16px', fontSize: 12, color: 'rgba(255,255,255,0.65)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'monospace' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            <QrCode size={12} style={{ color: 'rgba(0,255,136,0.6)' }}/> cetak qr
           </button>
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', margin: '3px 0' }}/>
           <button
