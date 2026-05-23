@@ -4,7 +4,7 @@ import Toast, { useToast } from '../components/ui/Toast'
 import {
   Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2, Download,
   Plus, Pencil, Trash2, ScrollText, Search, ChevronUp, ChevronDown, ChevronsUpDown,
-  SlidersHorizontal, ChevronLeft, ChevronRight,
+  SlidersHorizontal, ChevronLeft, ChevronRight, QrCode,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
@@ -13,6 +13,8 @@ import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import ThemedSelect from '../components/ui/ThemedSelect'
 import TpkRequiredState from '../components/layout/TpkRequiredState'
 import { TableSkeleton } from '../components/ui/LoadingState'
+import QRCode from 'qrcode'
+import svlkLogo from '../assets/svlk-logo.svg'
 
 const MONTH_FULL_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 const MONTH_SHORT_ID = ['JAN','FEB','MAR','APR','MEI','JUN','JUL','AGS','SEP','OKT','NOV','DES']
@@ -181,6 +183,48 @@ function normalizeDateInput(val, fallbackYear = new Date().getFullYear()) {
 function displayMonth(ym) {
   const m = String(ym || '').match(/^(\d{4})-(\d{2})$/)
   return m ? `${m[2]}/${m[1]}` : ym || ''
+}
+
+function deriveEndUser(tujuan, kotaTujuan) {
+  const t = (tujuan || '').trim()
+  const upper = t.toUpperCase()
+  if (upper.startsWith('PT ') || upper.startsWith('PT.') ||
+      upper.startsWith('CV ') || upper.startsWith('CV.') ||
+      upper.startsWith('UD ') || upper.startsWith('UD.')) {
+    return t.split(',')[0].trim()
+  }
+  return `END USER ${(kotaTujuan || '').trim()}`.trim()
+}
+
+function formatMasaAktif(tanggalIso, durasiHari) {
+  if (!tanggalIso) return ''
+  const [y, m, d] = tanggalIso.split('-')
+  const awal = `${d}-${m}-${y}`
+  const dateObj = new Date(Number(y), Number(m) - 1, Number(d))
+  dateObj.setDate(dateObj.getDate() + Math.max(0, Number(durasiHari) - 1))
+  const akhirD = String(dateObj.getDate()).padStart(2, '0')
+  const akhirM = String(dateObj.getMonth() + 1).padStart(2, '0')
+  const akhirY = dateObj.getFullYear()
+  return `${awal} s/d ${akhirD}-${akhirM}-${akhirY}`
+}
+
+function formatTanggalTerbit(isoDate) {
+  if (!isoDate) return ''
+  const [y, m, d] = isoDate.split('-')
+  return `${Number(d)} ${MONTH_FULL_ID[Number(m) - 1]} ${y}`
+}
+
+function buildQrString(form) {
+  return [
+    `KB.C.${form.noSkshhk}`,
+    'PERUM PERHUTANI',
+    form.tpkLabel,
+    form.endUser,
+    form.alamatBongkar,
+    formatMasaAktif(form.tanggalAwal, form.durasiHari),
+    form.penerbit,
+    form.tanggalTerbit,
+  ].join('#')
 }
 
 function num(v, isInt = false) {
