@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { logActivity, buildDiff } from '../../../lib/activityLog'
 import * as XLSX from 'xlsx'
 import { supabase } from '../../../lib/supabase'
 import { useAuth } from '../../../lib/AuthProvider'
@@ -241,12 +242,22 @@ export function useRegisterKaplingPage() {
     if (!editRow) return
     if (!editRow.no_kapling?.trim()) { showToast('No. Kapling wajib diisi.', 'error'); return }
     if (!tpkId) { showToast('Profil TPK tidak ditemukan. Coba login ulang.', 'error'); return }
+    const isNew  = Boolean(editRow._new)
+    const oldRow = isNew ? null : rows.find(r => r.id === editRow.id)
     setEditSaving(true)
     const result = await saveEditedRow({ row: editRow, supabase, tpkId })
     setEditSaving(false)
     showToast(result.message, result.type)
     if (result.closeEditor) setEditRow(null)
-    if (result.refresh) fetchData()
+    if (result.refresh) {
+      fetchData()
+      if (isNew) {
+        logActivity({ action: 'create', entityType: 'register_kapling', entityLabel: editRow.no_kapling, tpkId, profile })
+      } else if (oldRow) {
+        const diff = buildDiff(oldRow, editRow, FIELD_DEFS)
+        logActivity({ action: 'update', entityType: 'register_kapling', entityId: editRow.id, entityLabel: editRow.no_kapling, diff, tpkId, profile })
+      }
+    }
   }
 
   function handleEditNumberStep(event, key) {
@@ -262,12 +273,16 @@ export function useRegisterKaplingPage() {
   // ── Delete ────────────────────────────────────────────────────────────────
   async function handleDelete() {
     if (!deleteRow || !tpkId) return
+    const snapshot = { ...deleteRow }
     setDeleting(true)
     const result = await saveDeletedRow({ row: deleteRow, supabase, tpkId })
     setDeleting(false)
     showToast(result.message, result.type)
     if (result.closeEditor) setDeleteRow(null)
-    if (result.refresh) fetchData()
+    if (result.refresh) {
+      fetchData()
+      logActivity({ action: 'delete', entityType: 'register_kapling', entityId: snapshot.id, entityLabel: snapshot.no_kapling, tpkId, profile })
+    }
   }
 
   // ── Batch delete ──────────────────────────────────────────────────────────
@@ -278,7 +293,10 @@ export function useRegisterKaplingPage() {
     setBatchDeleting(false)
     showToast(result.message, result.type)
     if (result.closeEditor) setShowBatchDelete(false)
-    if (result.refresh) fetchData()
+    if (result.refresh) {
+      fetchData()
+      logActivity({ action: 'delete', entityType: 'register_kapling', entityLabel: `${[...selectedIds].length} kapling (batch)`, tpkId, profile })
+    }
   }
 
   // ── Batch edit ────────────────────────────────────────────────────────────
