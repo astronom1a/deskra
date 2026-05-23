@@ -129,7 +129,7 @@ export default function DatabaseTenaga() {
         action: 'update', entityType: 'tenaga_kerja', entityId: editId, entityLabel: payload.nama,
         diff: oldRow ? buildDiff(oldRow, payload, [
           { key: 'nama', label: 'Nama' }, { key: 'nik', label: 'NIK' },
-          { key: 'jabatan', label: 'Jabatan' }, { key: 'aktif', label: 'Aktif' },
+          { key: 'posisi', label: 'Posisi' }, { key: 'aktif', label: 'Aktif' },
         ]) : null,
         tpkId, profile,
       })
