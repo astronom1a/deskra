@@ -27,6 +27,8 @@ export default function DatabaseAlamatBongkar() {
   const [importing, setImporting]         = useState(false)
   const [previewPage, setPreviewPage]     = useState(1)
   const [contextMenu, setContextMenu]     = useState(null) // { x, y, row }
+  const [page, setPage]                   = useState(1)
+  const [searchTerm, setSearchTerm]       = useState('')
   const fileRef = useRef()
 
   // Tutup context menu saat klik di luar atau tekan Escape
@@ -43,6 +45,8 @@ export default function DatabaseAlamatBongkar() {
       document.removeEventListener('mousedown', close)
     }
   }, [contextMenu])
+
+  useEffect(() => { setPage(1) }, [searchTerm])
 
   useEffect(() => {
     if (tpkId) fetchData()
@@ -182,6 +186,17 @@ export default function DatabaseAlamatBongkar() {
     fetchData()
   }
 
+  const filteredData = searchTerm.trim()
+    ? data.filter(r =>
+        (r.label        || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (r.kota         || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (r.alamat_lengkap || '').toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : data
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / PAGE_SIZE))
+  const safePage   = Math.min(Math.max(page, 1), totalPages)
+  const pageData   = filteredData.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
   const INP = {
     background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)',
     color: '#f0f0f0', borderRadius: 3, outline: 'none', fontFamily: 'monospace',
@@ -211,12 +226,12 @@ export default function DatabaseAlamatBongkar() {
       />
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>Database Alamat Bongkar</h1>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>Kelola daftar alamat bongkar/tujuan yang sering digunakan</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <button onClick={() => fileRef.current?.click()}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', borderRadius: 3, cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, flexShrink: 0 }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.07)'; e.currentTarget.style.color = '#00ff88'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.2)' }}
@@ -229,6 +244,31 @@ export default function DatabaseAlamatBongkar() {
           ><Plus size={13}/> tambah alamat</button>
         </div>
         <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange} />
+      </div>
+
+      {/* Toolbar — search + info */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative' }}>
+          <input
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            placeholder="cari label / kota / alamat..."
+            style={{ ...INP, width: 260, paddingRight: searchTerm ? 28 : 10 }}
+            className="dab-inp"
+          />
+          {searchTerm && (
+            <button onClick={() => setSearchTerm('')}
+              style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', lineHeight: 0, padding: 0 }}
+              onMouseEnter={e => e.currentTarget.style.color = '#f0f0f0'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+            ><X size={12}/></button>
+          )}
+        </div>
+        <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.3)', whiteSpace: 'nowrap' }}>
+          {searchTerm
+            ? `${filteredData.length} dari ${data.length} alamat`
+            : `${data.length} alamat`}
+        </span>
       </div>
 
       {/* Form — modal popup */}
@@ -405,41 +445,69 @@ export default function DatabaseAlamatBongkar() {
           <TableSkeleton rows={5} columns={6} />
         ) : data.length === 0 ? (
           <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', fontSize: 11, fontStyle: 'italic' }}>Belum ada data alamat bongkar.</div>
+        ) : filteredData.length === 0 ? (
+          <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', fontSize: 11, fontStyle: 'italic' }}>Tidak ada hasil untuk "{searchTerm}".</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
-            <thead>
-              <tr>
-                {['No','Label','End User','Alamat Lengkap','Kota',''].map(h => (
-                  <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.015)' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row, i) => (
-                <tr key={row.id} className="dab-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                  onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, row }) }}
-                >
-                  <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.25)', fontSize: 11, width: 40 }}>{i + 1}</td>
-                  <td style={{ padding: '10px 12px', color: '#f0f0f0', fontWeight: 500 }}>{row.label}</td>
-                  <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.5)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.end_user || '—'}</td>
-                  <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.45)', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.alamat_lengkap || '—'}</td>
-                  <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.35)' }}>{row.kota || '—'}</td>
-                  <td style={{ padding: '10px 10px', width: 60 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
-                      <button onClick={() => openEdit(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
-                        onMouseEnter={e => e.currentTarget.style.color = '#00ff88'}
-                        onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
-                      ><Pencil size={13}/></button>
-                      <button onClick={() => setDeleteRow(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
-                        onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
-                        onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
-                      ><Trash2 size={13}/></button>
-                    </div>
-                  </td>
+          <>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+              <thead>
+                <tr>
+                  {['No','Label','End User','Alamat Lengkap','Kota',''].map(h => (
+                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.015)' }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {pageData.map((row, i) => (
+                  <tr key={row.id} className="dab-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                    onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, row }) }}
+                  >
+                    <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.25)', fontSize: 11, width: 40 }}>
+                      {(safePage - 1) * PAGE_SIZE + i + 1}
+                    </td>
+                    <td style={{ padding: '10px 12px', color: '#f0f0f0', fontWeight: 500 }}>{row.label}</td>
+                    <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.5)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.end_user || '—'}</td>
+                    <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.45)', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.alamat_lengkap || '—'}</td>
+                    <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.35)' }}>{row.kota || '—'}</td>
+                    <td style={{ padding: '10px 10px', width: 60 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
+                        <button onClick={() => openEdit(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                          onMouseEnter={e => e.currentTarget.style.color = '#00ff88'}
+                          onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                        ><Pencil size={13}/></button>
+                        <button onClick={() => setDeleteRow(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                          onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
+                          onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                        ><Trash2 size={13}/></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Pagination controls */}
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+                  {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filteredData.length)} dari {filteredData.length}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <button onClick={() => setPage(1)} disabled={safePage <= 1}
+                    style={{ padding: '3px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 3, color: safePage <= 1 ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.55)', cursor: safePage <= 1 ? 'default' : 'pointer', fontFamily: 'monospace', fontSize: 11 }}>«</button>
+                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}
+                    style={{ padding: '3px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 3, color: safePage <= 1 ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.55)', cursor: safePage <= 1 ? 'default' : 'pointer', fontFamily: 'monospace', fontSize: 11 }}>← prev</button>
+                  <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.45)', padding: '0 6px', minWidth: 80, textAlign: 'center' }}>
+                    {safePage} / {totalPages}
+                  </span>
+                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}
+                    style={{ padding: '3px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 3, color: safePage >= totalPages ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.55)', cursor: safePage >= totalPages ? 'default' : 'pointer', fontFamily: 'monospace', fontSize: 11 }}>next →</button>
+                  <button onClick={() => setPage(totalPages)} disabled={safePage >= totalPages}
+                    style={{ padding: '3px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 3, color: safePage >= totalPages ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.55)', cursor: safePage >= totalPages ? 'default' : 'pointer', fontFamily: 'monospace', fontSize: 11 }}>»</button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
