@@ -1,6 +1,16 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.36.0',
+    date: '2026-05-23',
+    items: [
+      { type: 'feat', text: 'Tambah database alamat bongkar/tujuan dengan halaman CRUD' },
+      { type: 'feat', text: 'Dropdown pilih alamat tersimpan di form surat SKSHHK (autofill tujuan & kota)' },
+      { type: 'feat', text: 'Dropdown pilih alamat tersimpan di modal QR (autofill end_user & alamat bongkar)' },
+      { type: 'feat', text: 'Quick-save alamat dari form surat dan modal QR ke database' },
+    ]
+  },
+  {
     version: '0.35.0',
     date: '2026-05-23',
     items: [
