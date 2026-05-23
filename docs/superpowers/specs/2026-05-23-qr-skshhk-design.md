@@ -95,20 +95,26 @@ Dibuka saat tombol QR diklik. Struktur:
 ## Layout Cetak (`@media print`)
 
 ```
-┌─────────────────┐
-│   [Logo SVLK]   │
+┌─────────────────┐  ← A5 portrait (148mm × 210mm)
+│                 │
+│   [Logo SVLK]   │  ← ~40% lebar halaman
 │  SVLK INDONESIA │
 │                 │
-│   [QR Code]     │
+│   [QR Code]     │  ← ~60% lebar halaman
 │                 │
-│ KB.C.7131705    │
+│  KB.C.7131705   │  ← font ~14pt, monospace
+│                 │
 └─────────────────┘
 ```
 
+- Ukuran kertas: A5 portrait (`@page { size: A5 portrait; margin: 16mm }`)
 - Logo SVLK disimpan sebagai SVG di `src/assets/svlk-logo.svg`
+- Proporsi elemen (dari lebar area cetak ~116mm):
+  - Logo SVLK: lebar ~45mm, tinggi proporsional
+  - QR code: lebar ~70mm × 70mm
+  - Nomor surat: font 14pt, monospace, rata tengah
 - Saat print: semua elemen modal disembunyikan kecuali area cetak
-- Area cetak: logo + QR + nomor surat, rata tengah
-- Nomor surat ditampilkan di bawah QR dalam format `KB.C.XXXXXXX`
+- Semua elemen rata tengah secara horizontal
 
 ---
 
