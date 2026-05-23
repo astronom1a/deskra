@@ -1508,17 +1508,55 @@ export default function DkhpSkshhk() {
             {[
               { label: 'Pemohon / Sopir', key: 'pemohon_sopir' },
               { label: 'Pembeli',         key: 'pembeli' },
-              { label: 'Tujuan (alamat lengkap)', key: 'tujuan', multiline: true },
             ].map(f => (
               <div key={f.key} style={{ marginBottom: 10 }}>
                 <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 4, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{f.label}</label>
-                {f.multiline ? (
-                  <textarea rows={2} value={editRow[f.key] ?? ''} onChange={e => setEditRow(p => ({ ...p, [f.key]: e.target.value }))} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '7px 10px', fontSize: 12, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}/>
-                ) : (
-                  <input type="text" value={editRow[f.key] ?? ''} onChange={e => setEditRow(p => ({ ...p, [f.key]: e.target.value }))} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '7px 10px', fontSize: 12, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}/>
-                )}
+                <input type="text" value={editRow[f.key] ?? ''} onChange={e => setEditRow(p => ({ ...p, [f.key]: e.target.value }))} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '7px 10px', fontSize: 12, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}/>
               </div>
             ))}
+
+            {/* Tujuan — dengan dropdown pilih alamat dan quick-save */}
+            <div style={{ marginBottom: 10 }}>
+              {alamatOptions.length > 0 && (
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ display: 'block', fontSize: 10, color: 'rgba(0,255,136,0.5)', marginBottom: 4, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pilih dari database alamat</label>
+                  <select
+                    value=""
+                    onChange={e => {
+                      const item = alamatOptions.find(a => a.id === e.target.value)
+                      if (!item) return
+                      setEditRow(p => ({ ...p, tujuan: item.alamat_lengkap || '', kota_tujuan: item.kota || '' }))
+                    }}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(0,255,136,0.18)', borderRadius: 3, padding: '7px 10px', fontSize: 12, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', colorScheme: 'dark' }}
+                  >
+                    <option value="">— pilih alamat tersimpan —</option>
+                    {alamatOptions.map(a => (
+                      <option key={a.id} value={a.id}>{a.label}{a.kota ? ` — ${a.kota}` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <label style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tujuan (alamat lengkap)</label>
+                <button
+                  type="button"
+                  onClick={() => { setSaveAlamatTarget('form'); setSaveAlamatLabel((editRow?.tujuan || '').slice(0, 20).trim()); setShowSaveAlamat(true) }}
+                  disabled={!editRow?.tujuan?.trim()}
+                  title="Simpan alamat ini ke database"
+                  style={{ background: 'none', border: 'none', cursor: editRow?.tujuan?.trim() ? 'pointer' : 'not-allowed', color: 'rgba(0,255,136,0.4)', opacity: editRow?.tujuan?.trim() ? 1 : 0.3, padding: 0, lineHeight: 0 }}
+                  onMouseEnter={e => { if (editRow?.tujuan?.trim()) e.currentTarget.style.color = '#00ff88' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'rgba(0,255,136,0.4)' }}
+                >
+                  <Bookmark size={12}/>
+                </button>
+              </div>
+              <textarea
+                rows={2}
+                value={editRow.tujuan ?? ''}
+                onChange={e => setEditRow(p => ({ ...p, tujuan: e.target.value }))}
+                style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '7px 10px', fontSize: 12, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+              />
+            </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
               <button type="button" onClick={() => setEditRow(null)} disabled={saving} style={{ padding: '8px 16px', fontSize: 12, borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontFamily: 'monospace' }}>batal</button>
               <button type="submit" disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 12, borderRadius: 3, background: saving ? 'rgba(0,255,136,0.3)' : '#00ff88', color: '#0a0a0a', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'monospace', fontWeight: 700, opacity: saving ? 0.7 : 1 }}>
