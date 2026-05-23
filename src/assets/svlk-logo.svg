@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 110" fill="none">
+  <!-- Lingkaran -->
+  <circle cx="48" cy="62" r="34" stroke="#27a535" stroke-width="4.5"/>
+  <!-- Centang dalam lingkaran -->
+  <polyline points="30,62 43,76 68,44" stroke="#27a535" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Daun kiri -->
+  <path d="M52,30 C44,8 18,10 22,32 C30,24 42,24 52,30Z" fill="#27a535"/>
+  <!-- Daun kanan -->
+  <path d="M52,30 C60,14 80,20 74,40 C66,32 58,28 52,30Z" fill="#27a535"/>
+  <!-- Teks SVLK -->
+  <text x="98" y="62" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="42" fill="#27a535" letter-spacing="-1">SVLK</text>
+  <!-- Teks INDONESIA -->
+  <text x="100" y="84" font-family="Arial,sans-serif" font-weight="700" font-size="17" fill="#27a535" letter-spacing="4">INDONESIA</text>
+</svg>
