@@ -18,7 +18,7 @@ export async function logActivity({
       entity_type:   entityType,
       entity_id:     entityId ?? null,
       entity_label:  entityLabel ?? null,
-      diff:          diff && diff.length > 0 ? diff : null,
+      diff:          (Array.isArray(diff) && diff.length > 0) ? diff : null,
     })
   } catch (err) {
     console.warn('[activityLog] gagal catat log:', err)

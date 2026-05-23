@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Link2, Users, Users2, Layers, Package,
   ChevronDown, ChevronRight, ClipboardList, Wallet, ScrollText,
   Settings as SettingsIcon, Building2, ShieldCheck, LogOut,
-  ArrowLeft, FileBarChart2, ScanLine, MapPin,
+  ArrowLeft, FileBarChart2, ScanLine, MapPin, History,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -19,6 +19,7 @@ const operatorNavItems = [
   { label: 'Register Kapling',path: '/register-kapling',icon: ClipboardList },
   { label: 'DKHP SKSHHK',    path: '/dkhp-skshhk',     icon: ScrollText },
   { label: 'Kayu Bernomor',  path: '/kayu-bernomor',   icon: ScanLine },
+  { label: 'Log Aktivitas',  path: '/activity-log',    icon: History },
   {
     label: 'DK310', icon: FileBarChart2,
     children: [
