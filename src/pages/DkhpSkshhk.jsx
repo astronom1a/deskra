@@ -1790,6 +1790,32 @@ export default function DkhpSkshhk() {
           </button>
         </div>
       )}
+      {/* Mini-modal quick-save alamat */}
+      {showSaveAlamat && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)' }}>
+          <div style={{ background: '#111', border: '1px solid rgba(0,255,136,0.2)', borderRadius: 4, padding: 20, maxWidth: 340, width: '100%', margin: '0 16px' }}>
+            <p style={{ fontFamily: 'monospace', fontSize: 12, color: '#00ff88', fontWeight: 600, marginBottom: 12 }}>simpan ke database alamat</p>
+            <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 4, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Label / nama singkat</label>
+            <input
+              type="text"
+              autoFocus
+              value={saveAlamatLabel}
+              onChange={e => setSaveAlamatLabel(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSaveAlamat() }}
+              placeholder="mis. Pak Eko - Kalipuro"
+              style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '7px 10px', fontSize: 12, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', marginBottom: 12 }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => { setShowSaveAlamat(false); setSaveAlamatLabel('') }}
+                style={{ flex: 1, padding: '7px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.55)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>batal</button>
+              <button
+                onClick={handleSaveAlamat}
+                style={{ flex: 1, padding: '7px 12px', background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}>simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Area cetak — hanya tampil saat window.print() */}
       <div id="qr-print-area" style={{ display: 'none' }}>
         <img src={svlkLogo} alt="SVLK Indonesia" style={{ width: 220 }}/>
