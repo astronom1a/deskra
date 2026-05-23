@@ -908,6 +908,12 @@ export default function DkhpSkshhk() {
         .dk-fi[type=number]::-webkit-inner-spin-button, .dk-fi[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .dk-missing-dkhp > summary::-webkit-details-marker { display: none; }
         .dk-missing-dkhp > summary { list-style: none; }
+        @media print {
+          @page { size: A5 portrait; margin: 16mm; }
+          body > * { visibility: hidden !important; }
+          #qr-print-area { visibility: visible !important; display: flex !important; flex-direction: column; align-items: center; gap: 10mm; position: fixed; top: 0; left: 0; width: 116mm; background: white; padding: 8mm 0; }
+          #qr-print-area * { visibility: visible !important; }
+        }
       `}</style>
 
       {/* Header */}
@@ -1656,6 +1662,14 @@ export default function DkhpSkshhk() {
           </button>
         </div>
       )}
+      {/* Area cetak — hanya tampil saat window.print() */}
+      <div id="qr-print-area" style={{ display: 'none' }}>
+        <img src={svlkLogo} alt="SVLK Indonesia" style={{ width: 120 }}/>
+        {qrDataUrl && <img src={qrDataUrl} alt="QR Code" style={{ width: 190, height: 190 }}/>}
+        <p style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, letterSpacing: 1 }}>
+          {qrForm ? `KB.C.${qrForm.noSkshhk}` : ''}
+        </p>
+      </div>
     </div>
   )
 }
