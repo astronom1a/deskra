@@ -9,6 +9,7 @@ import ThemedSelect from '../components/ui/ThemedSelect'
 import TpkRequiredState from '../components/layout/TpkRequiredState'
 import { Plus, Save, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, Printer, FileText, ClipboardCheck, Receipt, Wallet, ClipboardList, FileSpreadsheet } from 'lucide-react'
 import Toast, { useToast } from '../components/ui/Toast'
+import { logActivity } from '../lib/activityLog'
 
 // ─── helpers ────────────────────────────────────────────────
 const BULAN = ['Januari','Februari','Maret','April','Mei','Juni',
@@ -332,6 +333,7 @@ export default function MainLink() {
     await fetchPeriodes()
     setSelected(data)
     showToast(`Periode ${label} berhasil dibuat`)
+    logActivity({ action: 'create', entityType: 'periode', entityId: data.id, entityLabel: label, tpkId: scopedTpkId, profile })
   }
 
   async function handleRefreshPejabat() {
@@ -387,6 +389,7 @@ export default function MainLink() {
     let scopedTpkId
     try { scopedTpkId = requireTpkId(confirmDelete.tpk_id || tpkId) }
     catch (err) { return showToast(err.message, 'error') }
+    const snapshot = { ...confirmDelete }
     const { error } = await supabase
       .from('tabel_periode')
       .delete()
@@ -396,7 +399,8 @@ export default function MainLink() {
     setConfirmDel(null)
     const next = periodes.filter(p=>p.id!==confirmDelete.id)
     if (selectedPeriode?.id===confirmDelete.id) setSelected(next[0]||null)
-    showToast(`Periode ${confirmDelete.periode} berhasil dihapus`)
+    showToast(`Periode ${snapshot.periode} berhasil dihapus`)
+    logActivity({ action: 'delete', entityType: 'periode', entityId: snapshot.id, entityLabel: snapshot.periode, tpkId: scopedTpkId, profile })
     fetchPeriodes()
   }
 
