@@ -26,7 +26,23 @@ export default function DatabaseAlamatBongkar() {
   const [importPreview, setImportPreview] = useState(null) // { rows, failed, fileName }
   const [importing, setImporting]         = useState(false)
   const [previewPage, setPreviewPage]     = useState(1)
+  const [contextMenu, setContextMenu]     = useState(null) // { x, y, row }
   const fileRef = useRef()
+
+  // Tutup context menu saat klik di luar atau tekan Escape
+  useEffect(() => {
+    if (!contextMenu) return
+    function close(e) {
+      if (e.key === 'Escape') { setContextMenu(null); return }
+      setContextMenu(null)
+    }
+    document.addEventListener('keydown', close)
+    document.addEventListener('mousedown', close)
+    return () => {
+      document.removeEventListener('keydown', close)
+      document.removeEventListener('mousedown', close)
+    }
+  }, [contextMenu])
 
   useEffect(() => {
     if (tpkId) fetchData()
@@ -215,44 +231,56 @@ export default function DatabaseAlamatBongkar() {
         <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange} />
       </div>
 
-      {/* Form */}
+      {/* Form — modal popup */}
       {showForm && (
-        <div style={{ background: 'rgba(0,255,136,0.04)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 3, padding: 20, marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <p style={{ fontFamily: 'monospace', fontSize: 12, color: '#00ff88', fontWeight: 600 }}>{editId ? 'edit alamat' : 'tambah alamat baru'}</p>
-            <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', lineHeight: 0 }}
-              onMouseEnter={e => e.currentTarget.style.color = '#f0f0f0'}
-              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
-            ><X size={15}/></button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-            <div>
-              <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Label / Nama Singkat *</label>
-              <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-                style={INP} className="dab-inp" placeholder="mis. Pak Eko - Kalipuro"/>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onMouseDown={e => { if (e.target === e.currentTarget) setShowForm(false) }}
+        >
+          <div style={{ background: '#111', border: '1px solid rgba(0,255,136,0.18)', borderRadius: 4, width: '100%', maxWidth: 480, padding: 24 }}
+            onMouseDown={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <p style={{ fontFamily: 'monospace', fontSize: 13, color: '#00ff88', fontWeight: 700 }}>
+                {editId ? 'edit alamat' : 'tambah alamat baru'}
+              </p>
+              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', lineHeight: 0 }}
+                onMouseEnter={e => e.currentTarget.style.color = '#f0f0f0'}
+                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+              ><X size={15}/></button>
             </div>
-            <div>
-              <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Kota / Kabupaten</label>
-              <input value={form.kota} onChange={e => setForm(f => ({ ...f, kota: e.target.value }))}
-                style={INP} className="dab-inp" placeholder="BANYUWANGI"/>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div>
+                <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Label / Nama Singkat *</label>
+                <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
+                  style={INP} className="dab-inp" placeholder="mis. Pak Eko - Kalipuro"/>
+              </div>
+              <div>
+                <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Kota / Kabupaten</label>
+                <input value={form.kota} onChange={e => setForm(f => ({ ...f, kota: e.target.value }))}
+                  style={INP} className="dab-inp" placeholder="BANYUWANGI"/>
+              </div>
             </div>
-          </div>
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>End User (untuk QR)</label>
-            <input value={form.end_user} onChange={e => setForm(f => ({ ...f, end_user: e.target.value }))}
-              style={INP} className="dab-inp" placeholder="END USER KAB. BANYUWANGI atau CV MAJU JAYA"/>
-          </div>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Alamat Lengkap (untuk QR)</label>
-            <textarea rows={2} value={form.alamat_lengkap} onChange={e => setForm(f => ({ ...f, alamat_lengkap: e.target.value }))}
-              style={{ ...INP, resize: 'vertical' }} className="dab-inp"
-              placeholder="Nama, Jl. Joyoboyo RT/RW 001/001, Ds. Kalipuro, Kec. Kalipuro"/>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={handleSubmit} style={{ padding: '7px 16px', background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}>
-              {editId ? 'perbarui' : 'simpan'}
-            </button>
-            <button onClick={() => setShowForm(false)} style={{ padding: '7px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>batal</button>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>End User (untuk QR)</label>
+              <input value={form.end_user} onChange={e => setForm(f => ({ ...f, end_user: e.target.value }))}
+                style={INP} className="dab-inp" placeholder="END USER KAB. BANYUWANGI atau CV MAJU JAYA"/>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Alamat Lengkap (untuk QR)</label>
+              <textarea rows={3} value={form.alamat_lengkap} onChange={e => setForm(f => ({ ...f, alamat_lengkap: e.target.value }))}
+                style={{ ...INP, resize: 'vertical' }} className="dab-inp"
+                placeholder="Nama, Jl. Joyoboyo RT/RW 001/001, Ds. Kalipuro, Kec. Kalipuro"/>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={handleSubmit}
+                style={{ flex: 1, padding: '8px 16px', background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12, fontWeight: 700 }}>
+                {editId ? 'perbarui' : 'simpan'}
+              </button>
+              <button onClick={() => setShowForm(false)}
+                style={{ padding: '8px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 }}>
+                batal
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -388,7 +416,9 @@ export default function DatabaseAlamatBongkar() {
             </thead>
             <tbody>
               {data.map((row, i) => (
-                <tr key={row.id} className="dab-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <tr key={row.id} className="dab-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                  onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, row }) }}
+                >
                   <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.25)', fontSize: 11, width: 40 }}>{i + 1}</td>
                   <td style={{ padding: '10px 12px', color: '#f0f0f0', fontWeight: 500 }}>{row.label}</td>
                   <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.5)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.end_user || '—'}</td>
@@ -412,6 +442,40 @@ export default function DatabaseAlamatBongkar() {
           </table>
         )}
       </div>
+
+      {/* Context menu */}
+      {contextMenu && (
+        <div
+          onMouseDown={e => e.stopPropagation()}
+          style={{
+            position: 'fixed', zIndex: 2000,
+            top: contextMenu.y, left: contextMenu.x,
+            background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 4, padding: '4px 0', minWidth: 140,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          }}
+        >
+          <div style={{ padding: '3px 8px 5px 12px', fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.25)', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: 3 }}>
+            {contextMenu.row.label}
+          </div>
+          <button
+            onClick={() => { openEdit(contextMenu.row); setContextMenu(null) }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '7px 14px', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.75)', fontFamily: 'monospace', fontSize: 12, textAlign: 'left' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.07)'; e.currentTarget.style.color = '#00ff88' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
+          >
+            <Pencil size={12}/> Edit
+          </button>
+          <button
+            onClick={() => { setDeleteRow(contextMenu.row); setContextMenu(null) }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '7px 14px', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.75)', fontFamily: 'monospace', fontSize: 12, textAlign: 'left' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,107,107,0.07)'; e.currentTarget.style.color = '#ff6b6b' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
+          >
+            <Trash2 size={12}/> Hapus
+          </button>
+        </div>
+      )}
     </div>
   )
 }
