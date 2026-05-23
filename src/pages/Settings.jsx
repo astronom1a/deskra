@@ -1,14 +1,25 @@
 import { useState } from 'react'
-import { UserCog, Save, Check, AlertCircle } from 'lucide-react'
+import { UserCog, Save, Check, AlertCircle, Mail } from 'lucide-react'
 import { useAuth } from '../lib/AuthProvider'
+import { supabase } from '../lib/supabase'
 
 export default function Settings() {
-  const { profile, tpk, updateProfile } = useAuth()
+  const { profile, tpk, updateProfile, session } = useAuth()
 
   const [namaOperator, setNamaOperator] = useState(profile?.nama_operator || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [resetSent, setResetSent] = useState(false)
+  const [resetSending, setResetSending] = useState(false)
+
+  async function handleResetPassword() {
+    if (!session?.user?.email) return
+    setResetSending(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(session.user.email)
+    setResetSending(false)
+    if (!error) setResetSent(true)
+  }
 
   const dirty = namaOperator.trim() !== (profile?.nama_operator || '')
   const canSave = dirty && namaOperator.trim().length > 0 && !saving
@@ -144,6 +155,48 @@ export default function Settings() {
             <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#ff6b6b', fontFamily: 'monospace' }}><AlertCircle size={13} />{error}</span>
           )}
         </div>
+      </section>
+
+      <section style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: 20, marginTop: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 3, background: 'rgba(0,255,136,0.08)', border: '1px solid rgba(0,255,136,0.16)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Mail size={15} style={{ color: '#00ff88' }} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace', margin: 0 }}>Keamanan</h2>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.32)', marginTop: 3, fontFamily: 'monospace' }}>Kirim link reset password ke email terdaftar.</p>
+          </div>
+        </div>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace', marginBottom: 14 }}>
+          Email: <span style={{ color: '#f0f0f0' }}>{session?.user?.email || '—'}</span>
+        </p>
+        <button
+          onClick={handleResetPassword}
+          disabled={resetSending || resetSent}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 7,
+            padding: '8px 14px',
+            borderRadius: 3,
+            border: '1px solid rgba(255,255,255,0.12)',
+            background: resetSent ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.04)',
+            color: resetSent ? '#00ff88' : 'rgba(255,255,255,0.72)',
+            cursor: resetSending || resetSent ? 'not-allowed' : 'pointer',
+            fontFamily: 'monospace',
+            fontSize: 12,
+          }}
+        >
+          {resetSending
+            ? <span style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#f0f0f0', display: 'inline-block' }} className="animate-spin" />
+            : <Mail size={14} />}
+          {resetSent ? 'Link dikirim — cek email Anda' : 'Kirim Link Reset Password'}
+        </button>
+        {resetSent && (
+          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', marginTop: 8 }}>
+            Ikuti instruksi di email untuk mengatur password baru.
+          </p>
+        )}
       </section>
     </div>
   )
