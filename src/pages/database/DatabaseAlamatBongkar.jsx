@@ -94,12 +94,28 @@ export default function DatabaseAlamatBongkar() {
     fetchData()
   }
 
-  function pick(row, ...keys) {
-    for (const k of keys) {
-      const v = row[k] ?? row[k.toLowerCase()] ?? row[k.toUpperCase()]
-      if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim()
-    }
-    return ''
+  // Parse satu baris teks: "NAMA. alamat, ..., KOTA" → { label, end_user, alamat_lengkap, kota }
+  function parseAlamatLine(raw) {
+    const str = String(raw ?? '').trim()
+    if (!str || /^alamat$/i.test(str)) return null
+
+    // label = sebelum titik pertama (harus ada huruf, tidak boleh mengandung koma)
+    const dotIdx = str.indexOf('.')
+    if (dotIdx === -1) return null
+    const label = str.slice(0, dotIdx).trim()
+    if (!label || label.includes(',') || !/[A-Za-z]/.test(label)) return null
+
+    // kota = setelah koma paling kanan
+    const lastComma = str.lastIndexOf(',')
+    const kota = lastComma !== -1 ? str.slice(lastComma + 1).trim() : ''
+
+    // alamat_lengkap = antara titik pertama dan koma paling kanan
+    const alamat_lengkap = lastComma > dotIdx
+      ? str.slice(dotIdx + 1, lastComma).trim()
+      : str.slice(dotIdx + 1).trim()
+
+    // end_user = nama penerima (sama dengan label, dipakai untuk QR)
+    return { label, end_user: label, alamat_lengkap, kota }
   }
 
   function handleFileChange(e) {
@@ -108,19 +124,21 @@ export default function DatabaseAlamatBongkar() {
     e.target.value = ''
     const reader = new FileReader()
     reader.onload = evt => {
-      const wb  = XLSX.read(evt.target.result, { type: 'binary' })
-      const ws  = wb.Sheets[wb.SheetNames[0]]
-      const raw = XLSX.utils.sheet_to_json(ws, { defval: '' })
-      const rows = raw
-        .map(r => ({
-          label:         pick(r, 'Label', 'label', 'LABEL', 'Nama', 'nama'),
-          end_user:      pick(r, 'End User', 'end_user', 'EndUser', 'End user', 'END USER'),
-          alamat_lengkap: pick(r, 'Alamat Lengkap', 'alamat_lengkap', 'Alamat', 'alamat', 'ALAMAT'),
-          kota:          pick(r, 'Kota', 'kota', 'KOTA', 'Kabupaten', 'kabupaten'),
-        }))
-        .filter(r => r.label)
+      const wb   = XLSX.read(evt.target.result, { type: 'binary' })
+      const rows = []
+      for (const sheetName of wb.SheetNames) {
+        const ws  = wb.Sheets[sheetName]
+        // Baca sebagai array 2D — format asli: tiap baris punya 1 kolom berisi string penuh
+        const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
+        for (const row of raw) {
+          for (const cell of row) {
+            const parsed = parseAlamatLine(cell)
+            if (parsed) rows.push(parsed)
+          }
+        }
+      }
       if (!rows.length) {
-        showToast('Tidak ada data valid. Pastikan file memiliki kolom "Label".', 'error')
+        showToast('Tidak ada data valid di file.', 'error')
         return
       }
       setImportPreview({ rows, fileName: file.name })
