@@ -51,6 +51,7 @@ import {
 } from '../utils/registerKaplingConstants'
 import { analyzeKapling } from '../utils/registerKaplingUtils'
 import { buildRegisterKaplingTableState } from '../utils/registerKaplingTable'
+import { exportRegisterKaplingToExcel } from '../utils/registerKaplingExcelExport'
 import { useRegisterKaplingColumnSettings } from './useRegisterKaplingColumnSettings'
 import {
   getNextRegisterKaplingSelection,
@@ -67,7 +68,7 @@ const EMPTY_ROW = {
 const EMPTY_BATCH_EDIT = { tgl_kapling: '', periode: '', no_blok: '', sertifikasi: '' }
 
 export function useRegisterKaplingPage() {
-  const { profile, activeTpkId } = useAuth()
+  const { profile, activeTpkId, tpk } = useAuth()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const colMapStorageKey    = getTpkScopedStorageKey(COL_MAP_STORAGE_KEY, tpkId)
   const excelHeadersStorageKey = getTpkScopedStorageKey(EXCEL_HEADERS_STORAGE_KEY, tpkId)
@@ -448,6 +449,10 @@ export function useRegisterKaplingPage() {
     setSelectedIds(prev => getNextRegisterKaplingSelection({ allSelected, displayedIds, selectedIds: prev }))
   }
 
+  function handleExport() {
+    exportRegisterKaplingToExcel({ rows: searchedRows, tpkName: tpk?.namatpk })
+  }
+
   useEffect(() => {
     if (selectAllRef.current) selectAllRef.current.indeterminate = someSelected && !allSelected
   }, [someSelected, allSelected])
@@ -504,5 +509,7 @@ export function useRegisterKaplingPage() {
     expandedCard, setExpandedCard,
     // refs
     fileRef, invoisRef, dkhpImportRef, selectAllRef, colDropdownRef,
+    // export
+    handleExport,
   }
 }

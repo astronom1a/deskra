@@ -1,4 +1,4 @@
-import { FileBarChart2, FileText, Plus, Settings, Tag, Upload } from 'lucide-react'
+import { Download, FileBarChart2, FileText, Plus, Settings, Tag, Upload } from 'lucide-react'
 import { INVOIS_PREFIX_MAP } from '../utils/registerKaplingConstants'
 
 export default function RegisterKaplingHeader({
@@ -7,6 +7,7 @@ export default function RegisterKaplingHeader({
   fileRef,
   invoisRef,
   onDkhpImportFiles,
+  onExport,
   onFileChange,
   onInvoisFileChange,
   onAddRow,
@@ -104,6 +105,13 @@ export default function RegisterKaplingHeader({
             }}>{needFix}</span>
           </button>
         )}
+
+        {/* Export Excel */}
+        <button onClick={onExport} title="Export Excel"
+          style={{ ...iconBtn, color: 'rgba(255,255,255,0.5)' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.07)'; e.currentTarget.style.color = '#00ff88'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.2)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
+        ><Download size={14} /></button>
 
         {/* Import Excel */}
         <button onClick={() => fileRef.current?.click()}

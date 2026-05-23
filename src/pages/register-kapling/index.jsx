@@ -37,6 +37,7 @@ export default function RegisterKapling() {
         fileRef={page.fileRef}
         invoisRef={page.invoisRef}
         onDkhpImportFiles={page.handleDkhpImportFiles}
+        onExport={page.handleExport}
         onFileChange={page.handleFileChange}
         onInvoisFileChange={page.handleInvoisFileChange}
         onAddRow={() => page.setEditRow({ ...page.EMPTY_ROW })}
