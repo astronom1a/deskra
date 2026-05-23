@@ -7,7 +7,8 @@ import { fetchActivePejabatSnapshot, refreshPeriodePejabatSnapshot } from '../li
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import ThemedSelect from '../components/ui/ThemedSelect'
 import TpkRequiredState from '../components/layout/TpkRequiredState'
-import { Plus, Save, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, Printer, FileText, ClipboardCheck, Receipt, Wallet, ClipboardList, FileSpreadsheet } from 'lucide-react'
+import { Plus, Save, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, Printer, FileText, ClipboardCheck, Receipt, Wallet, ClipboardList, FileSpreadsheet, Download } from 'lucide-react'
+import * as XLSX from 'xlsx'
 import Toast, { useToast } from '../components/ui/Toast'
 import { logActivity } from '../lib/activityLog'
 
@@ -436,6 +437,25 @@ export default function MainLink() {
 
   const grandTotal = rows.reduce((s,r)=>s+(r.fisik||0)*(r.tarif||0),0)
 
+  function handleExportRekap() {
+    if (!selectedPeriode) return
+    const safePeriode = selectedPeriode.periode.replace(/\//g, '-').replace(/\s+/g, '')
+    const safeTpk = (tpk?.namatpk || 'tpk').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    const fileName = `rekap-${safePeriode}-${safeTpk}.xlsx`
+    const data = rows.map((r, i) => ({
+      'No': typeof r.no === 'number' ? r.no : i + 1,
+      'Uraian': r.uraian || '',
+      'Satuan': r.satuan || '',
+      'Fisik': r.fisik || 0,
+      'Tarif': r.tarif || 0,
+      'Jumlah': (r.fisik || 0) * (r.tarif || 0),
+    }))
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Rekap Periode')
+    XLSX.writeFile(wb, fileName)
+  }
+
   if (!tpkId) return <TpkRequiredState />
 
   return (
@@ -609,6 +629,14 @@ export default function MainLink() {
                 <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', marginTop: 2 }}>Data otomatis dari Tumpuk Kapling &amp; Detail Pekerjaan</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  onClick={handleExportRekap}
+                  title="Export Excel"
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 11, fontFamily: 'monospace', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.07)'; e.currentTarget.style.color = '#00ff88'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.2)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
+                ><Download size={11}/> Export Excel</button>
+
                 <button
                   onClick={()=>loadRows(selectedPeriode)}
                   disabled={loading}
