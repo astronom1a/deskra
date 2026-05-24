@@ -1,6 +1,15 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.39.0',
+    date: '2026-05-24',
+    items: [
+      { type: 'feat', text: 'sidebar bisa di-collapse ke mode icon-only (56px) dengan transisi smooth' },
+      { type: 'feat', text: 'state collapse sidebar persisten via localStorage' },
+      { type: 'feat', text: 'tambah ikon Database pada menu Database di sidebar' },
+    ]
+  },
+  {
     version: '0.38.3',
     date: '2026-05-24',
     items: [

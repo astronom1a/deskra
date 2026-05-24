@@ -2,9 +2,9 @@ import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import PageTransition from './PageTransition'
 import {
   LayoutDashboard, Link2, Users, Users2, Layers, Package,
-  ChevronDown, ChevronRight, ClipboardList, Wallet, ScrollText,
+  ChevronDown, ChevronRight, ChevronLeft, ClipboardList, Wallet, ScrollText,
   Settings as SettingsIcon, Building2, ShieldCheck, LogOut,
-  ArrowLeft, FileBarChart2, ScanLine, MapPin, History,
+  ArrowLeft, FileBarChart2, ScanLine, MapPin, History, Database,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -36,7 +36,7 @@ const operatorNavItems = [
     ],
   },
   {
-    label: 'Database', icon: null,
+    label: 'Database', icon: Database,
     children: [
       { label: 'Pejabat',        path: '/database/pejabat',        icon: Users },
       { label: 'Tenaga Kerja',   path: '/database/tenaga',         icon: Users2 },
@@ -76,7 +76,7 @@ function OrbitalMark({ size = 32 }) {
 }
 
 // ── SidebarItem ───────────────────────────────────────────────────────────────
-function SidebarItem({ item }) {
+function SidebarItem({ item, collapsed }) {
   const location = useLocation()
   const [open, setOpen] = useState(
     item.children?.some(c => location.pathname.startsWith(c.path))
@@ -84,7 +84,7 @@ function SidebarItem({ item }) {
   const bodyRef = useRef(null)
 
   useEffect(() => {
-    if (!bodyRef.current) return
+    if (!bodyRef.current || collapsed) return
     if (open) {
       gsap.fromTo(bodyRef.current,
         { height: 0, opacity: 0 },
@@ -95,9 +95,27 @@ function SidebarItem({ item }) {
         { height: 0, opacity: 0, duration: 0.22, ease: 'power2.in' }
       )
     }
-  }, [open])
+  }, [open, collapsed])
 
   if (item.children) {
+    // Collapsed: show icon-only pill, no accordion
+    if (collapsed) {
+      const anyChildActive = item.children.some(c => location.pathname.startsWith(c.path))
+      return (
+        <div
+          title={item.label}
+          style={{
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            padding: '7px 0',
+            color: anyChildActive ? '#00ff88' : 'rgba(255,255,255,0.38)',
+            borderRadius: 3,
+            background: anyChildActive ? 'rgba(0,255,136,0.07)' : 'transparent',
+          }}
+        >
+          {item.icon && <item.icon size={14} />}
+        </div>
+      )
+    }
     return (
       <div>
         <button
@@ -116,7 +134,7 @@ function SidebarItem({ item }) {
         <div ref={bodyRef} style={{ overflow: 'hidden', height: open ? 'auto' : 0, opacity: open ? 1 : 0 }}>
           <div className="ml-2 mt-0.5 mb-1 space-y-0.5" style={{ borderLeft: '1px solid rgba(0,255,136,0.15)', paddingLeft: 10 }}>
             {item.children.map(child => (
-              <SidebarItem key={child.path} item={child} />
+              <SidebarItem key={child.path} item={child} collapsed={collapsed} />
             ))}
           </div>
         </div>
@@ -128,18 +146,22 @@ function SidebarItem({ item }) {
     <NavLink
       to={item.path}
       end={item.path === '/admin'}
+      title={collapsed ? item.label : undefined}
       className={({ isActive }) => `sb-link ${isActive ? 'sb-link-active' : ''}`}
+      style={collapsed ? { justifyContent: 'center', padding: '7px 0', gap: 0, borderLeftColor: 'transparent' } : {}}
     >
       {item.icon && <item.icon size={14} />}
-      <span className="font-mono flex items-center gap-0.5">
-        {item.label}
-        {item.indicator && (
-          <span style={{
-            fontFamily: 'monospace', fontWeight: 700, fontSize: 13,
-            color: item.indicator === '+' ? '#00ff88' : '#ff6b6b',
-          }}>{item.indicator}</span>
-        )}
-      </span>
+      {!collapsed && (
+        <span className="font-mono flex items-center gap-0.5">
+          {item.label}
+          {item.indicator && (
+            <span style={{
+              fontFamily: 'monospace', fontWeight: 700, fontSize: 13,
+              color: item.indicator === '+' ? '#00ff88' : '#ff6b6b',
+            }}>{item.indicator}</span>
+          )}
+        </span>
+      )}
     </NavLink>
   )
 }
@@ -149,11 +171,20 @@ export default function Layout() {
   const navigate  = useNavigate()
   const sidebarRef = useRef(null)
   const [realtimeStatus, setRealtimeStatus] = useState('connecting')
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sb_collapsed') === '1')
   const { account } = useAccount()
   const { tpk, isAdmin, activeTpkId, setActiveTpkId, signOut } = useAuth()
   const namaTpk  = tpk?.namatpk || account.namaTpk || 'TPK Wongsorejo'
   const useOperatorContext = canUseOperatorRoutes({ isAdmin, activeTpkId })
   const navItems = useOperatorContext ? operatorNavItems : adminNavItems
+
+  const toggleCollapsed = () => {
+    setCollapsed(c => {
+      const next = !c
+      localStorage.setItem('sb_collapsed', next ? '1' : '0')
+      return next
+    })
+  }
 
   // entrance animation
   useEffect(() => {
@@ -193,59 +224,94 @@ export default function Layout() {
         .sb-btn { transition:color 0.15s, background 0.15s; }
         .sb-btn:hover { color:rgba(255,255,255,0.5); }
         .sb-btn-danger:hover { color:#ff6b6b !important; background:rgba(255,107,107,0.07) !important; }
+        .sb-collapsed .sb-link-active { padding-left:0 !important; border-left-color:transparent !important; }
+        .sb-toggle { display:flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:3px; border:1px solid rgba(255,255,255,0.08); background:transparent; color:rgba(255,255,255,0.28); cursor:pointer; flex-shrink:0; transition:color 0.15s, background 0.15s; }
+        .sb-toggle:hover { color:#f0f0f0; background:rgba(255,255,255,0.06); }
       `}</style>
 
       {/* Sidebar */}
       <aside
         ref={sidebarRef}
-        className="flex flex-col shrink-0"
+        className={`flex flex-col shrink-0${collapsed ? ' sb-collapsed' : ''}`}
         style={{
-          width: 220,
+          width: collapsed ? 56 : 220,
           background: '#0d0d0d',
           borderRight: '1px solid rgba(255,255,255,0.06)',
+          transition: 'width 0.25s ease',
+          overflow: 'hidden',
         }}
       >
         {/* Brand */}
-        <div data-sb-item className="flex items-center gap-3 px-4 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <OrbitalMark size={30} />
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="font-bold text-sm font-mono" style={{ color: '#f0f0f0', letterSpacing: '-0.01em' }}>
-                deskra
-              </p>
-              <span className="text-[9px] font-mono px-1.5 py-0.5" style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 2,
-                color: 'rgba(255,255,255,0.3)',
-              }}>
-                v{appVersion}
-              </span>
-              <span
-                title={realtimeStatus === 'connected' ? 'Live' : realtimeStatus === 'disconnected' ? 'Offline' : 'Connecting'}
-                style={{
-                  width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-                  background: realtimeStatus === 'connected' ? '#00ff88' : realtimeStatus === 'disconnected' ? '#ff4444' : '#ffaa00',
-                  boxShadow: realtimeStatus === 'connected' ? '0 0 6px rgba(0,255,136,0.6)' : 'none',
-                  animation: realtimeStatus !== 'disconnected' ? 'sb-glow 2s ease-in-out infinite' : 'none',
-                }}
-              />
-            </div>
-            {isAdmin && !activeTpkId ? (
-              <div className="flex items-center gap-1 mt-0.5">
-                <ShieldCheck size={9} style={{ color: '#fbbf24' }} />
-                <span className="text-[10px] font-mono" style={{ color: '#fbbf24' }}>superadmin</span>
+        <div
+          data-sb-item
+          className="flex items-center py-4 px-3"
+          style={{
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            gap: collapsed ? 0 : 0,
+            justifyContent: collapsed ? 'center' : 'space-between',
+            minHeight: 64,
+          }}
+        >
+          {collapsed ? (
+            // Collapsed: logo is the toggle button
+            <button
+              onClick={toggleCollapsed}
+              title="Expand sidebar"
+              className="sb-toggle"
+              style={{ width: 32, height: 32 }}
+            >
+              <OrbitalMark size={22} />
+            </button>
+          ) : (
+            <>
+              <div className="flex items-center gap-3" style={{ overflow: 'hidden', flex: 1, minWidth: 0 }}>
+                <OrbitalMark size={30} />
+                <div style={{ overflow: 'hidden', minWidth: 0 }}>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-sm font-mono" style={{ color: '#f0f0f0', letterSpacing: '-0.01em' }}>
+                      deskra
+                    </p>
+                    <span className="text-[9px] font-mono px-1.5 py-0.5" style={{
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 2,
+                      color: 'rgba(255,255,255,0.3)',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      v{appVersion}
+                    </span>
+                    <span
+                      title={realtimeStatus === 'connected' ? 'Live' : realtimeStatus === 'disconnected' ? 'Offline' : 'Connecting'}
+                      style={{
+                        width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                        background: realtimeStatus === 'connected' ? '#00ff88' : realtimeStatus === 'disconnected' ? '#ff4444' : '#ffaa00',
+                        boxShadow: realtimeStatus === 'connected' ? '0 0 6px rgba(0,255,136,0.6)' : 'none',
+                        animation: realtimeStatus !== 'disconnected' ? 'sb-glow 2s ease-in-out infinite' : 'none',
+                      }}
+                    />
+                  </div>
+                  {isAdmin && !activeTpkId ? (
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <ShieldCheck size={9} style={{ color: '#fbbf24' }} />
+                      <span className="text-[10px] font-mono" style={{ color: '#fbbf24' }}>superadmin</span>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] font-mono mt-0.5 truncate" style={{ color: 'rgba(255,255,255,0.25)', maxWidth: 110 }}>
+                      {namaTpk}
+                    </p>
+                  )}
+                </div>
               </div>
-            ) : (
-              <p className="text-[10px] font-mono mt-0.5 truncate" style={{ color: 'rgba(255,255,255,0.25)', maxWidth: 120 }}>
-                {namaTpk}
-              </p>
-            )}
-          </div>
+              {/* Collapse toggle */}
+              <button onClick={toggleCollapsed} title="Ciutkan sidebar" className="sb-toggle" style={{ flexShrink: 0 }}>
+                <ChevronLeft size={12} />
+              </button>
+            </>
+          )}
         </div>
 
         {/* Admin context banner */}
-        {isAdmin && activeTpkId && (
+        {!collapsed && isAdmin && activeTpkId && (
           <button
             data-sb-item
             onClick={() => { setActiveTpkId(null); navigate('/admin') }}
@@ -265,58 +331,66 @@ export default function Layout() {
         )}
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5" style={{ scrollbarWidth: 'none' }}>
+        <nav className="flex-1 overflow-y-auto py-4 space-y-0.5" style={{ scrollbarWidth: 'none', paddingLeft: collapsed ? 6 : 12, paddingRight: collapsed ? 6 : 12 }}>
           {navItems.map((item, i) => (
             <div key={item.path || i} data-sb-item>
-              <SidebarItem item={item} />
+              <SidebarItem item={item} collapsed={collapsed} />
             </div>
           ))}
         </nav>
 
         {/* Bottom */}
-        <div className="px-3 py-3 space-y-0.5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="py-3 space-y-0.5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingLeft: collapsed ? 6 : 12, paddingRight: collapsed ? 6 : 12 }}>
           {!isAdmin && (
             <div data-sb-item>
               <NavLink
                 to="/settings"
+                title={collapsed ? 'Settings' : undefined}
                 className={({ isActive }) => `sb-link ${isActive ? 'sb-link-active' : ''}`}
+                style={collapsed ? { justifyContent: 'center', padding: '7px 0', gap: 0, borderLeftColor: 'transparent' } : {}}
               >
                 <SettingsIcon size={14} />
-                <span className="font-mono">Settings</span>
+                {!collapsed && <span className="font-mono">Settings</span>}
               </NavLink>
             </div>
           )}
           <div data-sb-item>
             <button
               onClick={handleSignOut}
+              title={collapsed ? 'Keluar' : undefined}
               className="w-full flex items-center gap-2.5 px-3 py-2 font-mono text-xs sb-btn sb-btn-danger"
               style={{
                 borderRadius: 3, borderLeft: '2px solid transparent',
                 color: 'rgba(255,255,255,0.28)',
+                justifyContent: collapsed ? 'center' : undefined,
+                padding: collapsed ? '7px 0' : undefined,
+                gap: collapsed ? 0 : undefined,
               }}
             >
               <LogOut size={13} />
-              keluar
+              {!collapsed && 'keluar'}
             </button>
           </div>
         </div>
 
         {/* Footer */}
-        <div data-sb-item className="px-4 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-          <p className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.12)' }}>Perum Perhutani · KPH Banyuwangi Utara</p>
-          <p className="text-[10px] font-mono mt-1" style={{ color: 'rgba(255,255,255,0.1)' }}>
-            © 2026{' '}
-             <a
-               href="https://astrolabs.site"
-               target="_blank"
-               rel="noopener noreferrer"
-               className="sb-footer-link"
-               style={{ color: 'rgba(0,255,136,0.3)' }}
-            >
-              AstroLabs Studio
-            </a>
-          </p>
-        </div>
+        {!collapsed && (
+          <div data-sb-item className="px-4 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+            <p className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.12)' }}>Perum Perhutani · KPH Banyuwangi Utara</p>
+            <p className="text-[10px] font-mono mt-1" style={{ color: 'rgba(255,255,255,0.1)' }}>
+              © 2026{' '}
+               <a
+                 href="https://astrolabs.site"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 className="sb-footer-link"
+                 style={{ color: 'rgba(0,255,136,0.3)' }}
+              >
+                AstroLabs Studio
+              </a>
+            </p>
+          </div>
+        )}
       </aside>
 
       {/* Main content */}
