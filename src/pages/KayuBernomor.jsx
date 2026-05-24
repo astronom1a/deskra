@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsUpDown,
   Search, ScanLine, X,
@@ -8,6 +8,7 @@ import { useAuth } from '../lib/AuthProvider'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import TpkRequiredState from '../components/layout/TpkRequiredState'
 import { TableSkeleton } from '../components/ui/LoadingState'
+import ThemedSelect from '../components/ui/ThemedSelect'
 
 const PAGE = 500
 const COLS = [
@@ -33,14 +34,12 @@ const PAGE_SIZES = [
 export default function KayuBernomor() {
   const { profile, isAdmin, activeTpkId } = useAuth()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
-  const colDropdownRef = useRef(null)
 
   const [batang, setBatang]     = useState([])
   const [kaplingMap, setKaplingMap] = useState({})
   const [loading, setLoading]   = useState(false)
   const [search, setSearch]     = useState('')
   const [searchCol, setSearchCol] = useState('all')
-  const [showColDropdown, setShowColDropdown] = useState(false)
   const [filterDkhp, setFilterDkhp] = useState('')
   const [sorts, setSorts]       = useState([{ key: 'no_kapling', dir: 'asc' }])
   const [pageSize, setPageSize] = useState(50)
@@ -85,15 +84,6 @@ export default function KayuBernomor() {
   }
 
   useEffect(() => { setCurrentPage(1) }, [search, searchCol, filterDkhp])
-
-  useEffect(() => {
-    if (!showColDropdown) return
-    function onClickOutside(e) {
-      if (colDropdownRef.current && !colDropdownRef.current.contains(e.target)) setShowColDropdown(false)
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    return () => document.removeEventListener('mousedown', onClickOutside)
-  }, [showColDropdown])
 
   const dkhpOptions = useMemo(() => {
     const set = new Set(Object.values(kaplingMap).map(k => k.dkhp).filter(Boolean))
@@ -172,7 +162,6 @@ export default function KayuBernomor() {
         .kbn-th:hover { background: rgba(255,255,255,0.04) !important; }
         .kbn-input:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
         .kbn-input::placeholder { color: rgba(255,255,255,0.22); }
-        .kbn-select option { background: #111; color: #f0f0f0; }
       `}</style>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
@@ -225,54 +214,45 @@ export default function KayuBernomor() {
               </div>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <div ref={colDropdownRef} style={{ position: 'relative' }}>
-              <button onClick={() => setShowColDropdown(v => !v)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, height: 28, padding: '0 8px', background: 'rgba(255,255,255,0.03)', border: `1px solid ${showColDropdown ? 'rgba(0,255,136,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 3, color: searchCol === 'all' ? 'rgba(255,255,255,0.45)' : '#00ff88', fontFamily: 'monospace', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: showColDropdown ? '0 0 0 2px rgba(0,255,136,0.07)' : 'none' }}
-              >
-                {searchCol === 'all' ? 'Semua Kolom' : (COLS.find(c => c.key === searchCol)?.label || searchCol)}
-                <ChevronDown size={10} style={{ opacity: 0.45 }}/>
-              </button>
-              {showColDropdown && (
-                <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 200, background: '#111', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, overflow: 'hidden', minWidth: '100%', boxShadow: '0 8px 24px rgba(0,0,0,0.7)' }}>
-                  {[{ key: 'all', label: 'Semua Kolom' }, ...COLS, { key: 'pembeli', label: 'Pembeli' }].map(c => {
-                    const active = searchCol === c.key
-                    return (
-                      <div key={c.key} onClick={() => { setSearchCol(c.key); setShowColDropdown(false) }}
-                        style={{ padding: '6px 12px', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', color: active ? '#00ff88' : 'rgba(255,255,255,0.65)', background: active ? 'rgba(0,255,136,0.08)' : 'transparent', borderLeft: `2px solid ${active ? '#00ff88' : 'transparent'}` }}
-                      >{c.label}</div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {/* Kolom pencarian */}
+            <ThemedSelect
+              value={searchCol}
+              onChange={val => setSearchCol(val)}
+              options={[{ value: 'all', label: 'Semua Kolom' }, ...COLS.map(c => ({ value: c.key, label: c.label })), { value: 'pembeli', label: 'Pembeli' }]}
+              style={{ width: 140, minHeight: 30, fontSize: 11 }}
+            />
+            {/* Search input */}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
               <Search size={11} style={{ position: 'absolute', left: 8, color: 'rgba(255,255,255,0.3)', pointerEvents: 'none' }} />
               <input
                 value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="cari..."
                 className="kbn-input"
-                style={{ height: 28, width: 170, padding: `0 ${search ? 24 : 9}px 0 24px`, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: '#f0f0f0', fontSize: 11, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+                style={{ height: 30, width: 160, padding: `0 ${search ? 24 : 9}px 0 24px`, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: '#f0f0f0', fontSize: 11, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
               />
               {search && (
                 <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', padding: 0, lineHeight: 0 }}><X size={10}/></button>
               )}
             </div>
-            <select
-              value={filterDkhp} onChange={e => { setFilterDkhp(e.target.value); setCurrentPage(1) }}
-              className="kbn-select"
-              style={{ height: 28, padding: '0 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: filterDkhp ? '#f0f0f0' : 'rgba(255,255,255,0.38)', fontSize: 11, fontFamily: 'monospace', cursor: 'pointer' }}
-            >
-              <option value="">Semua DKHP</option>
-              {dkhpOptions.map(d => <option key={d} value={d}>DKHP {d}</option>)}
-            </select>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>tampilkan:</span>
-            <div style={{ display: 'flex', gap: 3 }}>
-              {PAGE_SIZES.map(p => (
-                <button key={p.value} onClick={() => { setPageSize(p.value); setCurrentPage(1) }}
-                  style={{ padding: '3px 8px', fontSize: 11, borderRadius: 3, fontWeight: 600, fontFamily: 'monospace', cursor: 'pointer', border: pageSize === p.value ? 'none' : '1px solid rgba(255,255,255,0.08)', background: pageSize === p.value ? '#00ff88' : 'rgba(255,255,255,0.04)', color: pageSize === p.value ? '#0a0a0a' : 'rgba(255,255,255,0.4)' }}
-                >{p.label}</button>
-              ))}
+            {/* Filter DKHP */}
+            <ThemedSelect
+              value={filterDkhp}
+              onChange={val => { setFilterDkhp(val); setCurrentPage(1) }}
+              options={[{ value: '', label: 'Semua DKHP' }, ...dkhpOptions.map(d => ({ value: d, label: `DKHP ${d}` }))]}
+              placeholder="Semua DKHP"
+              style={{ width: 130, minHeight: 30, fontSize: 11 }}
+            />
+            {/* Page size */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderLeft: '1px solid rgba(255,255,255,0.07)', paddingLeft: 8, marginLeft: 2, flexShrink: 0 }}>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>per halaman</span>
+              <div style={{ display: 'flex', gap: 3 }}>
+                {PAGE_SIZES.map(p => (
+                  <button key={p.value} onClick={() => { setPageSize(p.value); setCurrentPage(1) }}
+                    style={{ height: 30, padding: '0 8px', fontSize: 11, borderRadius: 3, fontWeight: 600, fontFamily: 'monospace', cursor: 'pointer', border: pageSize === p.value ? 'none' : '1px solid rgba(255,255,255,0.08)', background: pageSize === p.value ? '#00ff88' : 'rgba(255,255,255,0.04)', color: pageSize === p.value ? '#0a0a0a' : 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap' }}
+                  >{p.label}</button>
+                ))}
+              </div>
             </div>
           </div>
         </div>

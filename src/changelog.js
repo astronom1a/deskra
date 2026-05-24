@@ -1,6 +1,17 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.38.3',
+    date: '2026-05-24',
+    items: [
+      { type: 'feat', text: 'ganti semua dropdown native <select> dengan ThemedSelect di seluruh aplikasi' },
+      { type: 'style', text: 'toolbar Kayu Bernomor: semua kontrol sejajar satu baris, custom dropdown "Semua Kolom" diganti ThemedSelect' },
+      { type: 'style', text: 'toolbar Log Aktivitas: dibungkus container visual, filter sejajar satu baris' },
+      { type: 'refactor', text: 'ThemedSelect: support width override via style prop' },
+      { type: 'refactor', text: 'KayuBernomor: hapus showColDropdown state, colDropdownRef, dan useEffect click-outside yang tidak perlu' },
+    ]
+  },
+  {
     version: '0.38.2',
     date: '2026-05-24',
     items: [

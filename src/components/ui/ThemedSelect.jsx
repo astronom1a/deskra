@@ -39,9 +39,11 @@ export default function ThemedSelect({
 
   const rootStyle = {
     position: 'relative',
-    width: '100%',
+    width: style?.width ?? '100%',
     flex: style?.flex,
     minWidth: style?.minWidth,
+    maxWidth: style?.maxWidth,
+    flexShrink: style?.flexShrink ?? (style?.width ? 0 : undefined),
   }
 
   const fieldBg = disabled

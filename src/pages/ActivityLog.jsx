@@ -5,6 +5,7 @@ import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import TpkRequiredState from '../components/layout/TpkRequiredState'
 import { TableSkeleton } from '../components/ui/LoadingState'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import ThemedSelect from '../components/ui/ThemedSelect'
 
 const ENTITY_LABELS = {
   register_kapling: 'Register Kapling',
@@ -150,6 +151,7 @@ export default function ActivityLog() {
     border: '1px solid rgba(255,255,255,0.1)',
     background: 'rgba(255,255,255,0.03)',
     color: '#f0f0f0', fontFamily: 'monospace', fontSize: 11, outline: 'none',
+    minHeight: 30, boxSizing: 'border-box', colorScheme: 'dark',
   }
 
   return (
@@ -163,7 +165,9 @@ export default function ActivityLog() {
         </p>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, padding: '10px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Filter</span>
+        <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.08)' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)' }}>dari</span>
           <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={inputStyle} />
@@ -172,17 +176,19 @@ export default function ActivityLog() {
           <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)' }}>sampai</span>
           <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={inputStyle} />
         </div>
-        <select
+        <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.08)' }} />
+        <ThemedSelect
           value={moduleFilter}
-          onChange={e => setModuleFilter(e.target.value)}
-          style={{ ...inputStyle, cursor: 'pointer' }}
-        >
-          <option value="all">Semua Modul</option>
-          <option value="register_kapling">Register Kapling</option>
-          <option value="periode">Periode</option>
-          <option value="tenaga_kerja">Tenaga Kerja</option>
-          <option value="pejabat">Pejabat</option>
-        </select>
+          onChange={val => setModuleFilter(val)}
+          options={[
+            { value: 'all',              label: 'Semua Modul'    },
+            { value: 'register_kapling', label: 'Register Kapling' },
+            { value: 'periode',          label: 'Periode'         },
+            { value: 'tenaga_kerja',     label: 'Tenaga Kerja'    },
+            { value: 'pejabat',          label: 'Pejabat'         },
+          ]}
+          style={{ width: 170, fontSize: 11, minHeight: 30 }}
+        />
       </div>
 
       <div style={panelStyle}>

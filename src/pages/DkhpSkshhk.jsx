@@ -1527,20 +1527,16 @@ export default function DkhpSkshhk() {
               {alamatOptions.length > 0 && (
                 <div style={{ marginBottom: 8 }}>
                   <label style={{ display: 'block', fontSize: 10, color: 'rgba(0,255,136,0.5)', marginBottom: 4, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pilih dari database alamat</label>
-                  <select
+                  <ThemedSelect
                     value=""
-                    onChange={e => {
-                      const item = alamatOptions.find(a => a.id === e.target.value)
+                    onChange={val => {
+                      const item = alamatOptions.find(a => a.id === val)
                       if (!item) return
                       setEditRow(p => ({ ...p, tujuan: item.alamat_lengkap || '', kota_tujuan: item.kota || '' }))
                     }}
-                    style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(0,255,136,0.18)', borderRadius: 3, padding: '7px 10px', fontSize: 12, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', colorScheme: 'dark' }}
-                  >
-                    <option value="">— pilih alamat tersimpan —</option>
-                    {alamatOptions.map(a => (
-                      <option key={a.id} value={a.id}>{a.label}{a.kota ? ` — ${a.kota}` : ''}</option>
-                    ))}
-                  </select>
+                    options={alamatOptions.map(a => ({ value: a.id, label: `${a.label}${a.kota ? ` — ${a.kota}` : ''}` }))}
+                    placeholder="— pilih alamat tersimpan —"
+                  />
                 </div>
               )}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -1650,20 +1646,17 @@ export default function DkhpSkshhk() {
                 {alamatOptions.length > 0 && (
                   <div>
                     <label style={{ display: 'block', fontSize: 9, color: 'rgba(0,255,136,0.5)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pilih alamat tersimpan</label>
-                    <select
+                    <ThemedSelect
                       value=""
-                      onChange={e => {
-                        const item = alamatOptions.find(a => a.id === e.target.value)
+                      onChange={val => {
+                        const item = alamatOptions.find(a => a.id === val)
                         if (!item) return
                         setQrForm(p => ({ ...p, endUser: item.end_user || '', alamatBongkar: item.alamat_lengkap || '' }))
                       }}
-                      style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(0,255,136,0.18)', borderRadius: 3, padding: '5px 8px', fontSize: 11, color: '#f0f0f0', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', colorScheme: 'dark' }}
-                    >
-                      <option value="">— pilih dari database —</option>
-                      {alamatOptions.map(a => (
-                        <option key={a.id} value={a.id}>{a.label}{a.kota ? ` — ${a.kota}` : ''}</option>
-                      ))}
-                    </select>
+                      options={alamatOptions.map(a => ({ value: a.id, label: `${a.label}${a.kota ? ` — ${a.kota}` : ''}` }))}
+                      placeholder="— pilih dari database —"
+                      style={{ fontSize: 11, minHeight: 30 }}
+                    />
                   </div>
                 )}
 

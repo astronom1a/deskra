@@ -50,7 +50,10 @@
       "PowerShell(Get-Process -Name node -ErrorAction SilentlyContinue)",
       "PowerShell(Get-Process -Name node -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue }; Start-Sleep -Milliseconds 800; Get-Process -Name node -ErrorAction SilentlyContinue | Select-Object Id)",
       "Bash(cmd.exe /c \"taskkill /F /IM node.exe\")",
-      "Bash(mkdir -p \"F:\\\\Project\\\\CODING\\\\Deskra\\\\docs\\\\superpowers\\\\specs\")"
+      "Bash(mkdir -p \"F:\\\\Project\\\\CODING\\\\Deskra\\\\docs\\\\superpowers\\\\specs\")",
+      "Skill(code-review:code-review)",
+      "Skill(code-review:code-review:*)",
+      "Bash(git commit -m 'refactor: ekstrak SortIcon dan ActionButton, tambah aria-label di DkhpSkshhk *)"
     ]
   }
 }
