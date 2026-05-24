@@ -1,6 +1,17 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.38.2',
+    date: '2026-05-24',
+    items: [
+      { type: 'fix', text: 'parseAlamatLine: format "PT. Nama" tidak lagi terpotong jadi "PT"' },
+      { type: 'fix', text: 'end_user tidak lagi memiliki trailing space saat kota kosong' },
+      { type: 'fix', text: 'import Excel: sel angka/tanggal tidak dihitung sebagai baris gagal di-parse' },
+      { type: 'fix', text: 'import Excel: hanya baca sheet pertama untuk hindari duplikat' },
+      { type: 'fix', text: 'fetchData: ganti select(*) dengan kolom spesifik di tabel alamat bongkar' },
+    ]
+  },
+  {
     version: '0.38.1',
     date: '2026-05-24',
     items: [

@@ -115,6 +115,14 @@ chore: bump versi ke v0.34.0
 - Deskripsi singkat, imperatif, Bahasa Indonesia
 - Version bump menggunakan tipe `chore`: `chore: bump versi ke vX.Y.Z`
 
+### Auto Commit & Push
+- **Segera commit dan push** (tanpa menunggu konfirmasi user) setiap kali ada perubahan atau fix pada:
+  - File migrasi database (`supabase/migrations/`)
+  - Konfigurasi sistem (`package.json`, `vite.config.js`, `vercel.json`, `tailwind.config.js`, dll)
+  - Routing & auth (`src/lib/supabase.js`, `src/lib/AuthProvider.jsx`, `src/lib/tenantScope.js`, `src/App.jsx`)
+  - Changelog & versi (`src/changelog.js`, versi di `package.json`)
+- Untuk perubahan UI/halaman biasa: tanya dulu sebelum push, kecuali user sudah eksplisit minta push
+
 ### Branch
 - Branch utama: `main` — deploy otomatis ke Vercel production
 - Tidak perlu branch terpisah untuk perubahan kecil

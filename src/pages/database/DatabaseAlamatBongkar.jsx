@@ -60,7 +60,7 @@ export default function DatabaseAlamatBongkar() {
     setLoading(true)
     const { data } = await supabase
       .from('tabel_alamat_bongkar')
-      .select('*')
+      .select('id, tpk_id, label, end_user, alamat_lengkap, kota')
       .eq('tpk_id', tpkId)
       .order('label')
     setData(data || [])
@@ -121,8 +121,8 @@ export default function DatabaseAlamatBongkar() {
     const str = String(raw ?? '').trim()
     if (!str || /^alamat$/i.test(str)) return null
 
-    // label = sebelum titik pertama (harus ada huruf, tidak boleh mengandung koma)
-    const dotIdx = str.indexOf('.')
+    // label = sebelum titik pertama yang diikuti spasi (harus ada huruf, tidak boleh mengandung koma)
+    const dotIdx = str.search(/\.\s/)
     if (dotIdx === -1) return null
     const label = str.slice(0, dotIdx).trim()
     if (!label || label.includes(',') || !/[A-Za-z]/.test(label)) return null
@@ -138,7 +138,7 @@ export default function DatabaseAlamatBongkar() {
 
     // end_user: PT/CV/UD → pakai label apa adanya; selainnya → "END USER [kota]"
     const isBadan = /^(PT|CV|UD)\b/i.test(label)
-    const end_user = isBadan ? label : `END USER ${kota}`
+    const end_user = isBadan ? label : `END USER ${kota}`.trim()
 
     return { label, end_user, alamat_lengkap, kota }
   }
@@ -151,7 +151,8 @@ export default function DatabaseAlamatBongkar() {
     reader.onload = evt => {
       const wb = XLSX.read(evt.target.result, { type: 'binary' })
       const rows = [], failed = []
-      for (const sheetName of wb.SheetNames) {
+      const sheetName = wb.SheetNames[0]
+      {
         const ws  = wb.Sheets[sheetName]
         // Baca sebagai array 2D — format asli: tiap baris punya 1 kolom berisi string penuh
         const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
@@ -160,7 +161,7 @@ export default function DatabaseAlamatBongkar() {
             const str    = String(cell ?? '').trim()
             const parsed = parseAlamatLine(str)
             if (parsed) rows.push(parsed)
-            else if (str && !/^alamat$/i.test(str)) failed.push(str)
+            else if (str && /\.\s/.test(str) && !/^alamat$/i.test(str)) failed.push(str)
           }
         }
       }
