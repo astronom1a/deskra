@@ -90,6 +90,32 @@ function JenisBadge({ val, klas }) {
   return <span style={{ ...BADGE_BASE, ...(KLAS_STYLE[(klas || '').toUpperCase()] || BADGE_DEF) }}>{val}</span>
 }
 
+function SortIcon({ sorts, colKey }) {
+  const idx = sorts.findIndex(s => s.key === colKey)
+  if (idx === -1) return <ChevronsUpDown size={10} style={{ color: 'rgba(255,255,255,0.15)' }}/>
+  const s = sorts[idx]
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+      {sorts.length > 1 && <span style={{ fontSize: 8, fontWeight: 700, color: '#00ff88' }}>{idx + 1}</span>}
+      {s.dir === 'asc' ? <ChevronUp size={10} style={{ color: '#00ff88' }}/> : <ChevronDown size={10} style={{ color: '#00ff88' }}/>}
+    </span>
+  )
+}
+
+function ActionButton({ onClick, ariaLabel, hoverColor = '#f0f0f0', hoverBg = 'rgba(255,255,255,0.06)', children }) {
+  return (
+    <button
+      aria-label={ariaLabel}
+      onClick={onClick}
+      style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}
+      onMouseEnter={e => { e.currentTarget.style.color = hoverColor; e.currentTarget.style.background = hoverBg }}
+      onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
+    >
+      {children}
+    </button>
+  )
+}
+
 const KLAS_OPTIONS = ['JATI', 'RIMBA']
 const JENIS_BY_KLAS = {
   JATI: ['JATI'],
@@ -1226,17 +1252,7 @@ export default function DkhpSkshhk() {
                     >
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                         {c.label}
-                        {(() => {
-                          const idx = sorts.findIndex(s => s.key === c.key)
-                          if (idx === -1) return <ChevronsUpDown size={10} style={{ color: 'rgba(255,255,255,0.15)' }}/>
-                          const s = sorts[idx]
-                          return (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                              {sorts.length > 1 && <span style={{ fontSize: 8, fontWeight: 700, color: '#00ff88' }}>{idx + 1}</span>}
-                              {s.dir === 'asc' ? <ChevronUp size={10} style={{ color: '#00ff88' }}/> : <ChevronDown size={10} style={{ color: '#00ff88' }}/>}
-                            </span>
-                          )
-                        })()}
+                        <SortIcon sorts={sorts} colKey={c.key} />
                       </span>
                     </th>
                   ))}
@@ -1294,18 +1310,9 @@ export default function DkhpSkshhk() {
                         onMouseEnter={e => e.currentTarget.style.opacity = '1'}
                         onMouseLeave={e => e.currentTarget.style.opacity = '0'}
                       >
-                        <button onClick={() => openEdit(row)} style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}
-                          onMouseEnter={e => { e.currentTarget.style.color = '#f0f0f0'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
-                          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
-                        ><Pencil size={12}/></button>
-                        <button onClick={() => openQr(row)} style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}
-                          onMouseEnter={e => { e.currentTarget.style.color = '#00ff88'; e.currentTarget.style.background = 'rgba(0,255,136,0.08)' }}
-                          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
-                        ><QrCode size={12}/></button>
-                        <button onClick={() => setDeleteRow(row)} style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}
-                          onMouseEnter={e => { e.currentTarget.style.color = '#ff6b6b'; e.currentTarget.style.background = 'rgba(255,107,107,0.08)' }}
-                          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
-                        ><Trash2 size={12}/></button>
+                        <ActionButton ariaLabel="Edit" onClick={() => openEdit(row)}><Pencil size={12}/></ActionButton>
+                        <ActionButton ariaLabel="QR Code" onClick={() => openQr(row)} hoverColor="#00ff88" hoverBg="rgba(0,255,136,0.08)"><QrCode size={12}/></ActionButton>
+                        <ActionButton ariaLabel="Hapus" onClick={() => setDeleteRow(row)} hoverColor="#ff6b6b" hoverBg="rgba(255,107,107,0.08)"><Trash2 size={12}/></ActionButton>
                       </div>
                     </td>
                   </tr>

@@ -1,6 +1,14 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.38.1',
+    date: '2026-05-24',
+    items: [
+      { type: 'refactor', text: 'DkhpSkshhk: ekstrak SortIcon dan ActionButton untuk hapus IIFE di JSX dan duplikasi hover handler' },
+      { type: 'style', text: 'DkhpSkshhk: tambah aria-label pada tombol aksi tabel (Edit, QR Code, Hapus)' },
+    ]
+  },
+  {
     version: '0.38.0',
     date: '2026-05-24',
     items: [
