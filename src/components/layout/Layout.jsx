@@ -76,7 +76,7 @@ function OrbitalMark({ size = 32 }) {
 }
 
 // ── SidebarItem ───────────────────────────────────────────────────────────────
-function SidebarItem({ item, collapsed }) {
+function SidebarItem({ item, collapsed, onExpand }) {
   const location = useLocation()
   const [open, setOpen] = useState(
     item.children?.some(c => location.pathname.startsWith(c.path))
@@ -98,22 +98,26 @@ function SidebarItem({ item, collapsed }) {
   }, [open, collapsed])
 
   if (item.children) {
-    // Collapsed: show icon-only pill, no accordion
+    // Collapsed: show icon-only button — klik expand sidebar
     if (collapsed) {
       const anyChildActive = item.children.some(c => location.pathname.startsWith(c.path))
       return (
-        <div
+        <button
+          type="button"
           title={item.label}
+          onClick={() => { onExpand?.(); setOpen(true) }}
           style={{
-            display: 'flex', justifyContent: 'center', alignItems: 'center',
-            padding: '7px 0',
+            width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center',
+            padding: '7px 0', border: 'none', borderRadius: 3, cursor: 'pointer',
             color: anyChildActive ? '#00ff88' : 'rgba(255,255,255,0.38)',
-            borderRadius: 3,
             background: anyChildActive ? 'rgba(0,255,136,0.07)' : 'transparent',
+            transition: 'background 0.15s, color 0.15s',
           }}
+          onMouseEnter={e => { if (!anyChildActive) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = anyChildActive ? '#00ff88' : '#f0f0f0' }}
+          onMouseLeave={e => { e.currentTarget.style.background = anyChildActive ? 'rgba(0,255,136,0.07)' : 'transparent'; e.currentTarget.style.color = anyChildActive ? '#00ff88' : 'rgba(255,255,255,0.38)' }}
         >
           {item.icon && <item.icon size={14} />}
-        </div>
+        </button>
       )
     }
     return (
@@ -134,7 +138,7 @@ function SidebarItem({ item, collapsed }) {
         <div ref={bodyRef} style={{ overflow: 'hidden', height: open ? 'auto' : 0, opacity: open ? 1 : 0 }}>
           <div className="ml-2 mt-0.5 mb-1 space-y-0.5" style={{ borderLeft: '1px solid rgba(0,255,136,0.15)', paddingLeft: 10 }}>
             {item.children.map(child => (
-              <SidebarItem key={child.path} item={child} collapsed={collapsed} />
+              <SidebarItem key={child.path} item={child} collapsed={collapsed} onExpand={onExpand} />
             ))}
           </div>
         </div>
@@ -334,7 +338,7 @@ export default function Layout() {
         <nav className="flex-1 overflow-y-auto py-4 space-y-0.5" style={{ scrollbarWidth: 'none', paddingLeft: collapsed ? 6 : 12, paddingRight: collapsed ? 6 : 12 }}>
           {navItems.map((item, i) => (
             <div key={item.path || i} data-sb-item>
-              <SidebarItem item={item} collapsed={collapsed} />
+              <SidebarItem item={item} collapsed={collapsed} onExpand={toggleCollapsed} />
             </div>
           ))}
         </nav>

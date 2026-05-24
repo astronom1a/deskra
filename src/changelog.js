@@ -1,6 +1,13 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.39.1',
+    date: '2026-05-24',
+    items: [
+      { type: 'fix', text: 'sidebar collapsed: menu dengan sub-menu sekarang bisa diklik (expand sidebar + buka accordion)' },
+    ]
+  },
+  {
     version: '0.39.0',
     date: '2026-05-24',
     items: [
