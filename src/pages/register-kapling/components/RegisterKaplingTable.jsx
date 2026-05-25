@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, ChevronsUpDown, FileBarChart2, FileSpreadsheet, Pencil, Receipt, Trash2 } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ChevronUp, ChevronsUpDown, FileBarChart2, FileSpreadsheet, Pencil, Receipt, Trash2 } from 'lucide-react'
 import { TableSkeleton } from '../../../components/ui/LoadingState'
 import { displayDate, getMutuLabel, getPembeliName } from '../utils/registerKaplingUtils'
 
@@ -49,6 +49,22 @@ function EmptyValue() {
   return <span style={{ color: 'rgba(255,255,255,0.15)' }}>-</span>
 }
 
+function DkhpCell({ val, conflict }) {
+  if (!val) return <span style={{ color: 'rgba(255,255,255,0.15)' }}>-</span>
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      <span style={{ fontFamily: 'monospace', fontSize: 11 }}>{val}</span>
+      {conflict && (
+        <AlertTriangle
+          size={10}
+          title="No. DKHP pernah berubah — perlu evaluasi"
+          style={{ color: '#ffaa00', flexShrink: 0 }}
+        />
+      )}
+    </span>
+  )
+}
+
 function CellValue({ column, row }) {
   if (column.key === 'sertifikasi') return <SertBadge val={row.sertifikasi}/>
   if (column.key === 'jenis') return <JenisKayuBadge val={row.jenis}/>
@@ -58,6 +74,7 @@ function CellValue({ column, row }) {
   if (column.key === 'pembeli') return getPembeliName(row.pembeli) ?? <EmptyValue />
   if (column.key === 'no_invois') return <InvoisBadge val={row.no_invois}/>
   if (column.key === 'periode') return row.periode ? <span>{row.periode}</span> : <EmptyValue />
+  if (column.key === 'dkhp') return <DkhpCell val={row.dkhp} conflict={row.dkhp_conflict} />
   return row[column.key] ?? <EmptyValue />
 }
 

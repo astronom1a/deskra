@@ -275,6 +275,7 @@ export default function RegisterKapling() {
             }
             page.setContextMenu(null)
           }}
+          onClearConflict={() => page.handleClearDkhpConflict(page.contextMenu.row)}
           onEdit={() => {
             if (page.selectedIds.size > 1 && page.selectedIds.has(page.contextMenu.row.id)) {
               page.setBatchEditData({ tgl_kapling: '', periode: '', no_blok: '', sertifikasi: '' })

@@ -1,12 +1,15 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { CheckCircle, Pencil, Trash2 } from 'lucide-react'
 
 export default function RegisterKaplingContextMenu({
   isBatch,
   menu,
+  onClearConflict,
   onDelete,
   onEdit,
   selectedCount,
 }) {
+  const showClearConflict = !isBatch && onClearConflict && menu?.row?.dkhp_conflict
+
   return (
     <div
       style={{ position: 'fixed', zIndex: 50, background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.6)', padding: '4px 0', minWidth: 160, top: menu.y, left: menu.x }}
@@ -26,6 +29,17 @@ export default function RegisterKaplingContextMenu({
         <Pencil size={12} style={{ color: 'rgba(255,255,255,0.3)' }}/>
         {isBatch ? `edit ${selectedCount} terpilih` : 'edit'}
       </button>
+      {showClearConflict && (
+        <button
+          onClick={onClearConflict}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '7px 16px', fontSize: 12, color: '#ffaa00', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'monospace' }}
+          onMouseEnter={event => event.currentTarget.style.background = 'rgba(255,170,0,0.07)'}
+          onMouseLeave={event => event.currentTarget.style.background = 'none'}
+        >
+          <CheckCircle size={12}/>
+          Tandai sudah diperiksa
+        </button>
+      )}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', margin: '3px 0' }}/>
       <button
         onClick={onDelete}

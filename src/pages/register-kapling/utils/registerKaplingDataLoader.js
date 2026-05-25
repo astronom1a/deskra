@@ -1,5 +1,5 @@
 export const REGISTER_KAPLING_SELECT =
-  'id,tpk_id,no_kapling,tgl_kapling,periode,no_blok,jenis,sortimen,sort_untuk,panjang,lebar,diameter_tebal,status,mutu,cacat,asal_kayu,sertifikasi,batang,volume,no_invois,pembeli,dkhp,skshhk,file_name'
+  'id,tpk_id,no_kapling,tgl_kapling,periode,no_blok,jenis,sortimen,sort_untuk,panjang,lebar,diameter_tebal,status,mutu,cacat,asal_kayu,sertifikasi,batang,volume,no_invois,pembeli,dkhp,skshhk,dkhp_conflict,file_name'
 
 export async function fetchRegisterKaplingRows({ pageSize = 500, supabase, tpkId }) {
   const all = []

@@ -139,6 +139,15 @@ export async function saveQuickInvoisRow({ row, noInvois, pembeli, supabase, tpk
   }
 }
 
+export async function clearDkhpConflict({ rowId, supabase, tpkId }) {
+  const { error } = await supabase
+    .from('tabel_register_kapling')
+    .update({ dkhp_conflict: false })
+    .eq('id', rowId)
+    .eq('tpk_id', tpkId)
+  return { error }
+}
+
 function actionError(message) {
   return {
     closeEditor: false,

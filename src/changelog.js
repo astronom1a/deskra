@@ -1,6 +1,15 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.40.0',
+    date: '2026-05-25',
+    items: [
+      { type: 'feat', text: 'retroactive sync pembeli DKHP → Register Kapling via DB trigger' },
+      { type: 'feat', text: 'flag dkhp_conflict: kapling yang no. DKHP-nya pernah berubah otomatis ditandai ⚠️' },
+      { type: 'feat', text: 'context menu Register Kapling: tombol "Tandai sudah diperiksa" untuk reset flag konflik DKHP' },
+    ]
+  },
+  {
     version: '0.39.1',
     date: '2026-05-24',
     items: [

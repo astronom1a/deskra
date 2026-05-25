@@ -30,6 +30,7 @@ import {
   countMissingKaplings,
 } from '../utils/registerKaplingMetrics'
 import {
+  clearDkhpConflict,
   saveBatchDeleteRows,
   saveBatchEditRows,
   saveDeletedRow,
@@ -199,6 +200,15 @@ export function useRegisterKaplingPage() {
       document.removeEventListener('keydown', dismiss)
     }
   }, [contextMenu])
+
+  // ── Clear DKHP conflict flag ──────────────────────────────────────────────
+  async function handleClearDkhpConflict(row) {
+    setContextMenu(null)
+    const { error } = await clearDkhpConflict({ rowId: row.id, supabase, tpkId })
+    if (error) { showToast('Gagal reset konflik DKHP', 'error'); return }
+    setRows(prev => prev.map(r => r.id === row.id ? { ...r, dkhp_conflict: false } : r))
+    showToast('Konflik DKHP sudah ditandai diperiksa', 'success')
+  }
 
   // ── Col dropdown dismiss ──────────────────────────────────────────────────
   useEffect(() => {
@@ -475,7 +485,7 @@ export function useRegisterKaplingPage() {
     // batch edit
     showBatchEdit, setShowBatchEdit, batchEditData, setBatchEditData, batchEditSaving, handleBatchEdit,
     // context menu
-    contextMenu, setContextMenu,
+    contextMenu, setContextMenu, handleClearDkhpConflict,
     // invois
     invoisPreview, setInvoisPreview, invoisSaving, handleInvoisFileChange, handleInvoisSave,
     // fix prefix
