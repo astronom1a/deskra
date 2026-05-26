@@ -6,6 +6,25 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import { TableSkeleton } from '../../components/ui/LoadingState'
 import { Plus, CheckCircle2, XCircle, Search, ChevronRight, Trash2, AlertCircle } from 'lucide-react'
 
+function ReadinessChip({ periodeCount, operatorCount }) {
+  if (periodeCount > 0 && operatorCount > 0) return null
+  const label = operatorCount === 0 ? 'Belum ada operator' : 'Belum ada periode'
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 text-xs font-mono font-medium"
+      style={{
+        borderRadius: 3,
+        background: 'rgba(255,170,0,0.08)',
+        border: '1px solid rgba(255,170,0,0.22)',
+        color: '#ffaa00',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      ⚠ {label}
+    </span>
+  )
+}
+
 export default function AdminTpkList() {
   const navigate = useNavigate()
   const [tpkList, setTpkList] = useState([])
@@ -164,7 +183,12 @@ export default function AdminTpkList() {
                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.025)' }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                   >
-                    <td className="px-5 py-3.5 font-medium" style={{ color: '#f0f0f0' }}>{t.namatpk}</td>
+                    <td className="px-5 py-3.5" style={{ color: '#f0f0f0' }}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium">{t.namatpk}</span>
+                        <ReadinessChip periodeCount={t.periodeCount} operatorCount={t.operatorCount} />
+                      </div>
+                    </td>
                     <td className="px-5 py-3.5 font-mono text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>{t.kode_tpk || '—'}</td>
                     <td className="px-5 py-3.5 text-center font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>{t.operatorCount}</td>
                     <td className="px-5 py-3.5 text-center font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>{t.periodeCount}</td>
