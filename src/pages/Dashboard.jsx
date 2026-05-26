@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { computeTotalUK } from '../lib/rekapPekerjaan'
 import {
-  Clock, TrendingUp, AlertCircle, Eye, EyeOff,
+  Clock, TrendingUp, AlertCircle, Eye, EyeOff, ArrowRight, CalendarPlus,
 } from 'lucide-react'
 import { useAccount } from '../lib/hooks/useAccount'
 import { useAuth } from '../lib/AuthProvider'
@@ -48,6 +49,7 @@ export default function Dashboard() {
   const [hideAmount,  setHideAmount]  = useState(() => {
     try { return localStorage.getItem('deskra_dashboard_hide_amount') === '1' } catch { return false }
   })
+  const navigate = useNavigate()
 
   function toggleHideAmount() {
     setHideAmount(prev => {
@@ -481,12 +483,34 @@ export default function Dashboard() {
                 <AlertCircle size={15}/> {error}
               </div>
             ) : periodes.length === 0 ? (
-              <div className="p-10 text-center">
-                <Clock size={26} style={{ color: '#2a2a2a' }} className="mx-auto mb-3"/>
-                <p className="text-sm font-mono" style={{ color: '#3a3a3a' }}>belum ada data periode tersimpan.</p>
-                <p className="text-xs font-mono mt-1" style={{ color: '#2a2a2a' }}>
-                  Tambahkan periode pertama di halaman Main Link.
+              <div style={{ padding: '40px 24px', textAlign: 'center' }}>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 48, height: 48, borderRadius: '50%',
+                  background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.12)',
+                  marginBottom: 16,
+                }}>
+                  <CalendarPlus size={22} style={{ color: 'rgba(0,255,136,0.5)' }} />
+                </div>
+                <p className="font-mono font-semibold" style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, marginBottom: 6 }}>
+                  Belum ada periode
                 </p>
+                <p className="font-mono" style={{ color: 'rgba(255,255,255,0.22)', fontSize: 12, marginBottom: 20, maxWidth: 320, margin: '0 auto 20px' }}>
+                  Buat periode pertama untuk mulai mencatat uang kerja dan data operasional TPK.
+                </p>
+                <button
+                  onClick={() => navigate('/main-link')}
+                  className="inline-flex items-center gap-2 font-mono font-semibold transition-colors"
+                  style={{
+                    padding: '8px 16px', borderRadius: 3,
+                    background: 'rgba(0,255,136,0.1)', border: '1px solid rgba(0,255,136,0.22)',
+                    color: '#00ff88', fontSize: 12, cursor: 'pointer',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.18)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.1)' }}
+                >
+                  Buat Periode Pertama <ArrowRight size={13} />
+                </button>
               </div>
             ) : (
               <table className="w-full">
