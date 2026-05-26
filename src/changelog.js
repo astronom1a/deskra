@@ -1,6 +1,16 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.41.0',
+    date: '2026-05-26',
+    items: [
+      { type: 'feat', text: 'copy kredensial operator dan checklist onboarding di success screen pembuatan TPK' },
+      { type: 'feat', text: 'auto-seed tumpuk kapling default saat periode baru dibuat' },
+      { type: 'feat', text: 'empty state informatif di Dashboard dengan tombol langsung ke pembuatan periode' },
+      { type: 'feat', text: 'badge kesiapan TPK di daftar admin untuk identifikasi TPK yang belum setup' },
+    ]
+  },
+  {
     version: '0.40.0',
     date: '2026-05-25',
     items: [
