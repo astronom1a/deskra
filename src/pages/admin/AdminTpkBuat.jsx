@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { ArrowLeft, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, CheckCircle2, Copy, Check } from 'lucide-react'
 
 export default function AdminTpkBuat() {
   const navigate = useNavigate()
@@ -10,6 +10,15 @@ export default function AdminTpkBuat() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    const text = `Email: ${form.email}\nPassword: ${form.password}`
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    })
+  }
 
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -57,30 +66,73 @@ export default function AdminTpkBuat() {
   const inputCls = 'w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent'
 
   if (success) {
+    const namaFinal = /^tpk\s/i.test(form.namatpk.trim()) ? form.namatpk.trim() : `TPK ${form.namatpk.trim()}`
     return (
       <div className="p-6 max-w-lg mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
           <div className="flex justify-center mb-4">
             <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
               <CheckCircle2 size={28} className="text-green-600 dark:text-green-400" />
             </div>
           </div>
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
-            {/^tpk\s/i.test(form.namatpk.trim()) ? form.namatpk.trim() : `TPK ${form.namatpk.trim()}`} berhasil dibuat
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1 text-center">
+            {namaFinal} berhasil dibuat
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            Akun operator dengan email <strong>{form.email}</strong> sudah aktif dan bisa login.
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 text-center">
+            Akun operator sudah aktif dan bisa login.
           </p>
-          <div className="flex gap-3 justify-center">
+
+          {/* Kotak kredensial */}
+          <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4 mb-5">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Kredensial login operator</p>
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-mono text-gray-800 dark:text-gray-100 truncate">{form.email}</p>
+                <p className="text-xs font-mono text-gray-400 dark:text-gray-500 mt-0.5">{'•'.repeat(Math.min(form.password.length, 12))}</p>
+              </div>
+              <button
+                onClick={handleCopy}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                style={{
+                  background: copied ? 'rgb(220,252,231)' : 'rgb(243,244,246)',
+                  color: copied ? 'rgb(22,101,52)' : 'rgb(75,85,99)',
+                }}
+              >
+                {copied ? <Check size={13} /> : <Copy size={13} />}
+                {copied ? 'Tersalin' : 'Salin'}
+              </button>
+            </div>
+          </div>
+
+          {/* Checklist langkah selanjutnya */}
+          <div className="mb-6">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3">Langkah selanjutnya</p>
+            <ol className="space-y-2">
+              {[
+                'Kirim email & password ke operator kantor',
+                'Buka data TPK → tambah pejabat yang aktif',
+                'Minta operator login dan buat periode pertama',
+              ].map((step, i) => (
+                <li key={i} className="flex items-start gap-2.5">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-xs font-bold flex items-center justify-center mt-0.5">
+                    {i + 1}
+                  </span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div className="flex gap-3">
             <button
               onClick={() => navigate('/admin/tpk')}
-              className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="flex-1 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Lihat Daftar TPK
             </button>
             <button
-              onClick={() => { setSuccess(false); setForm({ namatpk: '', kode_tpk: '', email: '', password: '' }) }}
-              className="px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
+              onClick={() => { setSuccess(false); setCopied(false); setForm({ namatpk: '', kode_tpk: '', email: '', password: '' }) }}
+              className="flex-1 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
             >
               Tambah TPK Lain
             </button>
