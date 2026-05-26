@@ -330,6 +330,12 @@ export default function MainLink() {
       .from('tabel_tarif_periode')
       .upsert(seedPayload, { onConflict: 'periode_id,kode' })
     if (seedError) return showToast(seedError.message, 'error')
+
+    // Seed tumpuk kapling default (JATI/RIMBA_MAHONI/RIMBA_KEDAWUNG × AI/AII/AIII)
+    const { error: tumpukError } = await supabase
+      .rpc('seed_tumpuk_kapling', { p_periode_id: data.id })
+    if (tumpukError) return showToast(tumpukError.message, 'error')
+
     setShowForm(false)
     await fetchPeriodes()
     setSelected(data)
