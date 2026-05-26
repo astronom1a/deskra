@@ -293,7 +293,14 @@ export default function DetailPekerjaan() {
         urutan: i,
       }))
 
-    // Insert data baru dulu — baru hapus yang lama (safe order: insert first)
+    // Hapus data lama dulu — baru insert yang baru
+    await Promise.all([
+      supabase.from('tabel_tanda_laku').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
+      supabase.from('tabel_tumpuk_brongkol').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
+      supabase.from('tabel_pemasangan_barcode').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
+      supabase.from('tabel_custom_item').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
+    ])
+
     const inserts = []
     if (tlRows.length) inserts.push(supabase.from('tabel_tanda_laku').insert(tlRows))
     if (tbRows.length) inserts.push(supabase.from('tabel_tumpuk_brongkol').insert(tbRows))
@@ -327,21 +334,15 @@ export default function DetailPekerjaan() {
       }, { onConflict: 'periode_id' }))
     }
 
-    const results = await Promise.all(inserts)
-    const err = results.find(r => r.error)
-    if (err) {
-      showToast(err.error.message, 'error')
-      setLoading(false)
-      return
+    if (inserts.length) {
+      const results = await Promise.all(inserts)
+      const err = results.find(r => r.error)
+      if (err) {
+        showToast(err.error.message, 'error')
+        setLoading(false)
+        return
+      }
     }
-
-    // Insert sukses — baru hapus data lama
-    await Promise.all([
-      supabase.from('tabel_tanda_laku').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
-      supabase.from('tabel_tumpuk_brongkol').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
-      supabase.from('tabel_pemasangan_barcode').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
-      supabase.from('tabel_custom_item').delete().eq('tpk_id', scopedTpkId).eq('periode_id', pid),
-    ])
 
     showToast('Semua data berhasil disimpan')
     fetchAll(pid)
