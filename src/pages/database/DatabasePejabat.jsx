@@ -9,6 +9,16 @@ import Toast from '../../components/ui/Toast'
 import { TableSkeleton } from '../../components/ui/LoadingState'
 import { Plus, Pencil, Trash2, X } from 'lucide-react'
 
+const JABATAN_OPTIONS = [
+  { label: 'Administratur Utama',       short: 'ADM'  },
+  { label: 'Wakil Administratur Utama', short: 'WAKA' },
+  { label: 'Bendahara Umum',            short: 'BU'   },
+  { label: 'Kepala TPK',                short: 'KA'   },
+  { label: 'Pelaksana TPK',             short: 'PLK'  },
+  { label: 'TU TPK',                    short: 'TU'   },
+  { label: 'Penerbit TPK',              short: 'PNB'  },
+]
+
 const emptyForm = { npk: '', nama: '', jabatan: '', aktif: true }
 
 export default function DatabasePejabat() {
@@ -137,11 +147,10 @@ export default function DatabasePejabat() {
               onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
             ><X size={15}/></button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             {[
-              { label: 'NPK / No. Pegawai', key: 'npk',    placeholder: '3510180508720007' },
-              { label: 'Nama Lengkap',       key: 'nama',   placeholder: 'MISNOTO' },
-              { label: 'Jabatan',            key: 'jabatan', placeholder: 'KEPALA TPK WONGSOREJO' },
+              { label: 'NPK / No. Pegawai', key: 'npk',  placeholder: '3510180508720007' },
+              { label: 'Nama Lengkap',       key: 'nama', placeholder: 'MISNOTO' },
             ].map(({ label, key, placeholder }) => (
               <div key={key}>
                 <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>{label}</label>
@@ -149,6 +158,35 @@ export default function DatabasePejabat() {
                   style={INP} className="dp-inp" placeholder={placeholder}/>
               </div>
             ))}
+          </div>
+          <div>
+            <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 6 }}>Jabatan</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {JABATAN_OPTIONS.map(({ label }) => {
+                const active = form.jabatan === label
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, jabatan: active ? '' : label }))}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 3,
+                      border: active ? '1px solid rgba(0,255,136,0.5)' : '1px solid rgba(255,255,255,0.1)',
+                      background: active ? 'rgba(0,255,136,0.12)' : 'rgba(255,255,255,0.03)',
+                      color: active ? '#00ff88' : 'rgba(255,255,255,0.45)',
+                      fontFamily: 'monospace',
+                      fontSize: 11,
+                      fontWeight: active ? 700 : 400,
+                      cursor: 'pointer',
+                      transition: 'all 0.12s ease',
+                    }}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
           <button
             type="button"
@@ -208,7 +246,28 @@ export default function DatabasePejabat() {
                   <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.25)', fontSize: 11, width: 40 }}>{i + 1}</td>
                   <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.35)', fontSize: 11 }}>{row.npk || '—'}</td>
                   <td style={{ padding: '10px 12px', color: '#f0f0f0', fontWeight: 500 }}>{row.nama}</td>
-                  <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.5)' }}>{row.jabatan}</td>
+                  <td style={{ padding: '10px 12px' }}>
+                    {row.jabatan ? (
+                      <span
+                        title={row.jabatan}
+                        style={{
+                          display: 'inline-block',
+                          padding: '2px 8px',
+                          borderRadius: 3,
+                          fontSize: 10,
+                          fontWeight: 600,
+                          fontFamily: 'monospace',
+                          background: 'rgba(0,255,136,0.06)',
+                          border: '1px solid rgba(0,255,136,0.18)',
+                          color: 'rgba(0,255,136,0.75)',
+                          whiteSpace: 'nowrap',
+                          cursor: 'default',
+                        }}
+                      >
+                        {JABATAN_OPTIONS.find(j => j.label === row.jabatan)?.short ?? row.jabatan}
+                      </span>
+                    ) : <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>}
+                  </td>
                   <td style={{ padding: '10px 12px' }}>
                     <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 3, fontSize: 10, fontWeight: 600, background: row.aktif ? 'rgba(0,255,136,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${row.aktif ? 'rgba(0,255,136,0.25)' : 'rgba(255,255,255,0.08)'}`, color: row.aktif ? '#00ff88' : 'rgba(255,255,255,0.3)' }}>
                       {row.aktif ? 'aktif' : 'nonaktif'}
