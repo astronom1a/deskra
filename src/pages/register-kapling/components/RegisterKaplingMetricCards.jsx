@@ -18,11 +18,21 @@ function Card({ onClick, style, children }) {
 }
 
 export default function RegisterKaplingMetricCards({
+  accPihak3Batang,
+  accPihak3Volume,
+  accUnsoldBatang,
+  accUnsoldVolume,
   blokBreakdown,
   expandedCard,
+  isYearFiltered,
   kaplingInfo,
   missingInvoices,
   penguranganInvoices,
+  pihak3Batang,
+  pihak3Rows,
+  pihak3SortBatang,
+  pihak3SortVolume,
+  pihak3Volume,
   setExpandedCard,
   soldSortVolume,
   sortBatang,
@@ -45,7 +55,7 @@ export default function RegisterKaplingMetricCards({
   })
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
 
       {/* Card 1: Total Kapling */}
       <div
@@ -228,6 +238,12 @@ export default function RegisterKaplingMetricCards({
             {unsoldVolume.toFixed(3)} <span style={{ fontSize: 11, color: 'rgba(255,170,0,0.55)', fontWeight: 600 }}>m³</span>
           </p>
           <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.5)', fontFamily: 'monospace', marginTop: 4 }}>{unsoldBatang.toLocaleString('id')} batang</p>
+          {isYearFiltered && (
+            <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.35)', fontFamily: 'monospace', marginTop: 6 }}>
+              akumulasi: <span style={{ color: 'rgba(255,170,0,0.6)', fontWeight: 600 }}>{accUnsoldVolume.toFixed(3)} m³</span>
+              <span style={{ color: 'rgba(255,170,0,0.35)' }}> · {accUnsoldBatang.toLocaleString('id')} btg</span>
+            </p>
+          )}
         </div>
         <div style={{ borderTop: '1px solid rgba(255,170,0,0.12)', marginTop: 12, paddingTop: 12, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
           {SORTIMENS.map(m => (
@@ -270,6 +286,99 @@ export default function RegisterKaplingMetricCards({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Card 5: Persediaan Pihak III */}
+      <div
+        style={{
+          background: pihak3Rows.length > 0 ? 'rgba(139,92,246,0.05)' : 'rgba(255,255,255,0.025)',
+          border: `1px solid ${pihak3Rows.length > 0 ? 'rgba(139,92,246,0.22)' : 'rgba(255,255,255,0.08)'}`,
+          borderRadius: 3, padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease', cursor: 'pointer',
+        }}
+        onClick={() => toggle('pihak3')}
+        onMouseEnter={e => {
+          e.currentTarget.style.transform = 'translateY(-2px)'
+          e.currentTarget.style.boxShadow = pihak3Rows.length > 0 ? '0 8px 24px rgba(139,92,246,0.12)' : '0 8px 24px rgba(255,255,255,0.06)'
+          e.currentTarget.style.borderColor = pihak3Rows.length > 0 ? 'rgba(139,92,246,0.38)' : 'rgba(255,255,255,0.16)'
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.transform = ''
+          e.currentTarget.style.boxShadow = ''
+          e.currentTarget.style.borderColor = pihak3Rows.length > 0 ? 'rgba(139,92,246,0.22)' : 'rgba(255,255,255,0.08)'
+        }}
+      >
+        <div>
+          <p style={{ fontSize: 10, color: pihak3Rows.length > 0 ? 'rgba(139,92,246,0.7)' : 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>persediaan pihak iii</p>
+          <p style={{ fontSize: 22, fontWeight: 700, color: pihak3Rows.length > 0 ? '#a78bfa' : '#f0f0f0', fontFamily: 'monospace', lineHeight: 1 }}>
+            {pihak3Volume.toFixed(3)} <span style={{ fontSize: 11, color: pihak3Rows.length > 0 ? 'rgba(167,139,250,0.55)' : 'rgba(255,255,255,0.35)', fontWeight: 600 }}>m³</span>
+          </p>
+          <p style={{ fontSize: 10, color: pihak3Rows.length > 0 ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.25)', fontFamily: 'monospace', marginTop: 4 }}>
+            {pihak3Batang.toLocaleString('id')} batang · {pihak3Rows.length} kapling
+          </p>
+          {isYearFiltered && accPihak3Volume > 0 && (
+            <p style={{ fontSize: 10, color: 'rgba(139,92,246,0.35)', fontFamily: 'monospace', marginTop: 6 }}>
+              akumulasi: <span style={{ color: 'rgba(139,92,246,0.6)', fontWeight: 600 }}>{accPihak3Volume.toFixed(3)} m³</span>
+              <span style={{ color: 'rgba(139,92,246,0.35)' }}> · {accPihak3Batang.toLocaleString('id')} btg</span>
+            </p>
+          )}
+          {pihak3Rows.length === 0 && (
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', marginTop: 6 }}>semua kapling sudah ber-SKSHHK</p>
+          )}
+        </div>
+        {pihak3Rows.length > 0 && (
+          <div style={{ overflow: 'hidden', maxHeight: expandedCard === 'pihak3' ? 320 : 0, transition: 'max-height 0.3s ease', marginTop: expandedCard === 'pihak3' ? 12 : 0 }}>
+            <div style={{ borderTop: '1px solid rgba(139,92,246,0.15)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {/* Per sortimen */}
+              <div>
+                <p style={{ fontSize: 9, color: 'rgba(139,92,246,0.4)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>per sortimen</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {SORTIMENS.map(m => {
+                    const vol  = pihak3SortVolume[m]
+                    const pct  = pihak3Volume > 0 ? (vol / pihak3Volume) * 100 : 0
+                    return (
+                      <div key={m}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                          <span style={{ fontSize: 10, fontWeight: 600, fontFamily: 'monospace', color: 'rgba(139,92,246,0.7)' }}>{m}</span>
+                          <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(139,92,246,0.5)' }}>{vol.toFixed(3)} m³ · {pihak3SortBatang[m].toLocaleString('id')} btg</span>
+                        </div>
+                        <div style={{ height: 3, background: 'rgba(139,92,246,0.1)', borderRadius: 2 }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: 'rgba(139,92,246,0.5)', borderRadius: 2, transition: 'width 0.4s ease' }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              {/* Per invois */}
+              <div>
+                <p style={{ fontSize: 9, color: 'rgba(139,92,246,0.4)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>per invois/bap</p>
+                <div className="scrollbar-thin" style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 120, overflowY: 'auto', paddingRight: 4 }}>
+                  {Object.values(
+                    pihak3Rows.reduce((acc, r) => {
+                      const key = r.no_invois
+                      if (!acc[key]) acc[key] = { no_invois: r.no_invois, count: 0, volume: 0 }
+                      acc[key].count++
+                      acc[key].volume += Number(r.volume || 0)
+                      return acc
+                    }, {})
+                  ).map((g, i) => {
+                    const prefix = String(g.no_invois).slice(0, 3).toUpperCase()
+                    const pfx    = INVOIS_PREFIX_MAP[prefix]
+                    return (
+                      <div key={g.no_invois} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 10, color: 'rgba(139,92,246,0.3)', fontFamily: 'monospace', minWidth: 18, textAlign: 'right' }}>{i + 1}.</span>
+                        {pfx && <span style={{ ...RK_BADGE_BASE, background: pfx.bg, color: pfx.color, border: `1px solid ${pfx.border}`, fontSize: 9 }}>{prefix}</span>}
+                        <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.5)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.no_invois}</span>
+                        <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgba(139,92,246,0.5)', whiteSpace: 'nowrap' }}>{g.count} kpl · {g.volume.toFixed(3)} m³</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
     </div>

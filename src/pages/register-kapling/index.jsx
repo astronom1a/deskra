@@ -4,6 +4,7 @@ import { COLS, DEFAULT_COL_MAP, FIELD_DEFS, PAGE_SIZES } from './utils/registerK
 import RegisterKaplingBatchEditModal from './modals/RegisterKaplingBatchEditModal.jsx'
 import RegisterKaplingContextMenu from './components/RegisterKaplingContextMenu.jsx'
 import RegisterKaplingDeleteModal from './modals/RegisterKaplingDeleteModal.jsx'
+import RegisterKaplingBapPreview from './modals/RegisterKaplingBapPreview.jsx'
 import RegisterKaplingDkhpImportPreview from './modals/RegisterKaplingDkhpImportPreview.jsx'
 import RegisterKaplingDkhpModal from './modals/RegisterKaplingDkhpModal.jsx'
 import RegisterKaplingEditModal from './modals/RegisterKaplingEditModal.jsx'
@@ -32,10 +33,13 @@ export default function RegisterKapling() {
       <Toast toast={page.toast} />
 
       <RegisterKaplingHeader
+        availableYears={page.availableYears}
+        bapRef={page.bapRef}
         colMap={page.colMap}
         dkhpImportRef={page.dkhpImportRef}
         fileRef={page.fileRef}
         invoisRef={page.invoisRef}
+        onBapFiles={page.handleBapFiles}
         onDkhpImportFiles={page.handleDkhpImportFiles}
         onExport={page.handleExport}
         onFileChange={page.handleFileChange}
@@ -44,17 +48,29 @@ export default function RegisterKapling() {
         onOpenFixPrefix={page.handleOpenFixPrefix}
         realtimeStatus={page.realtimeStatus}
         rows={page.rows}
+        selectedYear={page.selectedYear}
         setDraftMap={page.setDraftMap}
+        setSelectedYear={page.setSelectedYear}
         setShowSettings={page.setShowSettings}
       />
 
       {page.rows.length > 0 && (
         <RegisterKaplingMetricCards
+          accPihak3Batang={page.accPihak3Batang}
+          accPihak3Volume={page.accPihak3Volume}
+          accUnsoldBatang={page.accUnsoldBatang}
+          accUnsoldVolume={page.accUnsoldVolume}
           blokBreakdown={page.blokBreakdown}
           expandedCard={page.expandedCard}
+          isYearFiltered={page.isYearFiltered}
           kaplingInfo={page.kaplingInfo}
           missingInvoices={page.missingInvoices}
           penguranganInvoices={page.penguranganInvoices}
+          pihak3Batang={page.pihak3Batang}
+          pihak3Rows={page.pihak3Rows}
+          pihak3SortBatang={page.pihak3SortBatang}
+          pihak3SortVolume={page.pihak3SortVolume}
+          pihak3Volume={page.pihak3Volume}
           setExpandedCard={page.setExpandedCard}
           soldSortVolume={page.soldSortVolume}
           sortBatang={page.sortBatang}
@@ -70,6 +86,15 @@ export default function RegisterKapling() {
       )}
 
       {/* ── Modals ─────────────────────────────────────────────────────────── */}
+
+      {page.bapPreview && (
+        <RegisterKaplingBapPreview
+          isSaving={page.bapSaving}
+          onCancel={() => page.setBapPreview(null)}
+          onSave={page.handleBapSave}
+          preview={page.bapPreview}
+        />
+      )}
 
       {page.showSettings && (
         <RegisterKaplingSettingsModal

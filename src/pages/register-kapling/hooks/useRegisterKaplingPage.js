@@ -22,6 +22,10 @@ import {
   saveDkhpImportPreview,
 } from '../utils/registerKaplingDkhpImport'
 import {
+  prepareBapImportPreview,
+  saveBapImportPreview,
+} from '../utils/registerKaplingBapImport'
+import {
   buildFixPrefixMap,
   saveFixPrefixUpdates,
 } from '../utils/registerKaplingFixPrefix'
@@ -116,6 +120,11 @@ export function useRegisterKaplingPage() {
   const [dkhpImportPreview, setDkhpImportPreview] = useState(null)
   const [dkhpImportSaving, setDkhpImportSaving]   = useState(false)
 
+  const [bapPreview, setBapPreview]     = useState(null)
+  const [bapSaving, setBapSaving]       = useState(false)
+
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+
   const [invoisRow, setInvoisRow]       = useState(null) // row yang sedang diedit invois-nya
   const [invoisInput, setInvoisInput]   = useState({ no_invois: '', pembeli: '' })
   const [invoisSavingQuick, setInvoisSavingQuick] = useState(false)
@@ -124,6 +133,7 @@ export function useRegisterKaplingPage() {
 
   const fileRef        = useRef()
   const invoisRef      = useRef()
+  const bapRef         = useRef()
   const dkhpImportRef  = useRef()
   const selectAllRef   = useRef()
   const colDropdownRef = useRef()
@@ -395,6 +405,26 @@ export function useRegisterKaplingPage() {
     if (result.refresh) fetchData()
   }
 
+  // ── BAP import ───────────────────────────────────────────────────────────
+  async function handleBapFiles(e) {
+    const files = [...(e.target.files || [])]
+    if (!files.length) return
+    e.target.value = ''
+    const result = await prepareBapImportPreview({ files, rows })
+    if (result.error) { showToast(result.error, 'error'); return }
+    setBapPreview(result.preview)
+  }
+
+  async function handleBapSave() {
+    if (!bapPreview?.totalMatched || !tpkId) return
+    setBapSaving(true)
+    const result = await saveBapImportPreview({ preview: bapPreview, supabase, tpkId })
+    setBapSaving(false)
+    showToast(result.message, result.type)
+    if (result.closePreview) setBapPreview(null)
+    if (result.refresh) fetchData()
+  }
+
   // ── Quick invois edit ─────────────────────────────────────────────────────
   function handleOpenInvoisModal(row) {
     setInvoisRow(row)
@@ -433,27 +463,44 @@ export function useRegisterKaplingPage() {
   }
 
   // ── Computed ──────────────────────────────────────────────────────────────
-  const kaplingInfo        = useMemo(() => analyzeKapling(rows), [rows])
+  const availableYears = useMemo(() => {
+    const years = [...new Set(rows.map(r => r.tgl_kapling ? new Date(r.tgl_kapling).getFullYear() : null).filter(Boolean))]
+    return years.sort((a, b) => b - a)
+  }, [rows])
+
+  const yearRows = useMemo(() => (
+    selectedYear ? rows.filter(r => r.tgl_kapling && new Date(r.tgl_kapling).getFullYear() === selectedYear) : rows
+  ), [rows, selectedYear])
+
+  const kaplingInfo        = useMemo(() => analyzeKapling(yearRows), [yearRows])
   const totalMissingCount  = useMemo(() => countMissingKaplings(kaplingInfo), [kaplingInfo])
 
   const {
     blokBreakdown, missingInvoices,
+    pihak3Batang, pihak3Rows, pihak3SortBatang, pihak3SortVolume, pihak3Volume,
     soldSortBatang, soldSortVolume,
     sortBatang, sortVolume,
     totalBatang, totalVolume,
     unsoldBatang, unsoldSortBatang, unsoldSortVolume, unsoldVolume,
-  } = useMemo(() => buildRegisterKaplingMetrics({ penguranganInvoices, rows, sortimens: SORTIMENS }), [penguranganInvoices, rows])
+  } = useMemo(() => buildRegisterKaplingMetrics({ penguranganInvoices, rows: yearRows, sortimens: SORTIMENS }), [penguranganInvoices, yearRows])
+
+  // Akumulasi semua tahun — hanya berbeda dari metric utama saat year filter aktif
+  const accUnsoldVolume  = useMemo(() => rows.filter(r => !r.no_invois).reduce((s, r) => s + Number(r.volume || 0), 0), [rows])
+  const accUnsoldBatang  = useMemo(() => rows.filter(r => !r.no_invois).reduce((s, r) => s + (r.batang || 0), 0), [rows])
+  const accPihak3Volume  = useMemo(() => rows.filter(r => r.no_invois && !r.skshhk).reduce((s, r) => s + Number(r.volume || 0), 0), [rows])
+  const accPihak3Batang  = useMemo(() => rows.filter(r => r.no_invois && !r.skshhk).reduce((s, r) => s + (r.batang || 0), 0), [rows])
 
   const {
     searchedRows, totalPages, safePage,
     displayedRows, displayedIds,
     allSelected, someSelected,
   } = useMemo(() => buildRegisterKaplingTableState({
-    rows, sorts, searchTerm, searchCol, pageSize, currentPage, selectedIds, cols: COLS,
-  }), [rows, sorts, searchTerm, searchCol, pageSize, currentPage, selectedIds])
+    rows: yearRows, sorts, searchTerm, searchCol, pageSize, currentPage, selectedIds, cols: COLS,
+  }), [yearRows, sorts, searchTerm, searchCol, pageSize, currentPage, selectedIds])
 
   const filteredBatang = searchedRows.reduce((s, r) => s + (r.batang || 0), 0)
   const filteredVolume = searchedRows.reduce((s, r) => s + Number(r.volume || 0), 0)
+  const isYearFiltered = selectedYear !== null
 
   function toggleSelectAll() {
     setSelectedIds(prev => getNextRegisterKaplingSelection({ allSelected, displayedIds, selectedIds: prev }))
@@ -512,13 +559,19 @@ export function useRegisterKaplingPage() {
     // computed metrics
     kaplingInfo, totalMissingCount,
     blokBreakdown, missingInvoices,
+    pihak3Batang, pihak3Rows, pihak3SortBatang, pihak3SortVolume, pihak3Volume,
+    accUnsoldVolume, accUnsoldBatang, accPihak3Volume, accPihak3Batang,
     soldSortBatang, soldSortVolume, sortBatang, sortVolume,
     totalBatang, totalVolume,
     unsoldBatang, unsoldSortBatang, unsoldSortVolume, unsoldVolume,
+    // year filter
+    availableYears, selectedYear, setSelectedYear, isYearFiltered,
     // cards
     expandedCard, setExpandedCard,
+    // bap import
+    bapPreview, setBapPreview, bapSaving, handleBapFiles, handleBapSave,
     // refs
-    fileRef, invoisRef, dkhpImportRef, selectAllRef, colDropdownRef,
+    fileRef, invoisRef, bapRef, dkhpImportRef, selectAllRef, colDropdownRef,
     // export
     handleExport,
   }

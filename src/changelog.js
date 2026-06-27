@@ -1,6 +1,19 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.42.0',
+    date: '2026-06-27',
+    items: [
+      { type: 'feat', text: 'card persediaan pihak III di Register Kapling — kapling yang sudah ada invois tapi belum ber-SKSHHK' },
+      { type: 'feat', text: 'filter tahun di Register Kapling — lintas periode dengan selector pill di header' },
+      { type: 'feat', text: 'import BAP PDF dengan sync field (panjang, diameter, status, mutu, sortimen, batang, volume) dan preview verifikasi diff' },
+      { type: 'feat', text: 'total akumulasi semua tahun di card Sisa Persediaan dan Persediaan Pihak III saat year filter aktif' },
+      { type: 'feat', text: 'breakdown per sortimen di expand card Persediaan Pihak III' },
+      { type: 'feat', text: 'periode aktif otomatis di sidebar (I/II per bulan berdasarkan tanggal)' },
+      { type: 'fix', text: 'simplifyRange panjang dan diameter berlaku konsisten di BAP import dan tabel' },
+    ]
+  },
+  {
     version: '0.41.0',
     date: '2026-05-26',
     items: [

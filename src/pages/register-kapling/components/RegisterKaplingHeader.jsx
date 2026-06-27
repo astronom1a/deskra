@@ -1,11 +1,14 @@
-import { Download, FileBarChart2, FileText, Plus, Settings, Tag, Upload } from 'lucide-react'
+import { ClipboardList, Download, FileBarChart2, FileText, Plus, Settings, Tag, Upload } from 'lucide-react'
 import { INVOIS_PREFIX_MAP } from '../utils/registerKaplingConstants'
 
 export default function RegisterKaplingHeader({
+  availableYears,
+  bapRef,
   colMap,
   dkhpImportRef,
   fileRef,
   invoisRef,
+  onBapFiles,
   onDkhpImportFiles,
   onExport,
   onFileChange,
@@ -14,7 +17,9 @@ export default function RegisterKaplingHeader({
   onOpenFixPrefix,
   realtimeStatus,
   rows,
+  selectedYear,
   setDraftMap,
+  setSelectedYear,
   setShowSettings,
 }) {
   const needFix = new Set(
@@ -54,6 +59,22 @@ export default function RegisterKaplingHeader({
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>
           data register kapling dari file dp kapling (.xlsx)
         </p>
+        {availableYears.length > 0 && (
+          <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
+            {availableYears.map(year => (
+              <button key={year} onClick={() => setSelectedYear(selectedYear === year ? null : year)}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 10px', height: 22, fontSize: 10, fontFamily: 'monospace', fontWeight: 600, borderRadius: 3, cursor: 'pointer', border: `1px solid ${selectedYear === year ? 'transparent' : 'rgba(139,92,246,0.25)'}`, transition: 'all 0.15s', background: selectedYear === year ? '#a78bfa' : 'rgba(139,92,246,0.08)', color: selectedYear === year ? '#0a0a0a' : 'rgba(139,92,246,0.7)' }}
+                onMouseEnter={e => { if (selectedYear !== year) { e.currentTarget.style.background = 'rgba(139,92,246,0.18)'; e.currentTarget.style.color = '#a78bfa'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.45)' } }}
+                onMouseLeave={e => { if (selectedYear !== year) { e.currentTarget.style.background = 'rgba(139,92,246,0.08)'; e.currentTarget.style.color = 'rgba(139,92,246,0.7)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.25)' } }}
+              >{year}</button>
+            ))}
+            {selectedYear && (
+              <button onClick={() => setSelectedYear(null)}
+                style={{ padding: '2px 8px', fontSize: 10, fontFamily: 'monospace', borderRadius: 3, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.3)' }}
+              >semua</button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Action buttons */}
@@ -79,6 +100,13 @@ export default function RegisterKaplingHeader({
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#f0f0f0' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
         ><Plus size={14} /></button>
+
+        {/* BAP PDF */}
+        <button onClick={() => bapRef.current?.click()} title="Import BAP"
+          style={{ ...iconBtn, color: 'rgba(139,92,246,0.65)' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.12)'; e.currentTarget.style.color = '#a78bfa'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.3)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(139,92,246,0.65)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
+        ><ClipboardList size={14} /></button>
 
         {/* Invoice PDF */}
         <button onClick={() => invoisRef.current?.click()} title="Input invois"
@@ -124,6 +152,7 @@ export default function RegisterKaplingHeader({
       {/* Hidden file inputs */}
       <input ref={fileRef}       type="file" accept=".xlsx,.xls"  className="hidden" onChange={onFileChange} />
       <input ref={invoisRef}     type="file" accept=".pdf" multiple className="hidden" onChange={onInvoisFileChange} />
+      <input ref={bapRef}        type="file" accept=".pdf" multiple className="hidden" onChange={onBapFiles} />
       <input ref={dkhpImportRef} type="file" accept=".xlsx" multiple className="hidden" onChange={onDkhpImportFiles} />
     </div>
   )

@@ -50,6 +50,14 @@ const adminNavItems = [
   { label: 'Manajemen TPK',   path: '/admin/tpk', icon: Building2 },
 ]
 
+function getPeriodeAktif() {
+  const now   = new Date()
+  const half  = now.getDate() <= 15 ? 'I' : 'II'
+  const month = now.getMonth() + 1
+  const year  = String(now.getFullYear()).slice(-2)
+  return `${half}/${month} ${year}`
+}
+
 // ── OrbitalMark ───────────────────────────────────────────────────────────────
 function OrbitalMark({ size = 32 }) {
   return (
@@ -300,9 +308,14 @@ export default function Layout() {
                       <span className="text-[10px] font-mono" style={{ color: '#fbbf24' }}>superadmin</span>
                     </div>
                   ) : (
-                    <p className="text-[10px] font-mono mt-0.5 truncate" style={{ color: 'rgba(255,255,255,0.25)', maxWidth: 110 }}>
-                      {namaTpk}
-                    </p>
+                    <>
+                      <p className="text-[10px] font-mono mt-0.5 truncate" style={{ color: 'rgba(255,255,255,0.25)', maxWidth: 110 }}>
+                        {namaTpk}
+                      </p>
+                      <p className="text-[9px] font-mono mt-0.5" style={{ color: 'rgba(255,255,255,0.15)' }}>
+                        periode <span style={{ color: 'rgba(0,255,136,0.45)', fontWeight: 600 }}>{getPeriodeAktif()}</span>
+                      </p>
+                    </>
                   )}
                 </div>
               </div>
@@ -330,7 +343,7 @@ export default function Layout() {
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(251,191,36,0.08)' }}
           >
             <ArrowLeft size={12} />
-            <span className="truncate">← admin panel</span>
+            <span className="truncate">admin panel</span>
           </button>
         )}
 

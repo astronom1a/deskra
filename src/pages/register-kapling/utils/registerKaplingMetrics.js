@@ -51,9 +51,21 @@ export function buildRegisterKaplingMetrics({
   const soldSortBatang = Object.fromEntries(sortimens.map(sortimen => [sortimen, sortBatang[sortimen] - unsoldSortBatang[sortimen]]))
   const soldSortVolume = Object.fromEntries(sortimens.map(sortimen => [sortimen, sortVolume[sortimen] - unsoldSortVolume[sortimen]]))
 
+  // Pihak III: sudah ada invois/pembeli tapi belum ada skshhk
+  const pihak3Rows = rows.filter(r => r.no_invois && !r.skshhk)
+  const pihak3Batang = sumBatang(pihak3Rows)
+  const pihak3Volume = sumVolume(pihak3Rows)
+  const pihak3SortBatang = sumBySortimen(pihak3Rows, sortimens, sumBatang)
+  const pihak3SortVolume = sumBySortimen(pihak3Rows, sortimens, sumVolume)
+
   return {
     blokBreakdown: buildBlokBreakdown(rows),
     missingInvoices,
+    pihak3Batang,
+    pihak3Rows,
+    pihak3SortBatang,
+    pihak3SortVolume,
+    pihak3Volume,
     soldSortBatang,
     soldSortVolume,
     sortBatang,
