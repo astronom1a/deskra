@@ -55,7 +55,7 @@ export default function RegisterKaplingMetricCards({
   })
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
+    <div className="rk-metric-grid">
 
       {/* Card 1: Total Kapling */}
       <div

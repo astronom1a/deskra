@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Link2, Users, Users2, Layers, Package,
   ChevronDown, ChevronRight, ChevronLeft, ClipboardList, Wallet, ScrollText,
   Settings as SettingsIcon, Building2, ShieldCheck, LogOut,
-  ArrowLeft, FileBarChart2, ScanLine, MapPin, History, Database,
+  ArrowLeft, FileBarChart2, ScanLine, MapPin, History, Database, Menu,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -50,14 +50,6 @@ const adminNavItems = [
   { label: 'Manajemen TPK',   path: '/admin/tpk', icon: Building2 },
 ]
 
-function getPeriodeAktif() {
-  const now   = new Date()
-  const half  = now.getDate() <= 15 ? 'I' : 'II'
-  const month = now.getMonth() + 1
-  const year  = String(now.getFullYear()).slice(-2)
-  return `${half}/${month} ${year}`
-}
-
 // ── OrbitalMark ───────────────────────────────────────────────────────────────
 function OrbitalMark({ size = 32 }) {
   return (
@@ -83,6 +75,14 @@ function OrbitalMark({ size = 32 }) {
   )
 }
 
+function getPeriodeAktif() {
+  const now   = new Date()
+  const half  = now.getDate() <= 15 ? 'I' : 'II'
+  const month = now.getMonth() + 1
+  const year  = String(now.getFullYear()).slice(-2)
+  return `${half}/${month} ${year}`
+}
+
 // ── SidebarItem ───────────────────────────────────────────────────────────────
 function SidebarItem({ item, collapsed, onExpand }) {
   const location = useLocation()
@@ -106,7 +106,6 @@ function SidebarItem({ item, collapsed, onExpand }) {
   }, [open, collapsed])
 
   if (item.children) {
-    // Collapsed: show icon-only button — klik expand sidebar
     if (collapsed) {
       const anyChildActive = item.children.some(c => location.pathname.startsWith(c.path))
       return (
@@ -180,15 +179,20 @@ function SidebarItem({ item, collapsed, onExpand }) {
 
 // ── Layout ────────────────────────────────────────────────────────────────────
 export default function Layout() {
-  const navigate  = useNavigate()
+  const navigate   = useNavigate()
+  const location   = useLocation()
   const sidebarRef = useRef(null)
   const [realtimeStatus, setRealtimeStatus] = useState('connecting')
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sb_collapsed') === '1')
+  const [isMobile, setIsMobile]   = useState(() => window.innerWidth <= 768)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const { account } = useAccount()
   const { tpk, isAdmin, activeTpkId, setActiveTpkId, signOut } = useAuth()
   const namaTpk  = tpk?.namatpk || account.namaTpk || 'TPK Wongsorejo'
   const useOperatorContext = canUseOperatorRoutes({ isAdmin, activeTpkId })
   const navItems = useOperatorContext ? operatorNavItems : adminNavItems
+  // on mobile drawer selalu expanded, tidak collapse
+  const ec = isMobile ? false : collapsed
 
   const toggleCollapsed = () => {
     setCollapsed(c => {
@@ -197,6 +201,20 @@ export default function Layout() {
       return next
     })
   }
+
+  // Deteksi resize
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    const onChange = e => { setIsMobile(e.matches); if (!e.matches) setMobileOpen(false) }
+    mq.addEventListener('change', onChange)
+    setIsMobile(mq.matches)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  // Tutup drawer saat navigasi
+  useEffect(() => {
+    if (isMobile) setMobileOpen(false)
+  }, [location.pathname, isMobile])
 
   // entrance animation
   useEffect(() => {
@@ -241,12 +259,29 @@ export default function Layout() {
         .sb-toggle:hover { color:#f0f0f0; background:rgba(255,255,255,0.06); }
       `}</style>
 
+      {/* Mobile backdrop */}
+      {isMobile && mobileOpen && (
+        <div
+          onClick={() => setMobileOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 49, background: 'rgba(0,0,0,0.6)' }}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         ref={sidebarRef}
-        className={`flex flex-col shrink-0${collapsed ? ' sb-collapsed' : ''}`}
-        style={{
-          width: collapsed ? 56 : 220,
+        className={`flex flex-col shrink-0${ec ? ' sb-collapsed' : ''}`}
+        style={isMobile ? {
+          position: 'fixed', top: 0, left: 0, bottom: 0,
+          width: 260, zIndex: 50,
+          background: '#0d0d0d',
+          borderRight: '1px solid rgba(255,255,255,0.06)',
+          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.25s ease',
+          overflow: 'hidden',
+          display: 'flex', flexDirection: 'column',
+        } : {
+          width: ec ? 56 : 220,
           background: '#0d0d0d',
           borderRight: '1px solid rgba(255,255,255,0.06)',
           transition: 'width 0.25s ease',
@@ -259,13 +294,11 @@ export default function Layout() {
           className="flex items-center py-4 px-3"
           style={{
             borderBottom: '1px solid rgba(255,255,255,0.06)',
-            gap: collapsed ? 0 : 0,
-            justifyContent: collapsed ? 'center' : 'space-between',
+            justifyContent: ec ? 'center' : 'space-between',
             minHeight: 64,
           }}
         >
-          {collapsed ? (
-            // Collapsed: logo is the toggle button
+          {ec ? (
             <button
               onClick={toggleCollapsed}
               title="Expand sidebar"
@@ -319,8 +352,12 @@ export default function Layout() {
                   )}
                 </div>
               </div>
-              {/* Collapse toggle */}
-              <button onClick={toggleCollapsed} title="Ciutkan sidebar" className="sb-toggle" style={{ flexShrink: 0 }}>
+              <button
+                onClick={isMobile ? () => setMobileOpen(false) : toggleCollapsed}
+                title={isMobile ? 'Tutup menu' : 'Ciutkan sidebar'}
+                className="sb-toggle"
+                style={{ flexShrink: 0 }}
+              >
                 <ChevronLeft size={12} />
               </button>
             </>
@@ -328,7 +365,7 @@ export default function Layout() {
         </div>
 
         {/* Admin context banner */}
-        {!collapsed && isAdmin && activeTpkId && (
+        {!ec && isAdmin && activeTpkId && (
           <button
             data-sb-item
             onClick={() => { setActiveTpkId(null); navigate('/admin') }}
@@ -348,50 +385,50 @@ export default function Layout() {
         )}
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-4 space-y-0.5" style={{ scrollbarWidth: 'none', paddingLeft: collapsed ? 6 : 12, paddingRight: collapsed ? 6 : 12 }}>
+        <nav className="flex-1 overflow-y-auto py-4 space-y-0.5" style={{ scrollbarWidth: 'none', paddingLeft: ec ? 6 : 12, paddingRight: ec ? 6 : 12 }}>
           {navItems.map((item, i) => (
             <div key={item.path || i} data-sb-item>
-              <SidebarItem item={item} collapsed={collapsed} onExpand={toggleCollapsed} />
+              <SidebarItem item={item} collapsed={ec} onExpand={toggleCollapsed} />
             </div>
           ))}
         </nav>
 
         {/* Bottom */}
-        <div className="py-3 space-y-0.5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingLeft: collapsed ? 6 : 12, paddingRight: collapsed ? 6 : 12 }}>
+        <div className="py-3 space-y-0.5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingLeft: ec ? 6 : 12, paddingRight: ec ? 6 : 12 }}>
           {!isAdmin && (
             <div data-sb-item>
               <NavLink
                 to="/settings"
-                title={collapsed ? 'Settings' : undefined}
+                title={ec ? 'Settings' : undefined}
                 className={({ isActive }) => `sb-link ${isActive ? 'sb-link-active' : ''}`}
-                style={collapsed ? { justifyContent: 'center', padding: '7px 0', gap: 0, borderLeftColor: 'transparent' } : {}}
+                style={ec ? { justifyContent: 'center', padding: '7px 0', gap: 0, borderLeftColor: 'transparent' } : {}}
               >
                 <SettingsIcon size={14} />
-                {!collapsed && <span className="font-mono">Settings</span>}
+                {!ec && <span className="font-mono">Settings</span>}
               </NavLink>
             </div>
           )}
           <div data-sb-item>
             <button
               onClick={handleSignOut}
-              title={collapsed ? 'Keluar' : undefined}
+              title={ec ? 'Keluar' : undefined}
               className="w-full flex items-center gap-2.5 px-3 py-2 font-mono text-xs sb-btn sb-btn-danger"
               style={{
                 borderRadius: 3, borderLeft: '2px solid transparent',
                 color: 'rgba(255,255,255,0.28)',
-                justifyContent: collapsed ? 'center' : undefined,
-                padding: collapsed ? '7px 0' : undefined,
-                gap: collapsed ? 0 : undefined,
+                justifyContent: ec ? 'center' : undefined,
+                padding: ec ? '7px 0' : undefined,
+                gap: ec ? 0 : undefined,
               }}
             >
               <LogOut size={13} />
-              {!collapsed && 'keluar'}
+              {!ec && 'keluar'}
             </button>
           </div>
         </div>
 
         {/* Footer */}
-        {!collapsed && (
+        {!ec && (
           <div data-sb-item className="px-4 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
             <p className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.12)' }}>Perum Perhutani · KPH Banyuwangi Utara</p>
             <p className="text-[10px] font-mono mt-1" style={{ color: 'rgba(255,255,255,0.1)' }}>
@@ -411,7 +448,34 @@ export default function Layout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto" style={{ background: '#0a0a0a' }}>
+      <main className="flex-1 overflow-y-auto flex flex-col" style={{ background: '#0a0a0a', minWidth: 0 }}>
+        {/* Mobile top bar */}
+        {isMobile && (
+          <div style={{
+            position: 'sticky', top: 0, zIndex: 40, flexShrink: 0,
+            height: 48, background: '#0d0d0d',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            display: 'flex', alignItems: 'center',
+            paddingLeft: 14, paddingRight: 14, gap: 12,
+          }}>
+            <button
+              onClick={() => setMobileOpen(true)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 32, height: 32, borderRadius: 3, flexShrink: 0,
+                border: '1px solid rgba(255,255,255,0.08)', background: 'transparent',
+                color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
+              }}
+            >
+              <Menu size={14} />
+            </button>
+            <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#f0f0f0', letterSpacing: '-0.01em' }}>deskra</span>
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+              background: realtimeStatus === 'connected' ? '#00ff88' : realtimeStatus === 'disconnected' ? '#ff4444' : '#ffaa00',
+            }} />
+          </div>
+        )}
         <PageTransition>
           <Outlet />
         </PageTransition>

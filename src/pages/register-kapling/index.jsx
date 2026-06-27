@@ -28,7 +28,7 @@ export default function RegisterKapling() {
   if (!page.tpkId) return <TpkRequiredState />
 
   return (
-    <div style={{ padding: 24, height: '100vh', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0a0a0a', color: '#f0f0f0' }}>
+    <div className="rk-page" style={{ padding: 24, height: '100vh', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0a0a0a', color: '#f0f0f0' }}>
       <RegisterKaplingStyles />
       <Toast toast={page.toast} />
 

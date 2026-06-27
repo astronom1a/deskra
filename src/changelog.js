@@ -1,6 +1,17 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.43.0',
+    date: '2026-06-27',
+    items: [
+      { type: 'feat', text: 'mobile UI: sidebar jadi drawer dengan hamburger + backdrop pada layar ≤768px' },
+      { type: 'feat', text: 'mobile top bar sticky dengan tombol buka drawer dan status realtime' },
+      { type: 'style', text: 'metric cards Register Kapling: 5-col → 2-col (tablet) → 1-col (phone)' },
+      { type: 'style', text: 'action buttons header Register Kapling wrap pada tablet' },
+      { type: 'style', text: 'tinggi halaman Register Kapling disesuaikan untuk mobile top bar (calc 100vh - 48px)' },
+    ]
+  },
+  {
     version: '0.42.0',
     date: '2026-06-27',
     items: [

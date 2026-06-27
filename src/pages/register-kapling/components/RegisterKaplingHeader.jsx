@@ -41,7 +41,7 @@ export default function RegisterKaplingHeader({
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>
 
       {/* Title + realtime badge */}
       <div>
@@ -78,7 +78,7 @@ export default function RegisterKaplingHeader({
       </div>
 
       {/* Action buttons */}
-      <div style={{ display: 'flex', gap: 6 }}>
+      <div className="rk-header-actions">
 
         {/* Import DKHP */}
         <button onClick={() => dkhpImportRef.current?.click()} title="Import DKHP dari Excel"
