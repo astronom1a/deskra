@@ -1,6 +1,14 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.43.1',
+    date: '2026-07-13',
+    items: [
+      { type: 'style', text: 'cetak QR SKSHHK: ukuran kertas F4 satu halaman, QR & logo SVLK diperbesar proporsional, logo di-center antara batas atas kertas dan QR' },
+      { type: 'fix', text: 'header/footer print browser tidak muncul karena margin halaman cetak QR 0 — margin dikembalikan agar ada ruang render' },
+    ]
+  },
+  {
     version: '0.43.0',
     date: '2026-06-27',
     items: [

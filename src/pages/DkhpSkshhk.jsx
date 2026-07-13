@@ -991,9 +991,9 @@ export default function DkhpSkshhk() {
         .dk-missing-dkhp > summary::-webkit-details-marker { display: none; }
         .dk-missing-dkhp > summary { list-style: none; }
         @media print {
-          @page { size: A5 portrait; margin: 16mm; }
+          @page { size: 215mm 330mm; margin: 15mm 10mm; }
           body > * { visibility: hidden !important; }
-          #qr-print-area { visibility: visible !important; display: flex !important; flex-direction: column; align-items: center; gap: 10mm; position: fixed; top: 0; left: 0; width: 116mm; background: white; padding: 8mm 0; }
+          #qr-print-area { visibility: visible !important; display: flex !important; flex-direction: column; align-items: center; position: fixed; inset: 0; width: 100%; height: 100%; background: white; }
           #qr-print-area * { visibility: visible !important; }
         }
       `}</style>
@@ -1818,11 +1818,14 @@ export default function DkhpSkshhk() {
       )}
       {/* Area cetak — hanya tampil saat window.print() */}
       <div id="qr-print-area" style={{ display: 'none' }}>
-        <img src={svlkLogo} alt="SVLK Indonesia" style={{ width: 220 }}/>
-        {qrDataUrl && <img src={qrDataUrl} alt="QR Code" style={{ width: 190, height: 190 }}/>}
-        <p style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, letterSpacing: 1 }}>
+        <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img src={svlkLogo} alt="SVLK Indonesia" style={{ width: '48%', maxWidth: '125mm' }}/>
+        </div>
+        {qrDataUrl && <img src={qrDataUrl} alt="QR Code" style={{ width: '62%', maxWidth: '133mm', aspectRatio: '1 / 1' }}/>}
+        <p style={{ fontFamily: 'monospace', fontSize: '18pt', fontWeight: 700, letterSpacing: 1, marginTop: '12mm' }}>
           {qrForm ? `KB.C.${qrForm.noSkshhk}` : ''}
         </p>
+        <div style={{ flex: 1 }}/>
       </div>
     </div>
   )
