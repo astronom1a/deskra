@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthProvider'
 import { requireTpkId } from '../lib/tenantScope'
@@ -228,7 +228,7 @@ export default function DetailPekerjaan() {
     }
 
     setListrik(lt.data || { nominal: 0, no_meter: '' })
-    setCustomItems((ci.data || []).map(r => ({ ...r, _key: r.id })))
+    setCustomItems((ci.data || []).map(r => ({ ...r, _key: r.id, group_id: r.group_id || r.id })))
     setLoading(false)
   }
 
@@ -290,6 +290,7 @@ export default function DetailPekerjaan() {
         satuan: r.satuan || null,
         fisik: parseFloat(r.fisik) || 0,
         tarif: parseFloat(r.tarif) || 0,
+        group_id: r.group_id || null,
         urutan: i,
       }))
 
@@ -349,14 +350,31 @@ export default function DetailPekerjaan() {
     setLoading(false)
   }
 
-  // Custom items handlers
-  const addCustom = () => setCustomItems(prev => [...prev, {
-    _key: crypto.randomUUID(), label: '', satuan: '', fisik: 0, tarif: 0, urutan: prev.length,
+  // Custom items handlers — dikelompokkan per Nota (group_id)
+  const addNota = () => {
+    const gid = crypto.randomUUID()
+    setCustomItems(prev => [...prev, {
+      _key: crypto.randomUUID(), group_id: gid, label: '', satuan: '', fisik: 0, tarif: 0, urutan: prev.length,
+    }])
+  }
+  const addItemToNota = (gid) => setCustomItems(prev => [...prev, {
+    _key: crypto.randomUUID(), group_id: gid, label: '', satuan: '', fisik: 0, tarif: 0, urutan: prev.length,
   }])
   const updateCustom = (key, field, value) =>
     setCustomItems(prev => prev.map(r => r._key === key ? { ...r, [field]: value } : r))
   const removeCustom = (key) =>
     setCustomItems(prev => prev.filter(r => r._key !== key))
+  const removeNota = (gid) =>
+    setCustomItems(prev => prev.filter(r => r.group_id !== gid))
+
+  const customNotas = useMemo(() => {
+    const map = new Map()
+    for (const r of customItems) {
+      if (!map.has(r.group_id)) map.set(r.group_id, [])
+      map.get(r.group_id).push(r)
+    }
+    return [...map.values()]
+  }, [customItems])
 
   const customTotal = customItems.reduce(
     (s, r) => s + (parseFloat(r.fisik) || 0) * (parseFloat(r.tarif) || 0), 0
@@ -563,7 +581,7 @@ export default function DetailPekerjaan() {
             </div>
           </div>
 
-          {/* Custom Items */}
+          {/* Custom Items — dikelompokkan per Nota (1 nota bisa berisi beberapa item) */}
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
             <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.015)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -572,64 +590,96 @@ export default function DetailPekerjaan() {
               </div>
               <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: SECTION_ACCENT.rose }}>{formatRupiah(customTotal)}</p>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
-              <thead>
-                <tr>
-                  {['Uraian','Satuan','Fisik','Tarif','Nilai',''].map((h, i) => (
-                    <th key={i} style={{ padding: '7px 12px', textAlign: i >= 2 && i <= 4 ? 'right' : 'left', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: i === 5 ? 36 : i >= 2 && i <= 4 ? 130 : 'auto' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {customItems.length === 0 && (
-                  <tr><td colSpan={6} style={{ padding: 16, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic', fontSize: 11 }}>
-                    Belum ada item custom.
-                  </td></tr>
-                )}
-                {customItems.map(r => {
-                  const nilai = (parseFloat(r.fisik) || 0) * (parseFloat(r.tarif) || 0)
-                  return (
-                    <tr key={r._key} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                      onMouseEnter={e => { for (const td of e.currentTarget.children) td.style.background = 'rgba(255,255,255,0.02)' }}
-                      onMouseLeave={e => { for (const td of e.currentTarget.children) td.style.background = '' }}
-                    >
-                      <td style={{ padding: '5px 12px' }}>
-                        <input value={r.label || ''} onChange={e => updateCustom(r._key, 'label', e.target.value)}
-                          style={dp_inputStyle} placeholder="Nama pekerjaan..."/>
-                      </td>
-                      <td style={{ padding: '5px 12px', width: 100 }}>
-                        <input value={r.satuan || ''} onChange={e => updateCustom(r._key, 'satuan', e.target.value)}
-                          style={dp_inputStyle} placeholder="KALI"/>
-                      </td>
-                      <td style={{ padding: '5px 12px', width: 130 }}>
-                        <input type="number" step="0.001" value={r.fisik ?? ''}
-                          onChange={e => updateCustom(r._key, 'fisik', e.target.value)}
-                          style={dp_inputStyleRight}/>
-                      </td>
-                      <td style={{ padding: '5px 12px', width: 130 }}>
-                        <input type="number" value={r.tarif ?? ''}
-                          onChange={e => updateCustom(r._key, 'tarif', e.target.value)}
-                          style={dp_inputStyleRight}/>
-                      </td>
-                      <td style={{ padding: '7px 12px', textAlign: 'right', fontWeight: 600, color: nilai > 0 ? '#f0f0f0' : 'rgba(255,255,255,0.2)' }}>{formatRupiah(nilai)}</td>
-                      <td style={{ padding: '7px 8px', textAlign: 'center' }}>
-                        <button onClick={() => removeCustom(r._key)}
+
+            <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {customNotas.length === 0 && (
+                <p style={{ padding: 8, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic', fontSize: 11, fontFamily: 'monospace' }}>
+                  Belum ada item custom.
+                </p>
+              )}
+              {customNotas.map((items, gi) => {
+                const gid = items[0].group_id
+                const notaTotal = items.reduce((s, r) => s + (parseFloat(r.fisik) || 0) * (parseFloat(r.tarif) || 0), 0)
+                return (
+                  <div key={gid} style={{ border: '1px solid rgba(255,255,255,0.07)', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.015)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.5)' }}>
+                        Nota {gi + 1}{items.length > 1 ? ` · ${items.length} item` : ''}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.5)' }}>{formatRupiah(notaTotal)}</span>
+                        <button onClick={() => removeNota(gid)} title="Hapus nota"
                           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
                           onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
                           onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
                         ><Trash2 size={13}/></button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+                      <thead>
+                        <tr>
+                          {['Uraian','Satuan','Fisik','Tarif','Nilai',''].map((h, i) => (
+                            <th key={i} style={{ padding: '7px 12px', textAlign: i >= 2 && i <= 4 ? 'right' : 'left', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: i === 5 ? 36 : i >= 2 && i <= 4 ? 130 : 'auto' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map(r => {
+                          const nilai = (parseFloat(r.fisik) || 0) * (parseFloat(r.tarif) || 0)
+                          return (
+                            <tr key={r._key} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                              onMouseEnter={e => { for (const td of e.currentTarget.children) td.style.background = 'rgba(255,255,255,0.02)' }}
+                              onMouseLeave={e => { for (const td of e.currentTarget.children) td.style.background = '' }}
+                            >
+                              <td style={{ padding: '5px 12px' }}>
+                                <input value={r.label || ''} onChange={e => updateCustom(r._key, 'label', e.target.value)}
+                                  style={dp_inputStyle} placeholder="Nama pekerjaan..."/>
+                              </td>
+                              <td style={{ padding: '5px 12px', width: 100 }}>
+                                <input value={r.satuan || ''} onChange={e => updateCustom(r._key, 'satuan', e.target.value)}
+                                  style={dp_inputStyle} placeholder="KALI"/>
+                              </td>
+                              <td style={{ padding: '5px 12px', width: 130 }}>
+                                <input type="number" step="0.001" value={r.fisik ?? ''}
+                                  onChange={e => updateCustom(r._key, 'fisik', e.target.value)}
+                                  style={dp_inputStyleRight}/>
+                              </td>
+                              <td style={{ padding: '5px 12px', width: 130 }}>
+                                <input type="number" value={r.tarif ?? ''}
+                                  onChange={e => updateCustom(r._key, 'tarif', e.target.value)}
+                                  style={dp_inputStyleRight}/>
+                              </td>
+                              <td style={{ padding: '7px 12px', textAlign: 'right', fontWeight: 600, color: nilai > 0 ? '#f0f0f0' : 'rgba(255,255,255,0.2)' }}>{formatRupiah(nilai)}</td>
+                              <td style={{ padding: '7px 8px', textAlign: 'center' }}>
+                                <button onClick={() => removeCustom(r._key)}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                                  onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
+                                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                                ><Trash2 size={13}/></button>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                    <div style={{ padding: '6px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
+                      <button onClick={() => addItemToNota(gid)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer' }}
+                        onMouseEnter={e => e.currentTarget.style.color = '#00ff88'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+                      ><Plus size={11}/> Tambah Item ke Nota Ini</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
             <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
-              <button onClick={addCustom}
+              <button onClick={addNota}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer' }}
                 onMouseEnter={e => e.currentTarget.style.color = '#00ff88'}
                 onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
-              ><Plus size={11}/> Tambah Item</button>
+              ><Plus size={11}/> Tambah Nota</button>
             </div>
           </div>
 

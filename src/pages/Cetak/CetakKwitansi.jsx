@@ -45,7 +45,7 @@ function KwitansiDoc({ periode }) {
 
   useEffect(() => {
     (async () => {
-      const [rows, pejabatRes, tumpuk, tandaLaku, barcode, brongkol, tenagaBantu, tenagaKerja] = await Promise.all([
+      const [rows, pejabatRes, tumpuk, tandaLaku, barcode, brongkol, tenagaBantu, tenagaKerja, customItems] = await Promise.all([
         buildRows(periode.id, periode.periode, { tpkId: periode.tpk_id }),
         resolvePejabatForPeriode(periode),
         supabase.from('tabel_tumpuk_kapling').select('*').eq('periode_id', periode.id).eq('tpk_id', periode.tpk_id),
@@ -54,6 +54,7 @@ function KwitansiDoc({ periode }) {
         supabase.from('tabel_tumpuk_brongkol').select('*').eq('periode_id', periode.id).eq('tpk_id', periode.tpk_id),
         supabase.from('tabel_tenaga_bantu').select('*').eq('periode_id', periode.id).eq('tpk_id', periode.tpk_id).maybeSingle(),
         supabase.from('tabel_tenaga_kerja').select('*').eq('tpk_id', periode.tpk_id).eq('aktif', true).order('nama'),
+        supabase.from('tabel_custom_item').select('*').eq('periode_id', periode.id).eq('tpk_id', periode.tpk_id).order('urutan'),
       ])
       const pejabat = pejabatRes || {}
       setData({
@@ -64,6 +65,7 @@ function KwitansiDoc({ periode }) {
         brongkol: brongkol.data||[],
         tenagaBantu: tenagaBantu.data || null,
         tenagaKerja: (tenagaKerja.data || []).filter(w => (w.posisi || '').split(',').map(s => s.trim()).includes('TENAGA_BANTU')),
+        customItems: customItems.data||[],
       })
     })()
   }, [periode])
@@ -114,9 +116,11 @@ function KwitansiDoc({ periode }) {
     )
   }
 
-  const cfg = itemKey.startsWith('custom_')
-    ? { title: item.uraian, subSrc: null }
-    : ITEM_CONFIG[itemKey]
+  const cfg = itemKey.startsWith('custom_group_')
+    ? { mode: 'multi-custom' }
+    : itemKey.startsWith('custom_')
+      ? { title: item.uraian, subSrc: null }
+      : ITEM_CONFIG[itemKey]
   if (!cfg) {
     return (
       <p className="text-center text-amber-600 py-10 text-sm">
@@ -214,6 +218,11 @@ function KwitansiDoc({ periode }) {
         <tbody>
           {cfg.mode === 'multi-tumpuk' ? (
             <TumpukKaplingBody data={data} grand={grand} formatAngka={formatAngka} formatAngkaFisik={formatAngkaFisik}/>
+          ) : cfg.mode === 'multi-custom' ? (
+            <CustomItemsBody
+              items={(data.customItems||[]).filter(i => (i.group_id || i.id) === itemKey.replace('custom_group_',''))}
+              grand={grand} formatAngka={formatAngka} formatAngkaFisik={formatAngkaFisik}
+            />
           ) : cfg.mode === 'multi-tenaga' ? (
             <>
               {/* Title row */}
@@ -508,6 +517,49 @@ function TumpukKaplingBody({ data, grand, formatAngka, formatAngkaFisik }) {
       <tr className="font-bold">
         <td colSpan={4} className="border-l border-t border-black px-2 py-1 text-right">Jumlah Rp.</td>
         <td className="border-l border-t border-black text-right px-1">{formatAngka(grand)}</td>
+        <td className="border-l border-t border-black text-center">-</td>
+        <td className="border-l border-t border-black text-right px-1">{formatAngka(grand)}</td>
+        <td className="border-l border-t border-black text-center">-</td>
+        <td className="border-l border-t border-black text-right px-1">{formatAngka(grand)}</td>
+      </tr>
+    </>
+  )
+}
+
+// ── Custom Items body (1 nota, beberapa item, tiap item 1 baris) ──────
+function CustomItemsBody({ items, grand, formatAngka, formatAngkaFisik }) {
+  return (
+    <>
+      {items.map((item, i) => {
+        const fisik = Number(item.fisik) || 0
+        const tarif = Number(item.tarif) || 0
+        const nilai = Math.round(fisik * tarif)
+        return (
+          <tr key={item.id || i}>
+            <td className="border-l border-black text-center align-top px-1 py-1"/>
+            <td className="border-l border-black align-top px-2 py-1">{item.label}</td>
+            <td className="border-l border-black text-right align-top px-1 py-1 tabular-nums">{formatAngkaFisik(fisik)}</td>
+            <td className="border-l border-black text-right align-top px-1 py-1">{formatAngka(tarif)}</td>
+            <td className="border-l border-black text-right align-top px-1 py-1">{formatAngka(nilai)}</td>
+            <td className="border-l border-black text-center align-top px-1 py-1">-</td>
+            <td className="border-l border-black text-right align-top px-1 py-1">{formatAngka(nilai)}</td>
+            <td className="border-l border-black text-center align-top px-1 py-1">-</td>
+            <td className="border-l border-black text-right align-top px-1 py-1">{formatAngka(nilai)}</td>
+          </tr>
+        )
+      })}
+      {/* Spacer */}
+      <tr>
+        <td className="border-l border-black h-4"/><td className="border-l border-black"/>
+        <td className="border-l border-black"/><td className="border-l border-black"/>
+        <td className="border-l border-black"/><td className="border-l border-black"/>
+        <td className="border-l border-black"/><td className="border-l border-black"/>
+        <td className="border-l border-black"/>
+      </tr>
+      {/* Jumlah */}
+      <tr className="font-bold">
+        <td colSpan={4} className="border-l border-t border-black px-2 py-1 text-right">Jumlah Rp.</td>
+        <td className="border-l border-t border-black text-center">-</td>
         <td className="border-l border-t border-black text-center">-</td>
         <td className="border-l border-t border-black text-right px-1">{formatAngka(grand)}</td>
         <td className="border-l border-t border-black text-center">-</td>

@@ -20,6 +20,35 @@ export function applyNumbers(rows) {
   })
 }
 
+// Kelompokkan custom item per nota (group_id). Item tanpa group_id
+// dianggap nota tersendiri (fallback: group_id = id miliknya sendiri).
+// Nota dengan 1 item → baris kwitansi lama (custom_<id>), tidak berubah.
+// Nota dengan >1 item → satu baris gabungan (custom_group_<group_id>).
+function buildCustomRows(custom) {
+  const groups = new Map()
+  for (const item of (custom || [])) {
+    const gid = item.group_id || item.id
+    if (!groups.has(gid)) groups.set(gid, [])
+    groups.get(gid).push(item)
+  }
+  return [...groups.entries()].map(([gid, items]) => {
+    if (items.length === 1) {
+      const item = items[0]
+      return {
+        _key:`custom_${item.id}`, kode_rek:'51.69.91',
+        uraian:item.label, satuan:item.satuan||'',
+        fisik:item.fisik||0, tarif:item.tarif||0, _noMode:'normal', _src:'auto',
+      }
+    }
+    const totalNilai = items.reduce((s,i) => s + (i.fisik||0)*(i.tarif||0), 0)
+    return {
+      _key:`custom_group_${gid}`, kode_rek:'51.69.91',
+      uraian:items.map(i => i.label).filter(Boolean).join(', '), satuan:'',
+      fisik:1, tarif:totalNilai, _noMode:'normal', _src:'auto',
+    }
+  })
+}
+
 // Bangun rekap baris pekerjaan untuk satu periode — sumber tunggal
 // dipakai oleh Main Link & Dashboard.
 function scoped(query, tpkId) {
@@ -134,11 +163,7 @@ export async function buildRows(periodeId, periodeLabel, options = {}) {
       _key:'listrik', kode_rek:'51.69.91', uraian:'LISTRIK TPK',
       satuan:'BLN', fisik:1, tarif:listrik.nominal||0, _noMode:'normal', _src:'auto',
     }] : []),
-    ...(custom||[]).map(item => ({
-      _key:`custom_${item.id}`, kode_rek:'51.69.91',
-      uraian:item.label, satuan:item.satuan||'',
-      fisik:item.fisik||0, tarif:item.tarif||0, _noMode:'normal', _src:'auto',
-    })),
+    ...buildCustomRows(custom),
   ]
 
   return applyNumbers(rows)

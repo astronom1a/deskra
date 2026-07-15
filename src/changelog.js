@@ -1,6 +1,14 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.44.0',
+    date: '2026-07-15',
+    items: [
+      { type: 'feat', text: 'Detail Pekerjaan: item custom dikelompokkan per Nota — satu kwitansi bisa memuat beberapa item sekaligus (kartu "Tambah Nota" / "Tambah Item ke Nota Ini")' },
+      { type: 'feat', text: 'cetak kwitansi custom multi-item: tiap item dalam satu nota tercetak sebagai baris terpisah dengan total gabungan' },
+    ]
+  },
+  {
     version: '0.43.1',
     date: '2026-07-13',
     items: [
