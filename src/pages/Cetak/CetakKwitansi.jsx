@@ -538,7 +538,7 @@ function CustomItemsBody({ items, grand, formatAngka, formatAngkaFisik }) {
           <tr key={item.id || i}>
             <td className="border-l border-black text-center align-top px-1 py-1"/>
             <td className="border-l border-black align-top px-2 py-1">{item.label}</td>
-            <td className="border-l border-black text-right align-top px-1 py-1 tabular-nums">{formatAngkaFisik(fisik)}</td>
+            <td className="border-l border-black text-right align-top px-1 py-1 tabular-nums">{formatAngkaFisik(fisik)}{item.satuan ? ` ${item.satuan}` : ''}</td>
             <td className="border-l border-black text-right align-top px-1 py-1">{formatAngka(tarif)}</td>
             <td className="border-l border-black text-right align-top px-1 py-1">{formatAngka(nilai)}</td>
             <td className="border-l border-black text-center align-top px-1 py-1">-</td>
@@ -548,9 +548,9 @@ function CustomItemsBody({ items, grand, formatAngka, formatAngkaFisik }) {
           </tr>
         )
       })}
-      {/* Spacer */}
+      {/* Spacer — meniru tinggi kwitansi penomoran kapling agar tabel penuh mengisi halaman */}
       <tr>
-        <td className="border-l border-black h-4"/><td className="border-l border-black"/>
+        <td className="border-l border-black h-44"/><td className="border-l border-black"/>
         <td className="border-l border-black"/><td className="border-l border-black"/>
         <td className="border-l border-black"/><td className="border-l border-black"/>
         <td className="border-l border-black"/><td className="border-l border-black"/>

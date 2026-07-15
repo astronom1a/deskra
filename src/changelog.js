@@ -1,6 +1,14 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.44.1',
+    date: '2026-07-15',
+    items: [
+      { type: 'style', text: 'cetak kwitansi nota custom multi-item: kolom Vol mencantumkan satuan setelah jumlah fisik' },
+      { type: 'style', text: 'tabel cetak nota custom multi-item disesuaikan tingginya agar serupa model kwitansi penomoran kapling' },
+    ]
+  },
+  {
     version: '0.44.0',
     date: '2026-07-15',
     items: [
