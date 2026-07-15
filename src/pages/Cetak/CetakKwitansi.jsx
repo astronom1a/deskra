@@ -7,7 +7,7 @@ import { formatAngka, formatAngkaFisik, terbilangBungkus, formatTanggalTtd } fro
 import { resolvePejabatForPeriode } from '../../lib/pejabatSnapshot'
 import { getTpkName, getTpkNameUpper } from '../../lib/effectiveTpk'
 
-const TIMES = { fontFamily: '"Times New Roman", Times, serif' }
+const TIMES = { fontFamily: 'Arial, Helvetica, sans-serif' }
 
 // Mapping itemKey → konfigurasi tampilan kwitansi
 // (TUMPUK KAPLING & TENAGA BANTU ditunda — menunggu contoh)
@@ -160,7 +160,7 @@ function KwitansiDoc({ periode }) {
 
       {/* ── Kotak atas: Telah terima (kiri) + KUITANSI (kanan) ── */}
       <div className="grid grid-cols-12 border border-black">
-        <div className="col-span-7 p-2 border-r border-black space-y-2">
+        <div className="col-span-9 p-2 border-r border-black space-y-2">
           <p>Telah terima dari :</p>
           <div className="grid grid-cols-[60px_10px_1fr] gap-y-1 items-baseline">
             <span>N a m a</span><span>:</span>
@@ -171,7 +171,7 @@ function KwitansiDoc({ periode }) {
             <span>Banyuwangi</span>
           </div>
         </div>
-        <div className="col-span-5 p-2 text-[10.5px]">
+        <div className="col-span-3 p-2 text-[10.5px]">
           <p className="font-bold border-b border-black pb-0.5 mb-1 flex items-center justify-between gap-2">
             <span>KUITANSI PEMBAYARAN</span>
             <span>No. {itemNumber}</span>
@@ -192,9 +192,9 @@ function KwitansiDoc({ periode }) {
       </div>
 
       {/* ── Banyaknya Uang ─────────────────────────────── */}
-      <div className="grid grid-cols-[120px_1fr] border-x border-b border-black">
-        <div className="border-r border-black p-1">Banyaknya Uang :</div>
-        <div className="p-1 font-bold">{terbilangBungkus(grand)}</div>
+      <div className="flex items-center gap-2 mt-2">
+        <span>Banyaknya Uang :</span>
+        <div className="flex-1 border border-black p-1 font-bold">{terbilangBungkus(grand)}</div>
       </div>
 
       {/* ── Untuk Pembayaran ───────────────────────────── */}
@@ -581,7 +581,7 @@ function KodeRow({ digits, amount, bold }) {
         ))}
       </div>
       <span className="text-[10px]">Rp.</span>
-      <span className={`flex-1 text-right tabular-nums ${bold ? 'font-bold' : ''}`}>{amount || ''}</span>
+      <span className={`w-20 text-right tabular-nums ${bold ? 'font-bold' : ''}`}>{amount || ''}</span>
     </div>
   )
 }

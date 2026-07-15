@@ -5,7 +5,7 @@ import { buildRows } from '../../lib/rekapPekerjaan'
 import { formatAngka, formatAngkaFisik, terbilangBungkus, formatTanggalTtd, parsePeriode } from './cetakHelpers'
 import { resolvePejabatForPeriode } from '../../lib/pejabatSnapshot'
 
-const TIMES = { fontFamily: '"Times New Roman", Times, serif' }
+const TIMES = { fontFamily: 'Arial, Helvetica, sans-serif' }
 const SORTIMEN = ['AIII', 'AII', 'AI']
 
 export default function CetakBiayaTPK() {

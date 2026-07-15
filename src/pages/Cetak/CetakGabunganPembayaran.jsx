@@ -5,7 +5,7 @@ import { formatAngka, terbilangBungkus, formatTanggalTtd } from './cetakHelpers'
 import { resolvePejabatForPeriode } from '../../lib/pejabatSnapshot'
 import { getTpkNameUpper } from '../../lib/effectiveTpk'
 
-const TIMES = { fontFamily: '"Times New Roman", Times, serif' }
+const TIMES = { fontFamily: 'Arial, Helvetica, sans-serif' }
 
 export default function CetakGabunganPembayaran() {
   return (

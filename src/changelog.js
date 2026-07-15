@@ -1,6 +1,15 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.44.3',
+    date: '2026-07-15',
+    items: [
+      { type: 'style', text: 'font cetak halaman Main Link (Biaya TPK, Gabungan Pembayaran, Kwitansi, Permintaan UK) diganti ke Arial sans-serif agar konsisten formal dengan halaman cetak lainnya' },
+      { type: 'style', text: 'cetak kwitansi: kolom nominal pada kotak Kode Rekening dan Rupiah dipersempit, pembagi kotak Telah Terima Dari / Kuitansi digeser ke kanan' },
+      { type: 'style', text: 'cetak kwitansi: baris Banyaknya Uang diubah jadi teks tanpa kotak dengan nominal di kotak terpisah dari tabel di atasnya' },
+    ]
+  },
+  {
     version: '0.44.2',
     date: '2026-07-15',
     items: [

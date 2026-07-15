@@ -3,7 +3,7 @@ import CetakLayout, { CetakPageSkeleton } from './CetakLayout'
 import { fetchCetakData, formatAngka, terbilangBungkus, formatTanggalLengkap, formatTanggalTtd } from './cetakHelpers'
 import { getTpkNameUpper } from '../../lib/effectiveTpk'
 
-const TIMES = { fontFamily: '"Times New Roman", Times, serif' }
+const TIMES = { fontFamily: 'Arial, Helvetica, sans-serif' }
 
 export default function CetakPermintaanUk() {
   return (
