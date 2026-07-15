@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import * as XLSX from 'xlsx'
 import Toast, { useToast } from '../components/ui/Toast'
 import {
@@ -321,7 +322,7 @@ export default function DkhpSkshhk() {
   const [tanggalFilter, setTanggalFilter] = useState('all')
   const [skshhkFilter, setSkshhkFilter] = useState('all')
   const [showColDropdown, setShowColDropdown] = useState(false)
-  const [sorts, setSorts]     = useState([{ key: 'no_dkhp', dir: 'asc' }])
+  const [sorts, setSorts]     = useState([{ key: 'tanggal', dir: 'asc' }, { key: 'no_dkhp', dir: 'asc' }])
   const [showSortPanel, setShowSortPanel] = useState(false)
   const [draftSorts, setDraftSorts]       = useState([])
   const [pageSize, setPageSize]           = useState(50)
@@ -992,9 +993,8 @@ export default function DkhpSkshhk() {
         .dk-missing-dkhp > summary { list-style: none; }
         @media print {
           @page { size: 215mm 330mm; margin: 15mm 10mm; }
-          body > * { visibility: hidden !important; }
-          #qr-print-area { visibility: visible !important; display: flex !important; flex-direction: column; align-items: center; position: fixed; inset: 0; width: 100%; height: 100%; background: white; }
-          #qr-print-area * { visibility: visible !important; }
+          body > *:not(#qr-print-area) { display: none !important; }
+          #qr-print-area { display: flex !important; flex-direction: column; align-items: center; width: 100%; min-height: 100%; background: white; }
         }
       `}</style>
 
@@ -1816,17 +1816,19 @@ export default function DkhpSkshhk() {
           </div>
         </div>
       )}
-      {/* Area cetak — hanya tampil saat window.print() */}
-      <div id="qr-print-area" style={{ display: 'none' }}>
-        <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img src={svlkLogo} alt="SVLK Indonesia" style={{ width: '48%', maxWidth: '125mm' }}/>
-        </div>
-        {qrDataUrl && <img src={qrDataUrl} alt="QR Code" style={{ width: '62%', maxWidth: '133mm', aspectRatio: '1 / 1' }}/>}
-        <p style={{ fontFamily: 'monospace', fontSize: '18pt', fontWeight: 700, letterSpacing: 1, marginTop: '12mm' }}>
-          {qrForm ? `KB.C.${qrForm.noSkshhk}` : ''}
-        </p>
-        <div style={{ flex: 1 }}/>
-      </div>
+      {/* Area cetak — di-portal ke document.body agar tidak ikut ter-hitung dalam alur halaman utama saat print */}
+      {createPortal(
+        <div id="qr-print-area" style={{ display: 'none' }}>
+          <div style={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={svlkLogo} alt="SVLK Indonesia" style={{ width: '65%', maxWidth: '100mm', marginBottom: '16mm' }}/>
+            {qrDataUrl && <img src={qrDataUrl} alt="QR Code" style={{ width: '95%', maxWidth: '132mm', aspectRatio: '1 / 1' }}/>}
+            <p style={{ fontFamily: 'monospace', fontSize: '18pt', fontWeight: 700, letterSpacing: 1, marginTop: '16mm' }}>
+              {qrForm ? `KB.C.${qrForm.noSkshhk}` : ''}
+            </p>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

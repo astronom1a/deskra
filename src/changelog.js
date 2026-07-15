@@ -1,6 +1,15 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.44.2',
+    date: '2026-07-15',
+    items: [
+      { type: 'fix', text: 'cetak QR SKSHHK: area cetak di-portal ke document.body agar tidak ikut terpengaruh layout/overflow container halaman utama' },
+      { type: 'style', text: 'ukuran QR cetak diperbesar jadi 132mm (2/5 panjang kertas F4), logo & jarak elemen disesuaikan proporsional' },
+      { type: 'style', text: 'default sort tabel DKHP/SKSHHK: urut Tanggal dulu baru DKHP' },
+    ]
+  },
+  {
     version: '0.44.1',
     date: '2026-07-15',
     items: [
