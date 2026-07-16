@@ -80,7 +80,6 @@ export default function StatistikKapling() {
           accUnsoldBatang={page.accUnsoldBatang}
           accUnsoldVolume={page.accUnsoldVolume}
           blokBreakdown={page.blokBreakdown}
-          expandedCard={page.expandedCard}
           isYearFiltered={page.isYearFiltered}
           kaplingInfo={page.kaplingInfo}
           missingInvoices={page.missingInvoices}
@@ -90,7 +89,6 @@ export default function StatistikKapling() {
           pihak3SortBatang={page.pihak3SortBatang}
           pihak3SortVolume={page.pihak3SortVolume}
           pihak3Volume={page.pihak3Volume}
-          setExpandedCard={page.setExpandedCard}
           soldSortVolume={page.soldSortVolume}
           sortBatang={page.sortBatang}
           sortVolume={page.sortVolume}

@@ -32,8 +32,8 @@ const operatorNavItems = [
   {
     label: 'DK310', icon: FileBarChart2,
     children: [
-      { label: 'DK310', path: '/dk310/penambahan',  icon: FileBarChart2, indicator: '+' },
-      { label: 'DK310', path: '/dk310/pengurangan', icon: FileBarChart2, indicator: '-' },
+      { label: 'Penambahan',  path: '/dk310/penambahan',  icon: FileBarChart2, indicator: '+' },
+      { label: 'Pengurangan', path: '/dk310/pengurangan', icon: FileBarChart2, indicator: '-' },
     ],
   },
   {
@@ -58,31 +58,6 @@ const adminNavItems = [
   { label: 'Dashboard Admin', path: '/admin',     icon: LayoutDashboard },
   { label: 'Manajemen TPK',   path: '/admin/tpk', icon: Building2 },
 ]
-
-// ── OrbitalMark ───────────────────────────────────────────────────────────────
-function OrbitalMark({ size = 32 }) {
-  return (
-    <svg viewBox="0 0 100 100" width={size} height={size} fill="none" aria-hidden="true">
-      <style>{`
-        @keyframes sb-orbit { to { transform: rotate(360deg); } }
-        @keyframes sb-pulse { 0%,100%{opacity:.3} 50%{opacity:.85} }
-        .sb-spin  { transform-origin: 50% 50%; animation: sb-orbit 18s linear infinite; }
-        .sb-pulse { animation: sb-pulse 2.4s ease-in-out infinite; }
-      `}</style>
-      <g className="sb-spin">
-        <ellipse cx="50" cy="50" rx="42" ry="14" stroke="#1a2a1a" strokeWidth="1.2"/>
-        <ellipse cx="50" cy="50" rx="42" ry="14" stroke="#1a2a1a" strokeWidth="1.2" transform="rotate(60 50 50)"/>
-        <ellipse cx="50" cy="50" rx="42" ry="14" stroke="#1a2a1a" strokeWidth="1.2" transform="rotate(120 50 50)"/>
-        <circle r="2.2" fill="rgba(240,240,240,0.8)">
-          <animateMotion dur="8s" repeatCount="indefinite" rotate="none"
-            path="M 92,50 A 42,14 0 0,1 8,50 A 42,14 0 0,1 92,50"/>
-        </circle>
-      </g>
-      <circle cx="50" cy="50" r="10" stroke="#00ff88" strokeWidth="1.2" opacity=".5" className="sb-pulse"/>
-      <circle cx="50" cy="50" r="5.5" fill="#00ff88"/>
-    </svg>
-  )
-}
 
 function getPeriodeAktif() {
   const now   = new Date()
@@ -263,6 +238,8 @@ export default function Layout() {
         .sb-collapsed .sb-link-active { padding-left:0 !important; border-left-color:transparent !important; }
         .sb-toggle { display:flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:3px; border:1px solid rgba(255,255,255,0.08); background:transparent; color:rgba(255,255,255,0.28); cursor:pointer; flex-shrink:0; transition:color 0.15s, background 0.15s; }
         .sb-toggle:hover { color:#f0f0f0; background:rgba(255,255,255,0.06); }
+        @keyframes sb-cursor { 0%,49% { opacity:1 } 50%,100% { opacity:0 } }
+        .sb-cursor { color:#00ff88; animation: sb-cursor 1.1s step-end infinite; }
       `}</style>
 
       {/* Mobile backdrop */}
@@ -308,55 +285,37 @@ export default function Layout() {
             <button
               onClick={toggleCollapsed}
               title="Expand sidebar"
-              className="sb-toggle"
-              style={{ width: 32, height: 32 }}
+              className="sb-toggle font-mono"
+              style={{ width: 32, height: 32, fontSize: 13, fontWeight: 700, color: '#f0f0f0' }}
             >
-              <OrbitalMark size={22} />
+              d<span className="sb-cursor">_</span>
             </button>
           ) : (
             <>
-              <div className="flex items-center gap-3" style={{ overflow: 'hidden', flex: 1, minWidth: 0 }}>
-                <OrbitalMark size={30} />
-                <div style={{ overflow: 'hidden', minWidth: 0 }}>
-                  <div className="flex items-center gap-2">
-                    <p className="font-bold text-sm font-mono" style={{ color: '#f0f0f0', letterSpacing: '-0.01em' }}>
-                      deskra
-                    </p>
-                    <span className="text-[9px] font-mono px-1.5 py-0.5" style={{
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 2,
-                      color: 'rgba(255,255,255,0.3)',
-                      whiteSpace: 'nowrap',
-                    }}>
-                      v{appVersion}
-                    </span>
-                    <span
-                      title={realtimeStatus === 'connected' ? 'Live' : realtimeStatus === 'disconnected' ? 'Offline' : 'Connecting'}
-                      style={{
-                        width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-                        background: realtimeStatus === 'connected' ? '#00ff88' : realtimeStatus === 'disconnected' ? '#ff4444' : '#ffaa00',
-                        boxShadow: realtimeStatus === 'connected' ? '0 0 6px rgba(0,255,136,0.6)' : 'none',
-                        animation: realtimeStatus !== 'disconnected' ? 'sb-glow 2s ease-in-out infinite' : 'none',
-                      }}
-                    />
-                  </div>
-                  {isAdmin && !activeTpkId ? (
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <ShieldCheck size={9} style={{ color: '#fbbf24' }} />
-                      <span className="text-[10px] font-mono" style={{ color: '#fbbf24' }}>superadmin</span>
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-[10px] font-mono mt-0.5 truncate" style={{ color: 'rgba(255,255,255,0.25)', maxWidth: 110 }}>
-                        {namaTpk}
-                      </p>
-                      <p className="text-[9px] font-mono mt-0.5" style={{ color: 'rgba(255,255,255,0.15)' }}>
-                        periode <span style={{ color: 'rgba(0,255,136,0.45)', fontWeight: 600 }}>{getPeriodeAktif()}</span>
-                      </p>
-                    </>
-                  )}
+              <div style={{ overflow: 'hidden', flex: 1, minWidth: 0 }}>
+                <div className="flex items-center gap-2">
+                  <p className="font-bold font-mono" style={{ color: '#f0f0f0', fontSize: 16, letterSpacing: '-0.02em' }}>
+                    deskra<span className="sb-cursor">_</span>
+                  </p>
+                  <span
+                    title={realtimeStatus === 'connected' ? 'Live' : realtimeStatus === 'disconnected' ? 'Offline' : 'Connecting'}
+                    style={{
+                      width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                      background: realtimeStatus === 'connected' ? '#00ff88' : realtimeStatus === 'disconnected' ? '#ff4444' : '#ffaa00',
+                      boxShadow: realtimeStatus === 'connected' ? '0 0 6px rgba(0,255,136,0.6)' : 'none',
+                    }}
+                  />
                 </div>
+                {isAdmin && !activeTpkId ? (
+                  <div className="flex items-center gap-1 mt-1">
+                    <ShieldCheck size={9} style={{ color: '#fbbf24' }} />
+                    <span className="text-[10px] font-mono" style={{ color: '#fbbf24' }}>superadmin</span>
+                  </div>
+                ) : (
+                  <p className="text-[10px] font-mono mt-1 truncate" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                    {namaTpk} · periode <span style={{ color: 'rgba(0,255,136,0.45)', fontWeight: 600 }}>{getPeriodeAktif()}</span>
+                  </p>
+                )}
               </div>
               <button
                 onClick={isMobile ? () => setMobileOpen(false) : toggleCollapsed}
@@ -436,6 +395,10 @@ export default function Layout() {
         {/* Footer */}
         {!ec && (
           <div data-sb-item className="px-4 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+            <p className="text-[10px] font-mono flex items-center gap-2 mb-1.5" style={{ color: 'rgba(255,255,255,0.2)' }}>
+              <span style={{ width: 16, height: 1, background: 'rgba(0,255,136,0.4)', display: 'inline-block' }} />
+              v{appVersion}
+            </p>
             <p className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.12)' }}>Perum Perhutani · KPH Banyuwangi Utara</p>
             <p className="text-[10px] font-mono mt-1" style={{ color: 'rgba(255,255,255,0.1)' }}>
               © 2026{' '}

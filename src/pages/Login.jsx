@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { version as appVersion } from '../../package.json'
 import { latestChangelog } from '../changelog.js'
@@ -22,12 +22,10 @@ export default function Login() {
   useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.timeline({ defaults: { ease: 'power3.out' } })
-        .from('[data-logo]',        { scale: 0.5, opacity: 0, duration: 0.8, ease: 'back.out(2.5)' })
-        .from('[data-brand-label]', { y: 10, opacity: 0, duration: 0.4 }, '-=0.35')
-        .from('[data-brand-title]', { y: 12, opacity: 0, duration: 0.45 }, '-=0.3')
-        .from('[data-brand-sub]',   { y: 8,  opacity: 0, duration: 0.35 }, '-=0.25')
-        .from('[data-card]',        { y: 32, opacity: 0, scale: 0.97, duration: 0.65, ease: 'power4.out' }, '-=0.25')
-        .from('[data-field]',       { x: -14, opacity: 0, stagger: 0.09, duration: 0.38 }, '-=0.35')
+        .from('[data-panel-brand]', { x: -24, opacity: 0, duration: 0.6 })
+        .from('[data-brand-line]',  { y: 16, opacity: 0, stagger: 0.08, duration: 0.5 }, '-=0.35')
+        .from('[data-form-head]',   { y: 14, opacity: 0, duration: 0.45 }, '-=0.4')
+        .from('[data-field]',       { y: 12, opacity: 0, stagger: 0.08, duration: 0.4 }, '-=0.3')
     }, rootRef)
     return () => ctx.revert()
   }, [])
@@ -56,11 +54,11 @@ export default function Login() {
       setError('Email atau password salah. Silakan coba lagi.')
       setLoading(false)
       gsap.timeline()
-        .to('[data-card]', { x: -8, duration: 0.07, ease: 'power2.out' })
-        .to('[data-card]', { x:  8, duration: 0.07 })
-        .to('[data-card]', { x: -5, duration: 0.06 })
-        .to('[data-card]', { x:  5, duration: 0.06 })
-        .to('[data-card]', { x:  0, duration: 0.05, clearProps: 'transform' })
+        .to('[data-form]', { x: -8, duration: 0.07, ease: 'power2.out' })
+        .to('[data-form]', { x:  8, duration: 0.07 })
+        .to('[data-form]', { x: -5, duration: 0.06 })
+        .to('[data-form]', { x:  5, duration: 0.06 })
+        .to('[data-form]', { x:  0, duration: 0.05, clearProps: 'transform' })
       return
     }
 
@@ -79,45 +77,43 @@ export default function Login() {
   return (
     <div
       ref={rootRef}
-      className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden"
+      className="relative min-h-screen flex overflow-hidden"
       style={{ background: '#0a0a0a', color: '#f0f0f0', minHeight: '100dvh' }}
     >
       {/* CSS keyframes */}
       <style>{`
-        @keyframes geo-rotate-cw  { to { transform: rotate(360deg);  } }
-        @keyframes geo-rotate-ccw { to { transform: rotate(-360deg); } }
-        @keyframes geo-float {
-          0%,100% { transform: translate(-50%,-50%) translateY(0px);   }
-          50%      { transform: translate(-50%,-50%) translateY(-18px); }
+        @keyframes cursor-blink { 0%,49% { opacity: 1 } 50%,100% { opacity: 0 } }
+        @keyframes scan-move { from { transform: translateY(-100%) } to { transform: translateY(100vh) } }
+        .login-cursor { animation: cursor-blink 1.1s step-end infinite; }
+        @keyframes dot-blink { 0%,60%,100% { opacity: 0.15 } 30% { opacity: 1 } }
+        .loading-dot { animation: dot-blink 1.2s infinite; }
+        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes btn-sweep { from { left: -40% } to { left: 110% } }
+        .btn-sweep {
+          position: absolute;
+          top: 0; bottom: 0;
+          width: 30%;
+          background: linear-gradient(90deg, transparent, rgba(0,255,136,0.12), transparent);
+          animation: btn-sweep 1.4s ease-in-out infinite;
+          pointer-events: none;
         }
-        @keyframes geo-pulse {
-          0%,100% { opacity: 0.05; }
-          50%      { opacity: 0.14; }
-        }
-        @keyframes mark-orbit { to { transform: rotate(360deg); } }
-        @keyframes mark-pulse { 0%,100%{opacity:.35} 50%{opacity:.9} }
-        @keyframes badge-glow {
-          0%,100% { box-shadow: 0 0 0 0 rgba(0,255,136,0.2); }
-          50%      { box-shadow: 0 0 0 4px rgba(0,255,136,0); }
-        }
-        .mark-spin  { transform-origin: 50% 50%; animation: mark-orbit 18s linear infinite; }
-        .mark-pulse { animation: mark-pulse 2.4s ease-in-out infinite; }
         .login-input::placeholder { color: rgba(255,255,255,0.2); }
+        .login-input {
+          border: none;
+          border-bottom: 1px solid rgba(255,255,255,0.12);
+          background: transparent;
+          border-radius: 0;
+        }
         .login-input:focus {
           outline: none;
-          border-color: rgba(0,255,136,0.5);
-          box-shadow: 0 0 0 3px rgba(0,255,136,0.08);
+          border-bottom-color: #00ff88;
         }
-        /* Layar kecil: ornamen dikecilkan & ditarik ke pojok agar tidak menimpa konten */
-        @media (max-width: 640px) {
-          .lg-orn-hex   { top: -60px !important; right: -60px !important; }
-          .lg-orn-hex svg   { width: 170px; height: 170px; }
-          .lg-orn-tri   { bottom: -40px !important; left: -40px !important; }
-          .lg-orn-tri svg   { width: 140px; height: 140px; }
-          .lg-orn-cross svg { width: 120px; height: 120px; }
-          .lg-orn-sq    { display: none; }
-          .lg-orn-dia svg   { width: 48px; height: 48px; }
+        .login-submit:not(:disabled):hover {
+          background: #00ff88 !important;
+          color: #0a0a0a !important;
         }
+        .login-submit:not(:disabled):hover .submit-arrow { transform: translateX(4px); }
       `}</style>
 
       {/* Dot grid */}
@@ -130,83 +126,46 @@ export default function Login() {
         <rect width="100%" height="100%" fill="url(#dots)" />
       </svg>
 
-      {/* Hexagon — top right, slow CW */}
-      <div className="absolute pointer-events-none lg-orn-hex" style={{ top: '2%', right: '2%', animation: 'geo-rotate-cw 70s linear infinite' }}>
-        <svg width="320" height="320" viewBox="-160 -160 320 320">
-          <polygon points="0,-110 95.3,-55 95.3,55 0,110 -95.3,55 -95.3,-55"
-            fill="none" stroke="#00ff88" strokeWidth="0.7" opacity="0.25" />
-          <polygon points="0,-70 60.6,-35 60.6,35 0,70 -60.6,35 -60.6,-35"
-            fill="none" stroke="#00ff88" strokeWidth="0.3" opacity="0.15" />
-        </svg>
-      </div>
+      {/* Scanline halus melintasi layar */}
+      <div
+        className="absolute inset-x-0 pointer-events-none"
+        aria-hidden="true"
+        style={{
+          height: 120,
+          background: 'linear-gradient(to bottom, transparent, rgba(0,255,136,0.03), transparent)',
+          animation: 'scan-move 9s linear infinite',
+        }}
+      />
 
-      {/* Triangle — bottom left, slow CCW */}
-      <div className="absolute pointer-events-none lg-orn-tri" style={{ bottom: '3%', left: '2%', animation: 'geo-rotate-ccw 90s linear infinite' }}>
-        <svg width="260" height="260" viewBox="-130 -130 260 260">
-          <polygon points="0,-100 86.6,50 -86.6,50"
-            fill="none" stroke="white" strokeWidth="0.6" opacity="0.12" />
-          <polygon points="0,-58 50.2,29 -50.2,29"
-            fill="none" stroke="#00ff88" strokeWidth="0.4" opacity="0.10" />
-        </svg>
-      </div>
-
-      {/* Cross lines — center, float */}
-      <div className="absolute pointer-events-none lg-orn-cross" style={{ top: '46%', left: '50%', animation: 'geo-float 14s ease-in-out infinite' }}>
-        <svg width="200" height="200" viewBox="-100 -100 200 200">
-          <line x1="-80" y1="0" x2="80" y2="0" stroke="white" strokeWidth="0.4" opacity="0.06" />
-          <line x1="0" y1="-80" x2="0" y2="80" stroke="white" strokeWidth="0.4" opacity="0.06" />
-          <line x1="-56" y1="-56" x2="56" y2="56" stroke="#00ff88" strokeWidth="0.4" opacity="0.06" />
-          <line x1="56" y1="-56" x2="-56" y2="56" stroke="#00ff88" strokeWidth="0.4" opacity="0.06" />
-          <circle cx="0" cy="0" r="4" fill="none" stroke="#00ff88" strokeWidth="0.5" opacity="0.12" />
-        </svg>
-      </div>
-
-      {/* Square — right mid, CW */}
-      <div className="absolute pointer-events-none lg-orn-sq" style={{ top: '45%', right: '5%', animation: 'geo-rotate-cw 35s linear infinite' }}>
-        <svg width="100" height="100" viewBox="-50 -50 100 100">
-          <rect x="-38" y="-38" width="76" height="76" fill="none" stroke="white"    strokeWidth="0.5" opacity="0.09" />
-          <rect x="-22" y="-22" width="44" height="44" fill="none" stroke="#00ff88" strokeWidth="0.4" opacity="0.09" />
-        </svg>
-      </div>
-
-      {/* Diamond — top left, pulse */}
-      <div className="absolute pointer-events-none lg-orn-dia" style={{ top: '18%', left: '5%', animation: 'geo-pulse 8s ease-in-out infinite' }}>
-        <svg width="80" height="80" viewBox="-40 -40 80 80">
-          <polygon points="0,-34 34,0 0,34 -34,0"
-            fill="none" stroke="#00ff88" strokeWidth="0.6" opacity="0.45" />
-        </svg>
-      </div>
-
-      {/* ── Content ─────────────────────────────────────────────────────────── */}
-      {/* Changelog badge — fixed top right of viewport */}
-      <div ref={changelogRef} style={{ position: 'fixed', top: 16, right: 16, zIndex: 50 }}>
+      {/* Changelog badge — fixed bottom left of viewport */}
+      <div ref={changelogRef} style={{ position: 'fixed', bottom: 16, left: 16, zIndex: 50 }}>
         <button
           onClick={() => setShowChangelog(v => !v)}
+          className="text-xs font-mono"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 5,
-            background: showChangelog ? 'rgba(0,255,136,0.14)' : 'rgba(0,255,136,0.08)',
-            border: '1px solid rgba(0,255,136,0.22)',
-            borderRadius: 20,
-            padding: '5px 10px 5px 8px',
-            fontSize: 10,
-            color: '#00ff88',
+            gap: 12,
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            color: showChangelog ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)',
             cursor: 'pointer',
             whiteSpace: 'nowrap',
-            fontFamily: 'inherit',
-            animation: showChangelog ? 'none' : 'badge-glow 2.5s ease-in-out infinite',
+            transition: 'color 0.2s',
           }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
+          onMouseLeave={e => { if (!showChangelog) e.currentTarget.style.color = 'rgba(255,255,255,0.2)' }}
         >
-          <span style={{ fontSize: 11 }}>✦</span>
-          <span style={{ fontSize: 9, opacity: 0.75 }}>v{appVersion}</span>
+          <span style={{ width: 24, height: 1, background: 'rgba(0,255,136,0.4)', display: 'inline-block' }} />
+          v{appVersion}
         </button>
 
         {showChangelog && (
           <div style={{
             position: 'absolute',
-            top: 40,
-            right: 0,
+            bottom: 40,
+            left: 0,
             width: 260,
             background: '#161616',
             border: '1px solid rgba(0,255,136,0.2)',
@@ -214,7 +173,6 @@ export default function Login() {
             padding: 16,
             boxShadow: '0 12px 40px rgba(0,0,0,0.75)',
           }}>
-            {/* Popup header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <span style={{ fontSize: 11, letterSpacing: '2px', textTransform: 'uppercase', color: '#00ff88' }}>
                 What's new
@@ -231,7 +189,6 @@ export default function Login() {
               </span>
             </div>
 
-            {/* Popup items */}
             {latestChangelog.items.map((item, i) => (
               <div key={i} style={{
                 display: 'flex',
@@ -278,51 +235,58 @@ export default function Login() {
         )}
       </div>
 
-      <div className="relative z-10 w-full max-w-sm">
+      {/* ── Panel brand (desktop) ───────────────────────────────────────────── */}
+      <div
+        data-panel-brand
+        className="relative z-10 hidden lg:flex flex-col justify-between w-[45%] p-12"
+        style={{ borderRight: '1px solid rgba(255,255,255,0.07)' }}
+      >
+        <div data-brand-line className="text-xs font-mono tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          [ deskra ]
+        </div>
 
-        {/* Brand */}
-        <div className="flex flex-col items-center mb-8">
-          {/* Orbital mark */}
-          <div data-logo className="mb-5">
-            <svg viewBox="0 0 100 100" width="64" height="64" fill="none" aria-hidden="true">
-              <g className="mark-spin">
-                <ellipse cx="50" cy="50" rx="42" ry="14" stroke="#1a2a1a" strokeWidth="1.2"/>
-                <ellipse cx="50" cy="50" rx="42" ry="14" stroke="#1a2a1a" strokeWidth="1.2" transform="rotate(60 50 50)"/>
-                <ellipse cx="50" cy="50" rx="42" ry="14" stroke="#1a2a1a" strokeWidth="1.2" transform="rotate(120 50 50)"/>
-                <circle r="2.4" fill="#f0f0f0">
-                  <animateMotion dur="8s" repeatCount="indefinite" rotate="none"
-                    path="M 92,50 A 42,14 0 0,1 8,50 A 42,14 0 0,1 92,50"/>
-                </circle>
-              </g>
-              <circle cx="50" cy="50" r="11" stroke="#00ff88" strokeWidth="1.2" opacity=".5" className="mark-pulse"/>
-              <circle cx="50" cy="50" r="6" fill="#00ff88"/>
-            </svg>
-          </div>
-
-          <h1 data-brand-title className="text-3xl font-bold tracking-tight" style={{ color: '#f0f0f0', letterSpacing: '-0.02em' }}>
+        <div>
+          <h1 data-brand-line className="font-bold" style={{ fontSize: 'clamp(48px, 6vw, 84px)', letterSpacing: '-0.03em', lineHeight: 1.05, color: '#f0f0f0' }}>
             Deskra
+            <span className="login-cursor" style={{ color: '#00ff88' }}>_</span>
           </h1>
-          <p data-brand-label className="text-xs font-mono tracking-widest uppercase mt-2" style={{ color: '#00ff88' }}>
+          <p data-brand-line className="text-sm font-mono tracking-widest uppercase mt-4" style={{ color: '#00ff88' }}>
             sistem administrasi
+          </p>
+          <p data-brand-line className="text-sm mt-6 max-w-xs" style={{ color: 'rgba(255,255,255,0.4)', lineHeight: 1.7 }}>
+            Pengelolaan register kapling, DKHP, SKSHHK, dan administrasi TPK dalam satu tempat.
           </p>
         </div>
 
-        {/* Card */}
-        <div data-card style={{
-          background: 'rgba(255,255,255,0.025)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 4,
-          padding: '28px 28px 24px',
-        }}>
-          <p className="text-xs font-mono mb-5" style={{ color: '#666666' }}>
-            — masuk ke akun anda
-          </p>
+        <div />
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+      {/* ── Panel form ──────────────────────────────────────────────────────── */}
+      <div className="relative z-10 flex-1 flex items-center justify-center p-6">
+        <div data-form className="w-full max-w-sm">
+
+          {/* Wordmark — hanya tampil di mobile/tablet (panel brand tersembunyi) */}
+          <div data-form-head className="lg:hidden mb-10">
+            <h1 className="text-4xl font-bold" style={{ letterSpacing: '-0.03em', color: '#f0f0f0' }}>
+              Deskra<span className="login-cursor" style={{ color: '#00ff88' }}>_</span>
+            </h1>
+            <p className="text-xs font-mono tracking-widest uppercase mt-2" style={{ color: '#00ff88' }}>
+              sistem administrasi
+            </p>
+          </div>
+
+          <div data-form-head className="mb-8 hidden lg:block">
+            <p className="text-xs font-mono tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              // autentikasi
+            </p>
+            <h2 className="text-2xl font-bold mt-2" style={{ letterSpacing: '-0.02em' }}>
+              Masuk ke akun anda
+            </h2>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-7">
             <div data-field>
-              <label className="block text-xs font-mono mb-1.5 tracking-wide" style={{ color: '#00ff88' }}>
+              <label className="block text-xs font-mono mb-2 tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>
                 email
               </label>
               <input
@@ -332,20 +296,13 @@ export default function Login() {
                 placeholder="nama@email.com"
                 required
                 autoComplete="email"
-                className="login-input w-full text-sm transition-all"
-                style={{
-                  padding: '10px 12px',
-                  borderRadius: 3,
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  background: 'rgba(255,255,255,0.03)',
-                  color: '#f0f0f0',
-                  fontSize: 14,
-                }}
+                className="login-input w-full text-sm transition-colors"
+                style={{ padding: '10px 2px', color: '#f0f0f0', fontSize: 15 }}
               />
             </div>
 
             <div data-field>
-              <label className="block text-xs font-mono mb-1.5 tracking-wide" style={{ color: '#00ff88' }}>
+              <label className="block text-xs font-mono mb-2 tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>
                 password
               </label>
               <div className="relative">
@@ -356,24 +313,17 @@ export default function Login() {
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
-                  className="login-input w-full text-sm transition-all"
-                  style={{
-                    padding: '10px 40px 10px 12px',
-                    borderRadius: 3,
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    background: 'rgba(255,255,255,0.03)',
-                    color: '#f0f0f0',
-                    fontSize: 14,
-                  }}
+                  className="login-input w-full text-sm transition-colors"
+                  style={{ padding: '10px 36px 10px 2px', color: '#f0f0f0', fontSize: 15 }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(v => !v)}
                   tabIndex={-1}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-100"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-100"
                   style={{ color: 'rgba(255,255,255,0.3)' }}
                 >
-                  {showPassword ? <EyeOff size={14}/> : <Eye size={14}/>}
+                  {showPassword ? <EyeOff size={15}/> : <Eye size={15}/>}
                 </button>
               </div>
             </div>
@@ -389,45 +339,55 @@ export default function Login() {
               </div>
             )}
 
-            <div data-field className="pt-1">
+            <div data-field className="pt-2">
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className="w-full flex items-center justify-center gap-2 text-sm font-semibold font-mono transition-all"
+                className="login-submit w-full flex items-center justify-between text-sm font-semibold font-mono transition-all"
                 style={{
-                  padding: '10px 16px',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  padding: '13px 18px',
                   borderRadius: 3,
-                  border: 'none',
+                  border: '1px solid rgba(0,255,136,0.4)',
                   cursor: canSubmit ? 'pointer' : 'not-allowed',
-                  background: canSubmit ? '#00ff88' : 'rgba(0,255,136,0.15)',
-                  color: canSubmit ? '#0a0a0a' : 'rgba(0,255,136,0.4)',
-                  letterSpacing: '0.04em',
+                  background: 'transparent',
+                  color: canSubmit ? '#00ff88' : 'rgba(0,255,136,0.35)',
+                  letterSpacing: '0.06em',
                 }}
               >
-                {loading
-                  ? <span className="inline-block w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(0,0,0,0.2)', borderTopColor: '#0a0a0a' }}/>
-                  : null}
-                {loading ? 'memproses...' : 'masuk'}
+                {loading && <span className="btn-sweep" aria-hidden="true" />}
+                <span>
+                  {loading ? 'memproses' : 'masuk'}
+                  {loading && (
+                    <span aria-hidden="true">
+                      <span className="loading-dot">.</span>
+                      <span className="loading-dot">.</span>
+                      <span className="loading-dot">.</span>
+                    </span>
+                  )}
+                </span>
+                {!loading && <ArrowRight size={16} className="submit-arrow transition-transform" />}
               </button>
             </div>
           </form>
-        </div>
 
-        {/* Footer */}
-        <div className="mt-6 text-center">
-          <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>
-            ©{' '}
-            <a
-              href="https://astrolabs.site"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: 'rgba(0,255,136,0.35)', transition: 'color 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#00ff88' }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(0,255,136,0.35)' }}
-            >
-              AstroLabs Studio
-            </a>
-          </p>
+          {/* Footer */}
+          <div className="mt-10">
+            <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>
+              ©{' '}
+              <a
+                href="https://astrolabs.site"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'rgba(0,255,136,0.35)', transition: 'color 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#00ff88' }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(0,255,136,0.35)' }}
+              >
+                AstroLabs Studio
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

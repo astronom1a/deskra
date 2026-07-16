@@ -76,12 +76,12 @@ export default function RegisterKaplingStyles() {
       .rk-row:hover .rk-actions { opacity: 1 !important; }
 
       /* ── Responsive ── */
-      .rk-metric-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+      /* auto-fit: jumlah kolom mengikuti lebar viewport, card tidak dipaksa 5 sejajar */
+      .rk-metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; margin-bottom: 20px; align-items: start; }
       .rk-header-actions { display: flex; gap: 6px; flex-wrap: nowrap; }
       .rk-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
       @media (max-width: 768px) {
-        .rk-metric-grid { grid-template-columns: repeat(2, 1fr); }
         .rk-header-actions { flex-wrap: wrap; }
         .rk-page { height: calc(100vh - 48px) !important; }
       }

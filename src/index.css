@@ -174,17 +174,6 @@ input::-moz-contacts-auto-fill-button {
 
 /* Login animations handled by GSAP — no CSS keyframes needed */
 
-@keyframes db-rot-cw   { to { transform: rotate(360deg);  } }
-@keyframes db-rot-ccw  { to { transform: rotate(-360deg); } }
-@keyframes db-float {
-  0%,100% { transform: translateY(0px);   }
-  50%      { transform: translateY(-14px); }
-}
-@keyframes db-pulse {
-  0%,100% { opacity: 0.04; }
-  50%      { opacity: 0.11; }
-}
-
 @media print {
   .no-print { display: none !important; }
   .print-only { display: block !important; }

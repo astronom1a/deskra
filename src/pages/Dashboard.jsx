@@ -194,7 +194,6 @@ export default function Dashboard() {
           .db-clock .db-clock-date { margin-top: 0 !important; }
           .db-kapling-split { flex-direction: column; }
           .db-kapling-right { border-left: none !important; padding-left: 0 !important; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; }
-          .db-orn-lg svg { width: 180px; height: 180px; }
         }
       `}</style>
 
@@ -207,42 +206,6 @@ export default function Dashboard() {
         </defs>
         <rect width="100%" height="100%" fill="url(#db-dots)"/>
       </svg>
-
-      {/* Hexagon — top right */}
-      <div aria-hidden="true" className="db-orn-lg" style={{ position: 'absolute', top: -80, right: -80, pointerEvents: 'none', animation: 'db-rot-cw 80s linear infinite' }}>
-        <svg width="320" height="320" viewBox="-160 -160 320 320">
-          <polygon points="0,-120 103.9,-60 103.9,60 0,120 -103.9,60 -103.9,-60"
-            fill="none" stroke="#00ff88" strokeWidth="0.6" opacity="0.18"/>
-          <polygon points="0,-76 65.8,-38 65.8,38 0,76 -65.8,38 -65.8,-38"
-            fill="none" stroke="#00ff88" strokeWidth="0.3" opacity="0.1"/>
-        </svg>
-      </div>
-
-      {/* Triangle — bottom left */}
-      <div aria-hidden="true" className="db-orn-lg" style={{ position: 'absolute', bottom: -50, left: -50, pointerEvents: 'none', animation: 'db-rot-ccw 110s linear infinite' }}>
-        <svg width="240" height="240" viewBox="-120 -120 240 240">
-          <polygon points="0,-95 82.2,47.5 -82.2,47.5"
-            fill="none" stroke="white" strokeWidth="0.5" opacity="0.08"/>
-          <polygon points="0,-56 48.5,28 -48.5,28"
-            fill="none" stroke="#00ff88" strokeWidth="0.3" opacity="0.07"/>
-        </svg>
-      </div>
-
-      {/* Diamond — left mid, float */}
-      <div aria-hidden="true" style={{ position: 'absolute', top: '45%', left: 20, pointerEvents: 'none', animation: 'db-float 12s ease-in-out infinite' }}>
-        <svg width="60" height="60" viewBox="-30 -30 60 60">
-          <polygon points="0,-26 26,0 0,26 -26,0"
-            fill="none" stroke="#00ff88" strokeWidth="0.6" opacity="0.3"/>
-        </svg>
-      </div>
-
-      {/* Square — right mid, rotate */}
-      <div aria-hidden="true" style={{ position: 'absolute', top: '60%', right: 24, pointerEvents: 'none', animation: 'db-rot-cw 40s linear infinite' }}>
-        <svg width="70" height="70" viewBox="-35 -35 70 70">
-          <rect x="-28" y="-28" width="56" height="56" fill="none" stroke="white"    strokeWidth="0.5" opacity="0.08"/>
-          <rect x="-16" y="-16" width="32" height="32" fill="none" stroke="#00ff88" strokeWidth="0.3" opacity="0.07"/>
-        </svg>
-      </div>
 
       {/* ── Content ───────────────────────────────────────────────────────── */}
       <div className="relative z-10 ds-page mx-auto" style={{ width: '100%', maxWidth: 'min(96vw, 1440px)' }}>

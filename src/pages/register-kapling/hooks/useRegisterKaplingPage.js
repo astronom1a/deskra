@@ -108,8 +108,6 @@ export function useRegisterKaplingPage() {
   const [fixPrefixMap, setFixPrefixMap]     = useState({})
   const [fixPrefixSaving, setFixPrefixSaving] = useState(false)
 
-  const [expandedCard, setExpandedCard]     = useState(null)
-
   const [showDkhpModal, setShowDkhpModal]   = useState(false)
   const [dkhpModalRows, setDkhpModalRows]   = useState([])
   const [dkhpInput, setDkhpInput]           = useState('')
@@ -566,8 +564,6 @@ export function useRegisterKaplingPage() {
     unsoldBatang, unsoldSortBatang, unsoldSortVolume, unsoldVolume,
     // year filter
     availableYears, selectedYear, setSelectedYear, isYearFiltered,
-    // cards
-    expandedCard, setExpandedCard,
     // bap import
     bapPreview, setBapPreview, bapSaving, handleBapFiles, handleBapSave,
     // refs
