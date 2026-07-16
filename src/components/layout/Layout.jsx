@@ -8,6 +8,8 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useIsMobile } from '../../lib/hooks/useIsMobile'
+import AppResponsiveStyles from '../ui/responsive/AppResponsiveStyles'
 import { useAccount } from '../../lib/hooks/useAccount'
 import { useAuth } from '../../lib/AuthProvider'
 import { canUseOperatorRoutes } from '../../lib/adminOperatorContext'
@@ -184,7 +186,7 @@ export default function Layout() {
   const sidebarRef = useRef(null)
   const [realtimeStatus, setRealtimeStatus] = useState('connecting')
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sb_collapsed') === '1')
-  const [isMobile, setIsMobile]   = useState(() => window.innerWidth <= 768)
+  const isMobile = useIsMobile()
   const [mobileOpen, setMobileOpen] = useState(false)
   const { account } = useAccount()
   const { tpk, isAdmin, activeTpkId, setActiveTpkId, signOut } = useAuth()
@@ -202,14 +204,10 @@ export default function Layout() {
     })
   }
 
-  // Deteksi resize
+  // Tutup drawer saat kembali ke desktop
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 768px)')
-    const onChange = e => { setIsMobile(e.matches); if (!e.matches) setMobileOpen(false) }
-    mq.addEventListener('change', onChange)
-    setIsMobile(mq.matches)
-    return () => mq.removeEventListener('change', onChange)
-  }, [])
+    if (!isMobile) setMobileOpen(false)
+  }, [isMobile])
 
   // Tutup drawer saat navigasi
   useEffect(() => {
@@ -247,6 +245,7 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#0a0a0a' }}>
+      <AppResponsiveStyles />
       <style>{`
         .sb-link { display:flex; align-items:center; gap:10px; padding:7px 12px; border-radius:3px; font-size:13px; text-decoration:none; transition:background 0.15s, color 0.15s, border-color 0.15s; border-left:2px solid transparent; color:rgba(255,255,255,0.38); }
         .sb-link:hover { color:#f0f0f0; background:rgba(255,255,255,0.04); }

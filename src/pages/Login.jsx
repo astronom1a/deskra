@@ -80,7 +80,7 @@ export default function Login() {
     <div
       ref={rootRef}
       className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden"
-      style={{ background: '#0a0a0a', color: '#f0f0f0' }}
+      style={{ background: '#0a0a0a', color: '#f0f0f0', minHeight: '100dvh' }}
     >
       {/* CSS keyframes */}
       <style>{`
@@ -108,6 +108,16 @@ export default function Login() {
           border-color: rgba(0,255,136,0.5);
           box-shadow: 0 0 0 3px rgba(0,255,136,0.08);
         }
+        /* Layar kecil: ornamen dikecilkan & ditarik ke pojok agar tidak menimpa konten */
+        @media (max-width: 640px) {
+          .lg-orn-hex   { top: -60px !important; right: -60px !important; }
+          .lg-orn-hex svg   { width: 170px; height: 170px; }
+          .lg-orn-tri   { bottom: -40px !important; left: -40px !important; }
+          .lg-orn-tri svg   { width: 140px; height: 140px; }
+          .lg-orn-cross svg { width: 120px; height: 120px; }
+          .lg-orn-sq    { display: none; }
+          .lg-orn-dia svg   { width: 48px; height: 48px; }
+        }
       `}</style>
 
       {/* Dot grid */}
@@ -121,7 +131,7 @@ export default function Login() {
       </svg>
 
       {/* Hexagon — top right, slow CW */}
-      <div className="absolute pointer-events-none" style={{ top: '2%', right: '2%', animation: 'geo-rotate-cw 70s linear infinite' }}>
+      <div className="absolute pointer-events-none lg-orn-hex" style={{ top: '2%', right: '2%', animation: 'geo-rotate-cw 70s linear infinite' }}>
         <svg width="320" height="320" viewBox="-160 -160 320 320">
           <polygon points="0,-110 95.3,-55 95.3,55 0,110 -95.3,55 -95.3,-55"
             fill="none" stroke="#00ff88" strokeWidth="0.7" opacity="0.25" />
@@ -131,7 +141,7 @@ export default function Login() {
       </div>
 
       {/* Triangle — bottom left, slow CCW */}
-      <div className="absolute pointer-events-none" style={{ bottom: '3%', left: '2%', animation: 'geo-rotate-ccw 90s linear infinite' }}>
+      <div className="absolute pointer-events-none lg-orn-tri" style={{ bottom: '3%', left: '2%', animation: 'geo-rotate-ccw 90s linear infinite' }}>
         <svg width="260" height="260" viewBox="-130 -130 260 260">
           <polygon points="0,-100 86.6,50 -86.6,50"
             fill="none" stroke="white" strokeWidth="0.6" opacity="0.12" />
@@ -141,7 +151,7 @@ export default function Login() {
       </div>
 
       {/* Cross lines — center, float */}
-      <div className="absolute pointer-events-none" style={{ top: '46%', left: '50%', animation: 'geo-float 14s ease-in-out infinite' }}>
+      <div className="absolute pointer-events-none lg-orn-cross" style={{ top: '46%', left: '50%', animation: 'geo-float 14s ease-in-out infinite' }}>
         <svg width="200" height="200" viewBox="-100 -100 200 200">
           <line x1="-80" y1="0" x2="80" y2="0" stroke="white" strokeWidth="0.4" opacity="0.06" />
           <line x1="0" y1="-80" x2="0" y2="80" stroke="white" strokeWidth="0.4" opacity="0.06" />
@@ -152,7 +162,7 @@ export default function Login() {
       </div>
 
       {/* Square — right mid, CW */}
-      <div className="absolute pointer-events-none" style={{ top: '45%', right: '5%', animation: 'geo-rotate-cw 35s linear infinite' }}>
+      <div className="absolute pointer-events-none lg-orn-sq" style={{ top: '45%', right: '5%', animation: 'geo-rotate-cw 35s linear infinite' }}>
         <svg width="100" height="100" viewBox="-50 -50 100 100">
           <rect x="-38" y="-38" width="76" height="76" fill="none" stroke="white"    strokeWidth="0.5" opacity="0.09" />
           <rect x="-22" y="-22" width="44" height="44" fill="none" stroke="#00ff88" strokeWidth="0.4" opacity="0.09" />
@@ -160,7 +170,7 @@ export default function Login() {
       </div>
 
       {/* Diamond — top left, pulse */}
-      <div className="absolute pointer-events-none" style={{ top: '18%', left: '5%', animation: 'geo-pulse 8s ease-in-out infinite' }}>
+      <div className="absolute pointer-events-none lg-orn-dia" style={{ top: '18%', left: '5%', animation: 'geo-pulse 8s ease-in-out infinite' }}>
         <svg width="80" height="80" viewBox="-40 -40 80 80">
           <polygon points="0,-34 34,0 0,34 -34,0"
             fill="none" stroke="#00ff88" strokeWidth="0.6" opacity="0.45" />

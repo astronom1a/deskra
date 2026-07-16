@@ -10,6 +10,8 @@ import { useAuth } from '../lib/AuthProvider'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import TpkRequiredState from '../components/layout/TpkRequiredState'
 import { TableSkeleton } from '../components/ui/LoadingState'
+import { useIsMobile } from '../lib/hooks/useIsMobile'
+import DataCard from '../components/ui/responsive/DataCard'
 
 const SORTIMENS = ['AI', 'AII', 'AIII']
 
@@ -31,6 +33,7 @@ function useDateTime() {
 
 export default function Dashboard() {
   const now       = useDateTime()
+  const isMobile  = useIsMobile()
   const { account } = useAccount()
   const { profile, tpk, activeTpkId } = useAuth()
   const tpkId     = getEffectiveTpkId({ activeTpkId, profile })
@@ -185,6 +188,16 @@ export default function Dashboard() {
   return (
     <div style={{ minHeight: '100%', background: '#0a0a0a', position: 'relative', overflow: 'hidden' }}>
 
+      <style>{`
+        @media (max-width: 480px) {
+          .db-clock { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+          .db-clock .db-clock-date { margin-top: 0 !important; }
+          .db-kapling-split { flex-direction: column; }
+          .db-kapling-right { border-left: none !important; padding-left: 0 !important; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; }
+          .db-orn-lg svg { width: 180px; height: 180px; }
+        }
+      `}</style>
+
       {/* Dot grid */}
       <svg aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
         <defs>
@@ -196,7 +209,7 @@ export default function Dashboard() {
       </svg>
 
       {/* Hexagon — top right */}
-      <div aria-hidden="true" style={{ position: 'absolute', top: -80, right: -80, pointerEvents: 'none', animation: 'db-rot-cw 80s linear infinite' }}>
+      <div aria-hidden="true" className="db-orn-lg" style={{ position: 'absolute', top: -80, right: -80, pointerEvents: 'none', animation: 'db-rot-cw 80s linear infinite' }}>
         <svg width="320" height="320" viewBox="-160 -160 320 320">
           <polygon points="0,-120 103.9,-60 103.9,60 0,120 -103.9,60 -103.9,-60"
             fill="none" stroke="#00ff88" strokeWidth="0.6" opacity="0.18"/>
@@ -206,7 +219,7 @@ export default function Dashboard() {
       </div>
 
       {/* Triangle — bottom left */}
-      <div aria-hidden="true" style={{ position: 'absolute', bottom: -50, left: -50, pointerEvents: 'none', animation: 'db-rot-ccw 110s linear infinite' }}>
+      <div aria-hidden="true" className="db-orn-lg" style={{ position: 'absolute', bottom: -50, left: -50, pointerEvents: 'none', animation: 'db-rot-ccw 110s linear infinite' }}>
         <svg width="240" height="240" viewBox="-120 -120 240 240">
           <polygon points="0,-95 82.2,47.5 -82.2,47.5"
             fill="none" stroke="white" strokeWidth="0.5" opacity="0.08"/>
@@ -232,7 +245,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Content ───────────────────────────────────────────────────────── */}
-      <div className="relative z-10 p-6 mx-auto" style={{ width: '100%', maxWidth: 'min(96vw, 1440px)' }}>
+      <div className="relative z-10 ds-page mx-auto" style={{ width: '100%', maxWidth: 'min(96vw, 1440px)' }}>
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-10">
@@ -254,7 +267,7 @@ export default function Dashboard() {
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: 4,
             padding: '14px 18px',
-          }} className="shrink-0 sm:text-right">
+          }} className="shrink-0 sm:text-right db-clock">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
               <p className="font-bold font-mono tabular-nums" style={{ color: '#00ff88', lineHeight: 1, fontSize: 26 }}>
                 {h}:{mm}:{ss}
@@ -280,7 +293,7 @@ export default function Dashboard() {
                 })}
               </div>
             </div>
-            <p className="font-mono" style={{ color: '#4a4a4a', marginTop: 7, fontSize: 12 }}>
+            <p className="font-mono db-clock-date" style={{ color: '#4a4a4a', marginTop: 7, fontSize: 12 }}>
               {now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>
@@ -294,7 +307,7 @@ export default function Dashboard() {
           {statsLoading ? (
             <TableSkeleton rows={3} columns={3} />
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 12, alignItems: 'stretch' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12, alignItems: 'stretch' }}>
 
               {/* DKHP */}
               <div
@@ -337,7 +350,7 @@ export default function Dashboard() {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
               >
-                <div style={{ display: 'flex', gap: 16 }}>
+                <div className="db-kapling-split" style={{ display: 'flex', gap: 16 }}>
                   <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>TOTAL KAPLING</p>
                     <div>
@@ -349,7 +362,7 @@ export default function Dashboard() {
                       {lastKapling && <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace', marginTop: 2 }}>{lastKapling}</p>}
                     </div>
                   </div>
-                  <div style={{ flex: 1, borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center' }}>
+                  <div className="db-kapling-right" style={{ flex: 1, borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center' }}>
                     {SORTIMENS.map(m => (
                       <div key={m} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                         <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', minWidth: 24, paddingTop: 1 }}>{m}</span>
@@ -511,6 +524,35 @@ export default function Dashboard() {
                 >
                   Buat Periode Pertama <ArrowRight size={13} />
                 </button>
+              </div>
+            ) : isMobile ? (
+              <div className="ds-card-list" style={{ padding: 10 }}>
+                {periodes.map(p => (
+                  <DataCard
+                    key={p.id}
+                    title={p.periode}
+                    right={maskRupiah(p.total_uk)}
+                    badge={
+                      <span
+                        className="inline-flex items-center px-2 py-0.5 text-xs font-mono"
+                        style={{
+                          borderRadius: 2, flexShrink: 0,
+                          background: p.status === 'aktif' ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${p.status === 'aktif' ? 'rgba(0,255,136,0.2)' : 'rgba(255,255,255,0.08)'}`,
+                          color: p.status === 'aktif' ? '#00ff88' : '#4a4a4a',
+                        }}
+                      >
+                        {p.status}
+                      </span>
+                    }
+                    fields={[{
+                      label: 'tanggal',
+                      value: p.tgl_awal && p.tgl_akhir
+                        ? `${new Date(p.tgl_awal).toLocaleDateString('id-ID')} – ${new Date(p.tgl_akhir).toLocaleDateString('id-ID')}`
+                        : '—',
+                    }]}
+                  />
+                ))}
               </div>
             ) : (
               <table className="w-full">

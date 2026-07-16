@@ -1,6 +1,15 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.45.0',
+    date: '2026-07-16',
+    items: [
+      { type: 'feat', text: 'kit UI responsif bersama (useIsMobile, DataCard, BottomSheet, util class ds-*) sebagai fondasi tampilan mobile semua halaman' },
+      { type: 'feat', text: 'Dashboard responsif: kartu jam horizontal di HP, kartu statistik menyesuaikan layar kecil, History Uang Kerja jadi card list di mobile' },
+      { type: 'fix', text: 'halaman login di layar kecil: ornamen dekoratif dikecilkan & ditarik ke pojok agar tidak menimpa logo dan form, tinggi pakai 100dvh' },
+    ]
+  },
+  {
     version: '0.44.3',
     date: '2026-07-15',
     items: [
