@@ -1,6 +1,15 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.46.0',
+    date: '2026-07-16',
+    items: [
+      { type: 'feat', text: 'DKHP/SKSHHK responsif: tabel jadi card list di mobile dengan badge klas/jenis, total m³, dan aksi Edit/QR/Hapus di tiap kartu' },
+      { type: 'feat', text: 'filter & tampilan DKHP/SKSHHK di mobile lewat bottom sheet — filter tanggal, SKSHHK, kolom pencarian, ukuran halaman, dan pengurutan' },
+      { type: 'style', text: 'modal cetak QR SKSHHK menyesuaikan layar sempit — preview QR dan form tersusun vertikal' },
+    ]
+  },
+  {
     version: '0.45.0',
     date: '2026-07-16',
     items: [

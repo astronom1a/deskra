@@ -1,6 +1,7 @@
 // Kartu "data ticket" — pengganti baris tabel di tampilan mobile.
 // fields: [{ label, value }] dirender sebagai grid 2 kolom label-atas-nilai-bawah.
-export default function DataCard({ title, badge, fields = [], right, onClick }) {
+// actions: node tombol aksi, dirender sebagai baris footer rata kanan.
+export default function DataCard({ title, badge, fields = [], right, onClick, actions }) {
   return (
     <div
       className="ds-data-card"
@@ -26,6 +27,17 @@ export default function DataCard({ title, badge, fields = [], right, onClick }) 
               <p className="ds-card-value">{f.value ?? '—'}</p>
             </div>
           ))}
+        </div>
+      )}
+      {actions && (
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            display: 'flex', justifyContent: 'flex-end', gap: 4, marginTop: 10,
+            paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.05)',
+          }}
+        >
+          {actions}
         </div>
       )}
     </div>

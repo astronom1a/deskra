@@ -14,6 +14,9 @@ import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import ThemedSelect from '../components/ui/ThemedSelect'
 import TpkRequiredState from '../components/layout/TpkRequiredState'
 import { TableSkeleton } from '../components/ui/LoadingState'
+import { useIsMobile } from '../lib/hooks/useIsMobile'
+import DataCard from '../components/ui/responsive/DataCard'
+import BottomSheet from '../components/ui/responsive/BottomSheet'
 import QRCode from 'qrcode'
 import svlkLogo from '../assets/svlk-logo.svg'
 
@@ -311,6 +314,8 @@ const EMPTY_FORM = {
 }
 
 export default function DkhpSkshhk() {
+  const isMobile = useIsMobile()
+  const [showFilterSheet, setShowFilterSheet] = useState(false)
   const { profile, activeTpkId } = useAuth()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const [tpkName, setTpkName]     = useState('TPK Wongsorejo')
@@ -970,7 +975,7 @@ export default function DkhpSkshhk() {
   if (!tpkId) return <TpkRequiredState />
 
   return (
-    <div style={{ padding: 24, height: '100vh', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0a0a0a', color: '#f0f0f0' }}>
+    <div className="dks-page" style={{ padding: 24, height: '100vh', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0a0a0a', color: '#f0f0f0' }}>
       <style>{`
         .dk-input { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #f0f0f0 !important; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; }
         .dk-input:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
@@ -991,6 +996,12 @@ export default function DkhpSkshhk() {
         .dk-fi[type=number]::-webkit-inner-spin-button, .dk-fi[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .dk-missing-dkhp > summary::-webkit-details-marker { display: none; }
         .dk-missing-dkhp > summary { list-style: none; }
+        @media (max-width: 768px) {
+          .dks-page { height: calc(100dvh - 48px) !important; }
+        }
+        @media (max-width: 480px) {
+          .dks-page { padding: 12px !important; }
+        }
         @media print {
           @page { size: 215mm 330mm; margin: 15mm 10mm; }
           body > *:not(#qr-print-area) { display: none !important; }
@@ -1119,6 +1130,7 @@ export default function DkhpSkshhk() {
               </div>
             )}
           </div>
+          {!isMobile ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ThemedSelect
               value={tanggalFilter}
@@ -1228,7 +1240,100 @@ export default function DkhpSkshhk() {
               ))}
             </div>
           </div>
+          ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 100%' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1 }}>
+              <Search size={11} style={{ position: 'absolute', left: 7, color: 'rgba(255,255,255,0.25)', pointerEvents: 'none' }}/>
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="cari..."
+                className="dk-input"
+                style={{ height: 30, paddingLeft: 24, paddingRight: search ? 22 : 8, width: '100%' }}
+              />
+              {search && (
+                <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 5, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', display: 'flex' }}>
+                  <X size={10}/>
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setShowFilterSheet(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 10px', fontSize: 11, borderRadius: 3, cursor: 'pointer', fontFamily: 'monospace', flexShrink: 0,
+                ...(hasActiveFilters || searchCol !== 'all'
+                  ? { background: 'rgba(0,255,136,0.08)', border: '1px solid rgba(0,255,136,0.2)', color: '#00ff88' }
+                  : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' })
+              }}
+            >
+              <SlidersHorizontal size={11}/>
+              filter
+              {(tanggalFilter !== 'all' ? 1 : 0) + (skshhkFilter !== 'all' ? 1 : 0) + (searchCol !== 'all' ? 1 : 0) > 0 && (
+                <span style={{ background: '#00ff88', color: '#0a0a0a', borderRadius: 99, width: 14, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>
+                  {(tanggalFilter !== 'all' ? 1 : 0) + (skshhkFilter !== 'all' ? 1 : 0) + (searchCol !== 'all' ? 1 : 0)}
+                </span>
+              )}
+            </button>
+          </div>
+          )}
         </div>
+      )}
+
+      {/* Filter sheet — mobile */}
+      {isMobile && (
+        <BottomSheet open={showFilterSheet} onClose={() => setShowFilterSheet(false)} title="filter & tampilan">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 4, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tanggal</label>
+              <ThemedSelect value={tanggalFilter} onChange={setTanggalFilter} options={tanggalFilterOptions} style={{ width: '100%', minHeight: 34 }}/>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 4, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SKSHHK</label>
+              <ThemedSelect value={skshhkFilter} onChange={setSkshhkFilter} options={skshhkFilterOptions} style={{ width: '100%', minHeight: 34 }}/>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 4, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Kolom pencarian</label>
+              <ThemedSelect
+                value={searchCol}
+                onChange={setSearchCol}
+                options={[{ value: 'all', label: 'Semua Kolom' }, ...COLS.map(c => ({ value: c.key, label: c.label }))]}
+                style={{ width: '100%', minHeight: 34 }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 4, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tampilkan per halaman</label>
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                {PAGE_SIZES.map(p => (
+                  <button
+                    key={p.value}
+                    onClick={() => { setPageSize(p.value); setCurrentPage(1) }}
+                    style={{
+                      padding: '6px 10px', fontSize: 11, borderRadius: 3, fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer',
+                      ...(pageSize === p.value
+                        ? { background: '#00ff88', color: '#0a0a0a', border: 'none' }
+                        : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' })
+                    }}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={() => { setDraftSorts([...sorts]); setShowFilterSheet(false); setShowSortPanel(true) }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 0', fontSize: 12, borderRadius: 3, cursor: 'pointer', fontFamily: 'monospace',
+                ...(sorts.length > 0
+                  ? { background: 'rgba(0,255,136,0.08)', border: '1px solid rgba(0,255,136,0.2)', color: '#00ff88' }
+                  : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' })
+              }}
+            >
+              <SlidersHorizontal size={12}/>
+              atur urutan {sorts.length > 0 && `(${sorts.length})`}
+            </button>
+          </div>
+        </BottomSheet>
       )}
 
       <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
@@ -1237,6 +1342,47 @@ export default function DkhpSkshhk() {
         ) : !sorted.length ? (
           <div style={{ padding: 40, textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.22)', fontFamily: 'monospace' }}>
             belum ada data — klik <span style={{ color: '#00ff88' }}>import excel</span> atau <span style={{ color: '#00ff88' }}>tambah</span> untuk mulai
+          </div>
+        ) : isMobile ? (
+          <div style={{ flex: '1 1 auto', minHeight: 0, overflow: 'auto' }}>
+            <div className="ds-card-list" style={{ padding: 10 }}>
+              {displayedRows.map(row => row._missingDkhp ? (
+                <div key={row.id} style={{ padding: '8px 12px', borderRadius: 3, background: 'rgba(255,170,0,0.05)', border: '1px solid rgba(255,170,0,0.18)', fontFamily: 'monospace', fontSize: 11, color: '#ffaa00', display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontWeight: 700 }}>{row.no_dkhp}</span>
+                  <span style={{ color: 'rgba(255,170,0,0.58)', fontSize: 10 }}>nomor DKHP tidak ada di database</span>
+                </div>
+              ) : (
+                <DataCard
+                  key={row.id}
+                  title={row.no_skshhk || '—'}
+                  badge={
+                    <span style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                      <KlasBadge val={row.klas}/>
+                      <JenisBadge val={row.jenis} klas={row.klas}/>
+                    </span>
+                  }
+                  right={`${(Number(row.jml_m3) || 0).toFixed(3)} m³`}
+                  fields={[
+                    { label: 'DKHP', value: row.no_dkhp },
+                    { label: 'Tanggal', value: displayDate(row.tanggal) },
+                    { label: 'Σ Btg', value: (Number(row.jml_bt) || 0).toLocaleString('id') },
+                    { label: 'Nopol', value: row.nopol },
+                    { label: 'Pembeli', value: row.pembeli },
+                    { label: 'Kota Tujuan', value: row.kota_tujuan },
+                    ...(row.tanggal_dimatikan ? [{ label: 'Dimatikan', value: displayDate(row.tanggal_dimatikan) }] : []),
+                  ]}
+                  actions={<>
+                    <ActionButton ariaLabel="Edit" onClick={() => openEdit(row)}><Pencil size={13}/></ActionButton>
+                    <ActionButton ariaLabel="QR Code" onClick={() => openQr(row)} hoverColor="#00ff88" hoverBg="rgba(0,255,136,0.08)"><QrCode size={13}/></ActionButton>
+                    <ActionButton ariaLabel="Hapus" onClick={() => setDeleteRow(row)} hoverColor="#ff6b6b" hoverBg="rgba(255,107,107,0.08)"><Trash2 size={13}/></ActionButton>
+                  </>}
+                />
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 3, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: '#f0f0f0' }}>
+                <span>TOTAL</span>
+                <span>{totals.jml_bt.toLocaleString('id')} btg · {totals.jml_m3.toFixed(3)} m³</span>
+              </div>
+            </div>
           </div>
         ) : (
           <div style={{ flex: '1 1 auto', minHeight: 0, overflow: 'auto', scrollbarGutter: 'stable both-edges' }}>
@@ -1612,7 +1758,7 @@ export default function DkhpSkshhk() {
               <button onClick={() => { setQrRow(null); setQrForm(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
             </div>
 
-            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'center' }}>
 
               {/* Preview QR */}
               <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
@@ -1628,7 +1774,7 @@ export default function DkhpSkshhk() {
               </div>
 
               {/* Form edit */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ flex: 1, minWidth: 240, display: 'flex', flexDirection: 'column', gap: 10 }}>
 
                 {/* Read-only fields */}
                 {[
