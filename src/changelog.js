@@ -1,6 +1,13 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.47.1',
+    date: '2026-07-16',
+    items: [
+      { type: 'fix', text: 'logo SVLK kini selalu ikut tercetak di halaman cetak QR SKSHHK (logo di-inline, tidak lagi bergantung pemuatan file gambar)' },
+    ]
+  },
+  {
     version: '0.47.0',
     date: '2026-07-16',
     items: [
