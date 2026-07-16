@@ -58,7 +58,7 @@ export default function Settings() {
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 760, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+    <div className="ds-page" style={{ maxWidth: 760, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
       <style>{`
         .settings-input:focus {
           border-color: rgba(0,255,136,0.5) !important;
@@ -85,7 +85,7 @@ export default function Settings() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,0.55)', marginBottom: 6, fontFamily: 'monospace', fontWeight: 600 }}>Nama Operator</label>
             <input

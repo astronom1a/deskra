@@ -204,7 +204,7 @@ export default function AdminTpkDetail() {
   if (error && !tpk) return <div style={{ minHeight: '100%', background: '#0a0a0a', color: '#ff6b6b', padding: 24, fontFamily: 'monospace', fontSize: 12 }}>{error}</div>
 
   return (
-    <div style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0', padding: 24 }}>
+    <div className="ds-page" style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
       <div className="mx-auto" style={{ width: '100%', maxWidth: 'min(96vw, 980px)' }}>
         <button
           onClick={() => navigate('/admin/tpk')}
@@ -219,7 +219,7 @@ export default function AdminTpkDetail() {
           <StatusBadge aktif={tpk.aktif} />
         </div>
 
-        <div className="flex gap-1 mb-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="flex gap-1 mb-6 flex-wrap" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           {TABS.map(t => {
             const Icon = t.icon
             const active = tab === t.id
@@ -311,7 +311,8 @@ export default function AdminTpkDetail() {
               ) : periodes.length === 0 ? (
                 <div className="p-6 text-sm text-center font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>Belum ada periode.</div>
               ) : (
-                <table className="w-full text-sm">
+                <div style={{ overflowX: 'auto' }}>
+                <table className="w-full text-sm" style={{ minWidth: 520 }}>
                   <thead style={{ background: 'rgba(255,255,255,0.015)' }}>
                     <tr>
                       <th className="text-left px-5 py-3 font-mono text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Periode</th>
@@ -331,6 +332,7 @@ export default function AdminTpkDetail() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
           </div>
@@ -338,7 +340,7 @@ export default function AdminTpkDetail() {
 
         {tab === 'akun' && (
           <div className="p-6 space-y-3" style={panelStyle}>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <label className="block font-mono text-xs" style={{ color: 'rgba(0,255,136,0.72)' }}>Email Operator</label>
               <button onClick={() => { setShowAddModal(true); setAddError(''); setAddForm({ email: '', password: '' }) }} className="flex items-center gap-1.5 px-3 py-1.5 transition-colors" style={primaryButton}>
                 <UserPlus size={13} /> Tambah Operator
@@ -359,7 +361,7 @@ export default function AdminTpkDetail() {
             ) : (
               operators.map(({ user_id, email }) => (
                 <div key={user_id} className="space-y-1.5">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <div className="flex flex-1 items-center gap-2 px-3 py-2.5 min-w-0" style={{ borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)' }}>
                       <Mail size={14} className="shrink-0" style={{ color: 'rgba(255,255,255,0.3)' }} />
                       <span className="text-sm font-mono truncate" style={{ color: 'rgba(255,255,255,0.68)' }}>{email}</span>

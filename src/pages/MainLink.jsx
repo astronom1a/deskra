@@ -11,6 +11,7 @@ import { Plus, Save, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown,
 import * as XLSX from 'xlsx'
 import Toast, { useToast } from '../components/ui/Toast'
 import { logActivity } from '../lib/activityLog'
+import { useIsMobile } from '../lib/hooks/useIsMobile'
 
 // ─── helpers ────────────────────────────────────────────────
 const BULAN = ['Januari','Februari','Maret','April','Mei','Juni',
@@ -64,6 +65,7 @@ function formatNum(n,dec=3) {
 // ─── Component ───────────────────────────────────────────────
 export default function MainLink() {
   const { profile, activeTpkId } = useAuth()
+  const isMobile = useIsMobile()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const [periodes, setPeriodes]         = useState([])
   const [selectedPeriode, setSelected]  = useState(null)
@@ -465,7 +467,7 @@ export default function MainLink() {
   if (!tpkId) return <TpkRequiredState />
 
   return (
-    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+    <div className="ds-page" style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
       <style>{`
         .ml-input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #f0f0f0; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; color-scheme: dark; -moz-appearance: textfield; }
         .ml-input:focus { border-color: rgba(0,255,136,0.5); box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
@@ -590,7 +592,7 @@ export default function MainLink() {
       {showPeriodeForm && (
         <div style={{ background: 'rgba(0,255,136,0.04)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 3, padding: 20, marginBottom: 16 }}>
           <p style={{ fontFamily: 'monospace', fontSize: 12, color: '#00ff88', fontWeight: 600, marginBottom: 16 }}>Tambah Periode Baru</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, maxWidth: 400 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, maxWidth: 400 }}>
             <div>
               <label style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Periode</label>
               <ThemedSelect
@@ -813,7 +815,7 @@ export default function MainLink() {
                     </tbody>
                   </table>
                 </div>
-                <div style={{ padding: '10px 16px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.015)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ padding: '10px 16px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.015)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                   <p style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>
                     Perubahan tarif akan tercermin di tabel di atas setelah disimpan.
                   </p>

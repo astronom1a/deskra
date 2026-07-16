@@ -9,6 +9,7 @@ import {
   TreePine, Barcode, Users, Sparkles, Zap, Package, Lock
 } from 'lucide-react'
 import Toast, { useToast } from '../components/ui/Toast'
+import { useIsMobile } from '../lib/hooks/useIsMobile'
 
 const DEFAULT_JENIS = ['JATI', 'RIMBA', 'MAHONI']
 const DEFAULT_JENIS_BARCODE = ['JATI', 'MAHONI', 'KEDAWUNG']
@@ -70,7 +71,8 @@ function SectionPerJenis({
         </div>
         <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: accent }}>{formatRupiah(total)}</p>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+      <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', minWidth: 480, borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
         <thead>
           <tr>
             {!lockedJenis && (
@@ -140,6 +142,7 @@ function SectionPerJenis({
           })}
         </tbody>
       </table>
+      </div>
       <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
         <button onClick={addRow}
           style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer' }}
@@ -156,6 +159,7 @@ function SectionPerJenis({
 // ============================================================
 export default function DetailPekerjaan() {
   const { profile, activeTpkId } = useAuth()
+  const isMobile = useIsMobile()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const { toast, showToast } = useToast(3000)
   const [periodes, setPeriodes] = useState([])
@@ -384,7 +388,7 @@ export default function DetailPekerjaan() {
   if (!tpkId) return <TpkRequiredState />
 
   return (
-    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+    <div className="ds-page" style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
       <style>{`
         .dp-input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #f0f0f0; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; -moz-appearance: textfield; }
         .dp-input:focus { border-color: rgba(0,255,136,0.5); box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
@@ -488,7 +492,7 @@ export default function DetailPekerjaan() {
             </div>
             <div style={{ padding: '16px' }}>
               {isPeriodeII ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 16 }}>
                   <div>
                     <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: 6 }}>Jumlah Orang (otomatis dari Database Tenaga)</label>
                     <input type="number" value={tenagaBantu.jumlah_orang} readOnly
@@ -559,7 +563,7 @@ export default function DetailPekerjaan() {
             </div>
             <div style={{ padding: '16px' }}>
               {isPeriodeI ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, maxWidth: 480 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, maxWidth: 480 }}>
                   <div>
                     <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: 6 }}>Nominal</label>
                     <input type="number" value={listrik.nominal}
@@ -615,7 +619,8 @@ export default function DetailPekerjaan() {
                         ><Trash2 size={13}/></button>
                       </div>
                     </div>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+                    <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', minWidth: 560, borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
                       <thead>
                         <tr>
                           {['Uraian','Satuan','Fisik','Tarif','Nilai',''].map((h, i) => (
@@ -662,6 +667,7 @@ export default function DetailPekerjaan() {
                         })}
                       </tbody>
                     </table>
+                    </div>
                     <div style={{ padding: '6px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
                       <button onClick={() => addItemToNota(gid)}
                         style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer' }}

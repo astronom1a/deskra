@@ -110,7 +110,7 @@ export default function AdminTpkList() {
   }
 
   return (
-    <div style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0', padding: 24 }}>
+    <div className="ds-page" style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
       <div className="mx-auto" style={{ width: '100%', maxWidth: 'min(96vw, 1180px)' }}>
         <ConfirmDialog
           open={!!deleteRow}
@@ -122,7 +122,7 @@ export default function AdminTpkList() {
           onConfirm={handleDeleteTpk}
         />
 
-        <div className="flex items-start justify-between mb-6 gap-4">
+        <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
           <div>
             <p className="text-xs font-mono tracking-widest uppercase mb-2" style={{ color: '#00ff88' }}>— superadmin</p>
             <h1 className="text-2xl font-bold" style={{ color: '#f0f0f0' }}>Manajemen TPK</h1>
@@ -165,7 +165,8 @@ export default function AdminTpkList() {
               {search ? 'Tidak ada TPK yang cocok.' : 'Belum ada TPK terdaftar.'}
             </div>
           ) : (
-            <table className="w-full text-sm">
+            <div style={{ overflowX: 'auto' }}>
+            <table className="w-full text-sm" style={{ minWidth: 680 }}>
               <thead style={{ background: 'rgba(255,255,255,0.015)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <tr>
                   {['Lokasi TPK','Kode','Operator','Periode','Total UK','Status',''].map((h, i) => (
@@ -220,6 +221,7 @@ export default function AdminTpkList() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

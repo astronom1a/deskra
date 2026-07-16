@@ -7,6 +7,8 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import TpkRequiredState from '../../components/layout/TpkRequiredState'
 import Toast from '../../components/ui/Toast'
 import { TableSkeleton } from '../../components/ui/LoadingState'
+import { useIsMobile } from '../../lib/hooks/useIsMobile'
+import DataCard from '../../components/ui/responsive/DataCard'
 import { Plus, Pencil, Trash2, Upload, X } from 'lucide-react'
 
 const emptyForm = { label: '', end_user: '', alamat_lengkap: '', kota: '' }
@@ -14,6 +16,7 @@ const PAGE_SIZE  = 20
 
 export default function DatabaseAlamatBongkar() {
   const { profile, activeTpkId } = useAuth()
+  const isMobile = useIsMobile()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -207,7 +210,7 @@ export default function DatabaseAlamatBongkar() {
   if (!tpkId) return <TpkRequiredState />
 
   return (
-    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+    <div className="ds-page" style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
       <style>{`
         .dab-row:hover td { background: rgba(255,255,255,0.02) !important; }
         .dab-inp:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
@@ -249,12 +252,12 @@ export default function DatabaseAlamatBongkar() {
 
       {/* Toolbar — search + info */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', flex: isMobile ? '1 1 100%' : '0 0 auto' }}>
           <input
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             placeholder="cari label / kota / alamat..."
-            style={{ ...INP, width: 260, paddingRight: searchTerm ? 28 : 10 }}
+            style={{ ...INP, width: isMobile ? '100%' : 260, paddingRight: searchTerm ? 28 : 10 }}
             className="dab-inp"
           />
           {searchTerm && (
@@ -274,7 +277,7 @@ export default function DatabaseAlamatBongkar() {
 
       {/* Form — modal popup */}
       {showForm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 12 : 24 }}
           onMouseDown={e => { if (e.target === e.currentTarget) setShowForm(false) }}
         >
           <div style={{ background: '#111', border: '1px solid rgba(0,255,136,0.18)', borderRadius: 4, width: '100%', maxWidth: 480, padding: 24 }}
@@ -289,7 +292,7 @@ export default function DatabaseAlamatBongkar() {
                 onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
               ><X size={15}/></button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 12 }}>
               <div>
                 <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Label / Nama Singkat *</label>
                 <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
@@ -333,7 +336,7 @@ export default function DatabaseAlamatBongkar() {
         const pageRows   = importPreview.rows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
         const hasFailed  = importPreview.failed && importPreview.failed.length > 0
         return (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 10 : 24 }}>
             <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, width: '100%', maxWidth: 820, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
               {/* Modal header */}
@@ -363,7 +366,8 @@ export default function DatabaseAlamatBongkar() {
               <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 8px' }}>
 
                 {/* Data table */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, fontFamily: 'monospace' }}>
+                <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', minWidth: 560, borderCollapse: 'collapse', fontSize: 11, fontFamily: 'monospace' }}>
                   <thead style={{ position: 'sticky', top: 0, background: '#111', zIndex: 1 }}>
                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                       <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 600, width: 40 }}>#</th>
@@ -384,6 +388,7 @@ export default function DatabaseAlamatBongkar() {
                     ))}
                   </tbody>
                 </table>
+                </div>
 
                 {/* Failed rows */}
                 {hasFailed && (
@@ -448,6 +453,36 @@ export default function DatabaseAlamatBongkar() {
           <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', fontSize: 11, fontStyle: 'italic' }}>Belum ada data alamat bongkar.</div>
         ) : filteredData.length === 0 ? (
           <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', fontSize: 11, fontStyle: 'italic' }}>Tidak ada hasil untuk "{searchTerm}".</div>
+        ) : isMobile ? (
+          <div className="ds-card-list" style={{ padding: 10 }}>
+            {pageData.map(row => (
+              <DataCard
+                key={row.id}
+                title={row.label}
+                right={row.kota || null}
+                fields={[
+                  { label: 'End User', value: row.end_user || '—' },
+                  { label: 'Kota', value: row.kota || '—' },
+                  { label: 'Alamat Lengkap', value: row.alamat_lengkap || '—' },
+                ]}
+                actions={<>
+                  <button onClick={() => openEdit(row)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 11 }}><Pencil size={12}/> edit</button>
+                  <button onClick={() => setDeleteRow(row)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'rgba(255,107,107,0.06)', border: '1px solid rgba(255,107,107,0.2)', borderRadius: 3, color: '#ff6b6b', cursor: 'pointer', fontFamily: 'monospace', fontSize: 11 }}><Trash2 size={12}/> hapus</button>
+                </>}
+              />
+            ))}
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6 }}>
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}
+                  style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 3, color: safePage <= 1 ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.55)', cursor: safePage <= 1 ? 'default' : 'pointer', fontFamily: 'monospace', fontSize: 11 }}>← prev</button>
+                <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>
+                  {safePage} / {totalPages}
+                </span>
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}
+                  style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 3, color: safePage >= totalPages ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.55)', cursor: safePage >= totalPages ? 'default' : 'pointer', fontFamily: 'monospace', fontSize: 11 }}>next →</button>
+              </div>
+            )}
+          </div>
         ) : (
           <>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>

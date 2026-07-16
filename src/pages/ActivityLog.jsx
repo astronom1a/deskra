@@ -155,7 +155,7 @@ export default function ActivityLog() {
   }
 
   return (
-    <div style={{ padding: 24, background: '#0a0a0a', color: '#f0f0f0', minHeight: '100%' }}>
+    <div className="ds-page" style={{ background: '#0a0a0a', color: '#f0f0f0', minHeight: '100%' }}>
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 18, fontWeight: 700, fontFamily: 'monospace', margin: 0, color: '#f0f0f0' }}>
           Log Aktivitas
@@ -199,7 +199,8 @@ export default function ActivityLog() {
             Tidak ada log pada rentang waktu ini.
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', minWidth: 560, borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                 {['Waktu', 'Operator', 'Aksi', 'Modul', 'Entitas', ''].map(h => (
@@ -216,6 +217,7 @@ export default function ActivityLog() {
               {logs.map(log => <LogRow key={log.id} log={log} />)}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

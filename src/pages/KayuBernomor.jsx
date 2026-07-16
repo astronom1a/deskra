@@ -9,6 +9,7 @@ import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import TpkRequiredState from '../components/layout/TpkRequiredState'
 import { TableSkeleton } from '../components/ui/LoadingState'
 import ThemedSelect from '../components/ui/ThemedSelect'
+import { useIsMobile } from '../lib/hooks/useIsMobile'
 
 const PAGE = 500
 const COLS = [
@@ -33,6 +34,7 @@ const PAGE_SIZES = [
 
 export default function KayuBernomor() {
   const { profile, isAdmin, activeTpkId } = useAuth()
+  const isMobile = useIsMobile()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
 
   const [batang, setBatang]     = useState([])
@@ -157,7 +159,7 @@ export default function KayuBernomor() {
   if (!tpkId) return <TpkRequiredState />
 
   return (
-    <div style={{ padding: 24, height: '100vh', boxSizing: 'border-box', overflow: 'hidden', background: '#0a0a0a', color: '#f0f0f0', fontFamily: 'monospace', display: 'flex', flexDirection: 'column' }}>
+    <div className="ds-page" style={{ height: isMobile ? 'calc(100dvh - 48px)' : '100vh', boxSizing: 'border-box', overflow: 'hidden', background: '#0a0a0a', color: '#f0f0f0', fontFamily: 'monospace', display: 'flex', flexDirection: 'column' }}>
       <style>{`
         .kbn-th:hover { background: rgba(255,255,255,0.04) !important; }
         .kbn-input:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }

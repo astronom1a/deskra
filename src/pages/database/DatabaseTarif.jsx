@@ -6,6 +6,8 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import TpkRequiredState from '../../components/layout/TpkRequiredState'
 import Toast from '../../components/ui/Toast'
 import { TableSkeleton } from '../../components/ui/LoadingState'
+import { useIsMobile } from '../../lib/hooks/useIsMobile'
+import DataCard from '../../components/ui/responsive/DataCard'
 import { Plus, Pencil, Trash2, X } from 'lucide-react'
 
 const emptyForm = { kode_rek: '', uraian: '', satuan: '', tarif: '', aktif: true }
@@ -16,6 +18,7 @@ function formatRupiah(val) {
 
 export default function DatabaseTarif() {
   const { profile, activeTpkId } = useAuth()
+  const isMobile = useIsMobile()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -87,7 +90,7 @@ export default function DatabaseTarif() {
   if (!tpkId) return <TpkRequiredState />
 
   return (
-    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+    <div className="ds-page" style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
       <style>{`
         .dt-row:hover td { background: rgba(255,255,255,0.02) !important; }
         .dt-inp:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
@@ -111,7 +114,7 @@ export default function DatabaseTarif() {
       />
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>Database Tarif</h1>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>Kelola tarif pekerjaan — digunakan sebagai referensi di Main Link</p>
@@ -133,7 +136,7 @@ export default function DatabaseTarif() {
               onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
             ><X size={15}/></button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
             {[
               { label: 'Uraian Pekerjaan', key: 'uraian', placeholder: 'PENOMORAN KAPLING' },
               { label: 'Kode Rekening',    key: 'kode_rek', placeholder: '51.69.43' },
@@ -164,7 +167,31 @@ export default function DatabaseTarif() {
         </div>
       )}
 
-      {/* Tabel */}
+      {/* Tabel (desktop) / card list (mobile) */}
+      {!loading && data.length > 0 && isMobile ? (
+        <div className="ds-card-list">
+          {data.map(row => (
+            <DataCard
+              key={row.id}
+              title={row.uraian}
+              badge={
+                <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 3, fontSize: 10, fontWeight: 600, fontFamily: 'monospace', background: row.aktif ? 'rgba(0,255,136,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${row.aktif ? 'rgba(0,255,136,0.25)' : 'rgba(255,255,255,0.08)'}`, color: row.aktif ? '#00ff88' : 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
+                  {row.aktif ? 'aktif' : 'nonaktif'}
+                </span>
+              }
+              fields={[
+                { label: 'Tarif', value: <span style={{ color: '#00ff88', fontWeight: 600 }}>{formatRupiah(row.tarif)}</span> },
+                { label: 'Satuan', value: row.satuan || '—' },
+                { label: 'Kode Rek', value: row.kode_rek || '—' },
+              ]}
+              actions={<>
+                <button onClick={() => openEdit(row)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 11 }}><Pencil size={12}/> edit</button>
+                <button onClick={() => setDeleteRow(row)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'rgba(255,107,107,0.06)', border: '1px solid rgba(255,107,107,0.2)', borderRadius: 3, color: '#ff6b6b', cursor: 'pointer', fontFamily: 'monospace', fontSize: 11 }}><Trash2 size={12}/> hapus</button>
+              </>}
+            />
+          ))}
+        </div>
+      ) : (
       <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
         {loading ? (
           <TableSkeleton rows={5} columns={7} />
@@ -210,6 +237,7 @@ export default function DatabaseTarif() {
           </table>
         )}
       </div>
+      )}
     </div>
   )
 }

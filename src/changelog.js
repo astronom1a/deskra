@@ -1,6 +1,14 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.48.0',
+    date: '2026-07-16',
+    items: [
+      { type: 'feat', text: 'semua halaman kini responsif untuk berbagai viewport: Database (Pejabat, Tarif, Tenaga, Alamat Bongkar) dan DK-310 tampil sebagai card list di mobile' },
+      { type: 'feat', text: 'MainLink, Detail Pekerjaan, Tumpuk Kapling, Kayu Bernomor, Activity Log, Settings, dan halaman admin menyesuaikan layar sempit (grid 1 kolom, tabel scroll horizontal, toolbar wrap)' },
+    ]
+  },
+  {
     version: '0.47.1',
     date: '2026-07-16',
     items: [

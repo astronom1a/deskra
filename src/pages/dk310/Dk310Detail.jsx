@@ -4,6 +4,7 @@ import { ArrowLeft, FileBarChart2, ChevronDown, ChevronRight, AlertCircle } from
 import { supabase } from '../../lib/supabase'
 import Toast, { useToast } from '../../components/ui/Toast'
 import { PageLoader } from '../../components/ui/LoadingState'
+import { useIsMobile } from '../../lib/hooks/useIsMobile'
 
 function fmt(n, dec = 0) {
   if (n == null) return '—'
@@ -146,6 +147,7 @@ export default function Dk310Detail() {
   const navigate = useNavigate()
   const location = useLocation()
   const backPath = location.pathname.includes('pengurangan') ? '/dk310/pengurangan' : '/dk310/penambahan'
+  const isMobile = useIsMobile()
   const { toast, showToast } = useToast(3000)
 
   const [period,     setPeriod]     = useState(null)
@@ -201,7 +203,7 @@ export default function Dk310Detail() {
   return (
     <div style={{ minHeight: '100%', background: '#0a0a0a' }}>
       <Toast toast={toast} />
-      <div className="relative z-10 p-6 mx-auto" style={{ width: '100%', maxWidth: 'min(96vw, 1440px)' }}>
+      <div className="relative z-10 ds-page mx-auto" style={{ width: '100%', maxWidth: 'min(96vw, 1440px)' }}>
 
         {/* Header */}
         <div style={{ marginBottom: 20 }}>
@@ -229,7 +231,7 @@ export default function Dk310Detail() {
         {period.jenis === 'pengurangan' ? (() => {
           const bd = buildBreakdown(sbList)
           return (
-            <div style={{ display: 'grid', gridTemplateColumns: `200px repeat(${bd.jenisList.length}, minmax(200px, 1fr))`, gap: 10, marginBottom: 28 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `200px repeat(${bd.jenisList.length}, minmax(200px, 1fr))`, gap: 10, marginBottom: 28 }}>
               <TotalCard btg={bd.totalBtg} m3={bd.totalM3} />
               {bd.jenisList.map(j => (
                 <JenisCard key={j.jenis} jenis={j.jenis} btg={j.btg} m3={j.m3} sortimen={j.sortimen} />

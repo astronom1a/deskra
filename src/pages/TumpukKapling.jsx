@@ -7,6 +7,7 @@ import { requireTpkId } from '../lib/tenantScope'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import TpkRequiredState from '../components/layout/TpkRequiredState'
 import Toast, { useToast } from '../components/ui/Toast'
+import { useIsMobile } from '../lib/hooks/useIsMobile'
 
 const JENIS_LIST = [
   { key: 'JATI', label: 'Tumpuk Kapling JATI' },
@@ -38,6 +39,7 @@ function formatNum(n) {
 
 export default function TumpukKapling() {
   const { profile, activeTpkId } = useAuth()
+  const isMobile = useIsMobile()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const [periodes, setPeriodes] = useState([])
   const [selectedPeriode, setSelectedPeriode] = useState(null)
@@ -216,7 +218,7 @@ export default function TumpukKapling() {
   if (!tpkId) return <TpkRequiredState />
 
   return (
-    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+    <div className="ds-page" style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
       <style>{`
         .tk-input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #f0f0f0; border-radius: 3px; outline: none; font-family: monospace; font-size: 12px; -moz-appearance: textfield; }
         .tk-input:focus { border-color: rgba(0,255,136,0.5); box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
@@ -289,7 +291,7 @@ export default function TumpukKapling() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
             {JENIS_LIST.map(j => (
               <div key={j.key} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.015)' }}>
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.015)', flexWrap: 'wrap', gap: 6 }}>
                   <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: '#f0f0f0' }}>{j.label}</p>
                   <div style={{ display: 'flex', gap: 16, fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
                     <span>Total: <strong style={{ color: '#f0f0f0' }}>{formatNum(totalPerJenis(j.key))} M³</strong></span>
@@ -341,7 +343,7 @@ export default function TumpukKapling() {
           </div>
 
           {/* Summary turunan */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
             {[
               { label: 'Penomoran Kapling', data: summary.penomoran, note: 'Semua jenis',   accent: '#60a5fa' },
               { label: 'Sabuk Kapling',     data: summary.sabuk,     note: '= Penomoran',   accent: '#34d399' },

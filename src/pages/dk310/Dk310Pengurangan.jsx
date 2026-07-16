@@ -9,6 +9,8 @@ import { parseDk310m } from './parseDk310m'
 import Toast, { useToast } from '../../components/ui/Toast'
 import TpkRequiredState from '../../components/layout/TpkRequiredState'
 import { TableSkeleton } from '../../components/ui/LoadingState'
+import { useIsMobile } from '../../lib/hooks/useIsMobile'
+import DataCard from '../../components/ui/responsive/DataCard'
 
 function fmt(n, dec = 0) {
   if (n == null) return '—'
@@ -105,6 +107,7 @@ export default function Dk310Pengurangan() {
   const { profile, activeTpkId } = useAuth()
   const tpkId     = getEffectiveTpkId({ activeTpkId, profile })
   const fileRef   = useRef(null)
+  const isMobile  = useIsMobile()
   const { toast, showToast } = useToast(3000)
 
   const [periods,    setPeriods]    = useState([])
@@ -248,10 +251,10 @@ export default function Dk310Pengurangan() {
   return (
     <div style={{ minHeight: '100%', background: '#0a0a0a' }}>
       <Toast toast={toast} />
-      <div className="relative z-10 p-6 mx-auto" style={{ width: '100%', maxWidth: 'min(96vw, 1440px)' }}>
+      <div className="relative z-10 ds-page mx-auto" style={{ width: '100%', maxWidth: 'min(96vw, 1440px)' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <FileBarChart2 size={20} style={{ color: '#00ff88' }} />
             <h1 style={{ fontSize: 20, fontWeight: 700, color: '#f0f0f0', letterSpacing: '-0.02em' }}>
@@ -312,7 +315,7 @@ export default function Dk310Pengurangan() {
             <p style={{ fontSize: 10, color: '#00ff88', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
               Ringkasan
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: `200px repeat(${breakdown.jenisList.length}, minmax(200px, 1fr))`, gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `200px repeat(${breakdown.jenisList.length}, minmax(200px, 1fr))`, gap: 10 }}>
               <TotalCard btg={breakdown.totalBtg} m3={breakdown.totalM3} />
               {breakdown.jenisList.map(j => (
                 <JenisCard key={j.jenis} jenis={j.jenis} btg={j.btg} m3={j.m3} sortimen={j.sortimen} />
@@ -332,6 +335,42 @@ export default function Dk310Pengurangan() {
         ) : periods.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.2)', fontSize: 13, padding: '24px 0' }}>
             <AlertCircle size={14} /> Belum ada data. Import file Excel DK310M untuk memulai.
+          </div>
+        ) : isMobile ? (
+          <div className="ds-card-list">
+            {periods.map(p => {
+              const isConfirming = deletingId === p.id
+              return (
+                <DataCard
+                  key={p.id}
+                  title={p.periode}
+                  badge={parseMasaBulan(p.masa_pembayaran) ? (
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace', flexShrink: 0 }}>
+                      {parseMasaBulan(p.masa_pembayaran)}
+                    </span>
+                  ) : null}
+                  onClick={() => !isConfirming && navigate(`/dk310/pengurangan/${p.id}`)}
+                  fields={[{
+                    label: 'Jumlah Pengurangan',
+                    value: (
+                      <>
+                        <span style={{ color: '#f0f0f0' }}>{fmt(p.jumlah_pengurangan_btg)} btg</span>
+                        <span style={{ color: '#379165' }}> · {fmt(p.jumlah_pengurangan_m3, 3)} m³</span>
+                      </>
+                    ),
+                  }]}
+                  actions={isConfirming ? (
+                    <>
+                      <span style={{ fontSize: 11, color: 'rgba(255,100,100,0.8)', fontFamily: 'monospace', alignSelf: 'center' }}>Hapus?</span>
+                      <button onClick={() => handleDelete(p.id)} style={{ padding: '6px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,80,80,0.4)', background: 'rgba(255,60,60,0.15)', color: '#ff6b6b', cursor: 'pointer', fontFamily: 'monospace' }}>Ya</button>
+                      <button onClick={() => setDeletingId(null)} style={{ padding: '6px 14px', fontSize: 11, borderRadius: 3, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontFamily: 'monospace' }}>Batal</button>
+                    </>
+                  ) : (
+                    <button onClick={() => setDeletingId(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'rgba(255,107,107,0.06)', border: '1px solid rgba(255,107,107,0.2)', borderRadius: 3, color: '#ff6b6b', cursor: 'pointer', fontFamily: 'monospace', fontSize: 11 }}><Trash2 size={12}/> hapus</button>
+                  )}
+                />
+              )
+            })}
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>

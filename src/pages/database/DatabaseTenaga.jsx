@@ -7,6 +7,8 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import TpkRequiredState from '../../components/layout/TpkRequiredState'
 import Toast from '../../components/ui/Toast'
 import { TableSkeleton } from '../../components/ui/LoadingState'
+import { useIsMobile } from '../../lib/hooks/useIsMobile'
+import DataCard from '../../components/ui/responsive/DataCard'
 import { Plus, Pencil, Trash2, X, CheckCircle2 } from 'lucide-react'
 
 const POSISI_OPTIONS = [
@@ -38,6 +40,7 @@ function posisiLabel(v) {
 
 export default function DatabaseTenaga() {
   const { profile, activeTpkId } = useAuth()
+  const isMobile = useIsMobile()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -171,7 +174,7 @@ export default function DatabaseTenaga() {
   if (!tpkId) return <TpkRequiredState />
 
   return (
-    <div style={{ padding: 24, minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
+    <div className="ds-page" style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
       <style>{`
         .dtk-row:hover td { background: rgba(255,255,255,0.02) !important; }
         .dtk-inp:focus { border-color: rgba(0,255,136,0.5) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.07); }
@@ -193,7 +196,7 @@ export default function DatabaseTenaga() {
       />
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>Database Tenaga Kerja</h1>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>Kelola data tenaga bantu dan tenaga kapling</p>
@@ -215,7 +218,7 @@ export default function DatabaseTenaga() {
               onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
             ><X size={15}/></button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
             <div>
               <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>Nama</label>
               <input value={form.nama} onChange={e => setForm(f => ({ ...f, nama: e.target.value }))}
@@ -335,7 +338,45 @@ export default function DatabaseTenaga() {
         </div>
       )}
 
-      {/* Tabel */}
+      {/* Tabel (desktop) / card list (mobile) */}
+      {!loading && data.length > 0 && isMobile ? (
+        <div className="ds-card-list">
+          {data.map(row => (
+            <DataCard
+              key={row.id}
+              title={row.nama}
+              badge={
+                <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 3, fontSize: 10, fontWeight: 600, fontFamily: 'monospace', background: row.aktif ? 'rgba(0,255,136,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${row.aktif ? 'rgba(0,255,136,0.25)' : 'rgba(255,255,255,0.08)'}`, color: row.aktif ? '#00ff88' : 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
+                  {row.aktif ? 'aktif' : 'nonaktif'}
+                </span>
+              }
+              fields={[
+                { label: 'NIK', value: row.nik || '—' },
+                {
+                  label: 'Posisi',
+                  value: (
+                    <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: 4 }}>
+                      {parsePosisi(row.posisi).length === 0 ? '—' : parsePosisi(row.posisi).map(p => {
+                        const c = POSISI_COLORS[p] || { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.5)' }
+                        return (
+                          <span key={p} style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 3, fontSize: 10, fontWeight: 600, background: c.bg, border: `1px solid ${c.border}`, color: c.color }}>
+                            {POSISI_OPTIONS.find(x => x.value === p)?.label || p}
+                          </span>
+                        )
+                      })}
+                    </span>
+                  ),
+                },
+                { label: 'Alamat', value: row.alamat || '—' },
+              ]}
+              actions={<>
+                <button onClick={() => openEdit(row)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: 'monospace', fontSize: 11 }}><Pencil size={12}/> edit</button>
+                <button onClick={() => setDeleteRow(row)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'rgba(255,107,107,0.06)', border: '1px solid rgba(255,107,107,0.2)', borderRadius: 3, color: '#ff6b6b', cursor: 'pointer', fontFamily: 'monospace', fontSize: 11 }}><Trash2 size={12}/> hapus</button>
+              </>}
+            />
+          ))}
+        </div>
+      ) : (
       <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
         {loading ? (
           <TableSkeleton rows={5} columns={7} />
@@ -392,6 +433,7 @@ export default function DatabaseTenaga() {
           </table>
         )}
       </div>
+      )}
     </div>
   )
 }

@@ -122,7 +122,7 @@ export default function AdminDashboard() {
   ]
 
   return (
-    <div style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0', padding: 24 }}>
+    <div className="ds-page" style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
       <div className="mx-auto" style={{ width: '100%', maxWidth: 'min(96vw, 1180px)' }}>
         <div className="mb-8">
           <p className="text-xs font-mono tracking-widest uppercase mb-2" style={{ color: '#00ff88' }}>— superadmin</p>
@@ -171,7 +171,8 @@ export default function AdminDashboard() {
             ) : tpkList.length === 0 ? (
               <div className="p-8 text-center text-sm font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>Belum ada TPK terdaftar.</div>
             ) : (
-              <table className="w-full text-sm">
+              <div style={{ overflowX: 'auto' }}>
+              <table className="w-full text-sm" style={{ minWidth: 640 }}>
                 <thead style={{ background: 'rgba(255,255,255,0.015)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   <tr>
                     {['Lokasi TPK','Kode','Operator','Periode','Total UK','Status'].map((h, i) => (
@@ -211,6 +212,7 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </section>
