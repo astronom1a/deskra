@@ -157,7 +157,7 @@ export default function DatabasePejabat() {
             ].map(({ label, key, placeholder }) => (
               <div key={key}>
                 <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,255,136,0.7)', display: 'block', marginBottom: 4 }}>{label}</label>
-                <input value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                <input value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value.toUpperCase() }))}
                   style={INP} className="dp-inp" placeholder={placeholder}/>
               </div>
             ))}
