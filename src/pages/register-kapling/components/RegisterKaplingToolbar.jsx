@@ -66,7 +66,7 @@ export default function RegisterKaplingToolbar({
           </div>
         )}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <div ref={colDropdownRef} style={{ position: 'relative' }}>
             <button onClick={onToggleColDropdown}

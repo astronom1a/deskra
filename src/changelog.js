@@ -1,6 +1,15 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.47.0',
+    date: '2026-07-16',
+    items: [
+      { type: 'feat', text: 'Register Kapling di mobile: tabel tampil default dengan scroll horizontal, toggle tabel/kartu untuk beralih ke tampilan card list' },
+      { type: 'feat', text: 'empat tombol import (DP Kapling, DKHP, BAP, Invois) digabung jadi satu tombol import dengan menu pilihan' },
+      { type: 'style', text: 'toolbar Register Kapling bisa wrap di layar sempit agar tidak overflow' },
+    ]
+  },
+  {
     version: '0.46.1',
     date: '2026-07-16',
     items: [

@@ -1,4 +1,5 @@
-import { ClipboardList, Download, FileBarChart2, FileText, Plus, Settings, Tag, Upload } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ChevronDown, ClipboardList, Download, FileBarChart2, FileSpreadsheet, FileText, Plus, Settings, Tag, Upload } from 'lucide-react'
 import { INVOIS_PREFIX_MAP } from '../utils/registerKaplingConstants'
 
 export default function RegisterKaplingHeader({
@@ -22,6 +23,25 @@ export default function RegisterKaplingHeader({
   setSelectedYear,
   setShowSettings,
 }) {
+  const [showImportMenu, setShowImportMenu] = useState(false)
+  const importMenuRef = useRef(null)
+
+  useEffect(() => {
+    if (!showImportMenu) return
+    function onClickOutside(e) {
+      if (importMenuRef.current && !importMenuRef.current.contains(e.target)) setShowImportMenu(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [showImportMenu])
+
+  const importOptions = [
+    { label: 'DP Kapling',  desc: 'file excel dp kapling (.xlsx)',    Icon: FileSpreadsheet, color: '#00ff88',              onPick: () => fileRef.current?.click() },
+    { label: 'DKHP',        desc: 'file excel dkhp (.xlsx, multi)',   Icon: FileBarChart2,   color: 'rgba(0,255,136,0.75)', onPick: () => dkhpImportRef.current?.click() },
+    { label: 'BAP',         desc: 'file pdf bap (multi)',             Icon: ClipboardList,   color: '#a78bfa',              onPick: () => bapRef.current?.click() },
+    { label: 'Invois',      desc: 'file pdf invois (multi)',          Icon: FileText,        color: 'rgba(0,180,255,0.9)',  onPick: () => invoisRef.current?.click() },
+  ]
+
   const needFix = new Set(
     rows
       .filter(r => r.no_invois && !INVOIS_PREFIX_MAP[String(r.no_invois).trim().slice(0, 3).toUpperCase()])
@@ -80,13 +100,6 @@ export default function RegisterKaplingHeader({
       {/* Action buttons */}
       <div className="rk-header-actions">
 
-        {/* Import DKHP */}
-        <button onClick={() => dkhpImportRef.current?.click()} title="Import DKHP dari Excel"
-          style={{ ...iconBtn, color: 'rgba(255,255,255,0.5)' }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.07)'; e.currentTarget.style.color = '#00ff88'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.2)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
-        ><FileBarChart2 size={14} /></button>
-
         {/* Settings */}
         <button onClick={() => { setDraftMap({ ...colMap }); setShowSettings(true) }} title="Pengaturan header kolom"
           style={{ ...iconBtn, gap: 6, padding: '7px 10px', fontSize: 12, color: 'rgba(255,255,255,0.5)' }}
@@ -100,20 +113,6 @@ export default function RegisterKaplingHeader({
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#f0f0f0' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
         ><Plus size={14} /></button>
-
-        {/* BAP PDF */}
-        <button onClick={() => bapRef.current?.click()} title="Import BAP"
-          style={{ ...iconBtn, color: 'rgba(139,92,246,0.65)' }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.12)'; e.currentTarget.style.color = '#a78bfa'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.3)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(139,92,246,0.65)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
-        ><ClipboardList size={14} /></button>
-
-        {/* Invoice PDF */}
-        <button onClick={() => invoisRef.current?.click()} title="Input invois"
-          style={{ ...iconBtn, color: 'rgba(255,255,255,0.65)' }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#f0f0f0' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
-        ><FileText size={14} /></button>
 
         {/* Fix prefix — hanya tampil jika ada invois yang perlu diperbaiki */}
         {needFix > 0 && (
@@ -141,12 +140,35 @@ export default function RegisterKaplingHeader({
           onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
         ><Download size={14} /></button>
 
-        {/* Import Excel */}
-        <button onClick={() => fileRef.current?.click()}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', fontSize: 12, background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 700 }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-        ><Upload size={14} /> import excel</button>
+        {/* Import — satu tombol untuk semua jenis import */}
+        <div ref={importMenuRef} style={{ position: 'relative' }}>
+          <button onClick={() => setShowImportMenu(v => !v)}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', fontSize: 12, background: '#00ff88', color: '#0a0a0a', borderRadius: 3, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 700 }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          >
+            <Upload size={14} /> import
+            <ChevronDown size={12} style={{ transition: 'transform 0.15s', transform: showImportMenu ? 'rotate(180deg)' : 'none' }} />
+          </button>
+          {showImportMenu && (
+            <div style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 200, minWidth: 220, background: '#111', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.7)' }}>
+              {importOptions.map(({ label, desc, Icon, color, onPick }) => (
+                <button key={label}
+                  onClick={() => { setShowImportMenu(false); onPick() }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 12px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <Icon size={14} style={{ color, flexShrink: 0 }} />
+                  <span>
+                    <span style={{ display: 'block', fontSize: 12, fontFamily: 'monospace', fontWeight: 600, color: '#f0f0f0' }}>{label}</span>
+                    <span style={{ display: 'block', fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>{desc}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Hidden file inputs */}

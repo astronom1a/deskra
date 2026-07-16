@@ -1,5 +1,7 @@
-import { AlertTriangle, ChevronDown, ChevronUp, ChevronsUpDown, FileBarChart2, FileSpreadsheet, Pencil, Receipt, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { AlertTriangle, ChevronDown, ChevronUp, ChevronsUpDown, FileBarChart2, FileSpreadsheet, LayoutGrid, Pencil, Receipt, Table2, Trash2 } from 'lucide-react'
 import { TableSkeleton } from '../../../components/ui/LoadingState'
+import { useIsMobile } from '../../../lib/hooks/useIsMobile'
 import { displayDate, getMutuLabel, getPembeliName } from '../utils/registerKaplingUtils'
 
 const INVOIS_PREFIX_MAP = {
@@ -78,6 +80,71 @@ function CellValue({ column, row }) {
   return row[column.key] ?? <EmptyValue />
 }
 
+// Kartu pengganti baris tabel di mobile — checkbox seleksi + badge + aksi tetap tersedia.
+function MobileRowCard({ row, selected, onToggleSelect, onOpenContextMenu, onOpenDkhpModal, onOpenInvoisModal, onEditRow, onDeleteRow }) {
+  const fields = [
+    { label: 'Tgl Kapling', value: displayDate(row.tgl_kapling) },
+    { label: 'Sortimen', value: row.sortimen },
+    { label: 'Panjang', value: row.panjang },
+    { label: 'Dia/Tebal', value: row.diameter_tebal },
+    { label: 'Mutu', value: getMutuLabel(row) },
+    { label: 'Jumlah', value: row.batang != null ? Number(row.batang).toLocaleString('id') : null },
+    { label: 'Pembeli', value: getPembeliName(row.pembeli) },
+    { label: 'SKSHHK', value: row.skshhk },
+  ]
+  return (
+    <div
+      className="ds-data-card"
+      onContextMenu={e => onOpenContextMenu(e, row)}
+      style={selected ? { background: 'rgba(0,255,136,0.05)', borderColor: 'rgba(0,255,136,0.25)' } : undefined}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input type="checkbox" checked={selected} onChange={() => onToggleSelect(row.id)} className="rk-cb" style={{ cursor: 'pointer', flexShrink: 0 }}/>
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#f0f0f0', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {row.no_kapling}
+        </span>
+        <span style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+          <JenisKayuBadge val={row.jenis}/>
+          <SertBadge val={row.sertifikasi}/>
+        </span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#00ff88', flexShrink: 0 }}>
+          {Number(row.volume).toFixed(3)} m³
+        </span>
+      </div>
+      <div className="ds-card-grid">
+        {fields.map((f, i) => (
+          <div key={i}>
+            <p className="ds-card-label">{f.label}</p>
+            <p className="ds-card-value">{f.value ?? '—'}</p>
+          </div>
+        ))}
+        <div>
+          <p className="ds-card-label">Invois</p>
+          <p className="ds-card-value"><InvoisBadge val={row.no_invois}/></p>
+        </div>
+        <div>
+          <p className="ds-card-label">DKHP</p>
+          <p className="ds-card-value"><DkhpCell val={row.dkhp} conflict={row.dkhp_conflict}/></p>
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4, marginTop: 10, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <button onClick={() => onOpenDkhpModal([row])} title="Input DKHP"
+          style={{ padding: 5, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: row.dkhp ? '#00ff88' : 'rgba(255,255,255,0.3)' }}
+        ><FileBarChart2 size={14}/></button>
+        <button onClick={() => onOpenInvoisModal(row)} title="Input Invois"
+          style={{ padding: 5, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: row.no_invois ? 'rgba(0,180,255,0.9)' : 'rgba(255,255,255,0.3)' }}
+        ><Receipt size={14}/></button>
+        <button onClick={() => onEditRow({ ...row })} title="Edit"
+          style={{ padding: 5, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}
+        ><Pencil size={14}/></button>
+        <button onClick={() => onDeleteRow(row)} title="Hapus"
+          style={{ padding: 5, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}
+        ><Trash2 size={14}/></button>
+      </div>
+    </div>
+  )
+}
+
 export default function RegisterKaplingTable({
   allSelected,
   columns,
@@ -101,6 +168,9 @@ export default function RegisterKaplingTable({
   sorts,
   someSelected: _someSelected,
 }) {
+  const isMobile = useIsMobile()
+  // Mobile: default tabel (scroll horizontal), bisa dialihkan ke tampilan kartu
+  const [mobileView, setMobileView] = useState('table')
   return (
     <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
       {isLoading ? (
@@ -110,6 +180,52 @@ export default function RegisterKaplingTable({
           <FileSpreadsheet size={36} style={{ color: 'rgba(255,255,255,0.1)', marginBottom: 12 }}/>
           <p style={{ fontWeight: 600, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace', fontSize: 13 }}>belum ada data</p>
           <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11, marginTop: 4, fontFamily: 'monospace' }}>klik <span style={{ color: '#00ff88' }}>import excel</span> untuk mengimpor file DP Kapling</p>
+        </div>
+      ) : (
+        <>
+          {isMobile && (
+            <div style={{ display: 'flex', gap: 4, padding: '8px 10px 0', flexShrink: 0 }}>
+              {[{ v: 'table', label: 'tabel', Icon: Table2 }, { v: 'cards', label: 'kartu', Icon: LayoutGrid }].map(({ v, label, Icon }) => (
+                <button
+                  key={v}
+                  onClick={() => setMobileView(v)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 11, borderRadius: 3, fontFamily: 'monospace', fontWeight: 600, cursor: 'pointer',
+                    ...(mobileView === v
+                      ? { background: 'rgba(0,255,136,0.08)', border: '1px solid rgba(0,255,136,0.2)', color: '#00ff88' }
+                      : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' })
+                  }}
+                >
+                  <Icon size={11}/> {label}
+                </button>
+              ))}
+            </div>
+          )}
+          {isMobile && mobileView === 'cards' ? (
+        <div style={{ flex: '1 1 auto', minHeight: 0, overflow: 'auto' }}>
+          <div className="ds-card-list" style={{ padding: 10 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 4px', fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.35)', cursor: 'pointer', userSelect: 'none' }}>
+              <input ref={selectAllRef} type="checkbox" checked={allSelected} onChange={onToggleSelectAll} className="rk-cb" style={{ cursor: 'pointer' }}/>
+              pilih semua di halaman ini
+            </label>
+            {displayedRows.map(row => (
+              <MobileRowCard
+                key={row.id}
+                row={row}
+                selected={selectedIds.has(row.id)}
+                onToggleSelect={onToggleSelectRow}
+                onOpenContextMenu={onOpenContextMenu}
+                onOpenDkhpModal={onOpenDkhpModal}
+                onOpenInvoisModal={onOpenInvoisModal}
+                onEditRow={onEditRow}
+                onDeleteRow={onDeleteRow}
+              />
+            ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 3, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.65)' }}>
+              <span>TOTAL</span>
+              <span>{filteredBatang.toLocaleString('id')} btg · {filteredVolume.toFixed(3)} m³</span>
+            </div>
+          </div>
         </div>
       ) : (
         <div style={{ flex: '1 1 auto', minHeight: 0, overflow: 'auto', scrollbarGutter: 'stable both-edges' }}>
@@ -195,6 +311,8 @@ export default function RegisterKaplingTable({
             </tfoot>
           </table>
         </div>
+          )}
+        </>
       )}
     </div>
   )
