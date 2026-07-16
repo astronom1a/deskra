@@ -1,6 +1,13 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.46.1',
+    date: '2026-07-16',
+    items: [
+      { type: 'chore', text: 'dev server Vite bind ke jaringan (host: true) agar bisa diakses dari HP untuk uji tampilan mobile' },
+    ]
+  },
+  {
     version: '0.46.0',
     date: '2026-07-16',
     items: [

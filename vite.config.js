@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    host: true, // bisa diakses dari HP/perangkat lain di jaringan yang sama
+  },
   optimizeDeps: {
     exclude: ['pdfjs-dist'],
   },
