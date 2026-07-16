@@ -312,9 +312,19 @@ export default function Layout() {
                     <span className="text-[10px] font-mono" style={{ color: '#fbbf24' }}>superadmin</span>
                   </div>
                 ) : (
-                  <p className="text-[10px] font-mono mt-1 truncate" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                    {namaTpk} · periode <span style={{ color: 'rgba(0,255,136,0.45)', fontWeight: 600 }}>{getPeriodeAktif()}</span>
-                  </p>
+                  <>
+                    <p className="text-[10px] font-mono mt-1 truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                      {namaTpk}
+                    </p>
+                    <span className="text-[10px] font-mono inline-flex items-center gap-1.5 mt-1 px-1.5 py-0.5" style={{
+                      background: 'rgba(0,255,136,0.07)',
+                      border: '1px solid rgba(0,255,136,0.18)',
+                      borderRadius: 2,
+                      color: 'rgba(255,255,255,0.4)',
+                    }}>
+                      periode <span style={{ color: '#00ff88', fontWeight: 700 }}>{getPeriodeAktif()}</span>
+                    </span>
+                  </>
                 )}
               </div>
               <button

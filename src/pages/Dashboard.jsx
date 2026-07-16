@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { computeTotalUK } from '../lib/rekapPekerjaan'
 import {
@@ -48,7 +48,6 @@ export default function Dashboard() {
   const [lastDkhpPerni,setLastDkhpPerni] = useState(null)
   const [lastKapling,  setLastKapling]  = useState(null)
   const [kaplingRows,  setKaplingRows]  = useState([])
-  const [expandedCard, setExpandedCard] = useState(null)
   const [hideAmount,  setHideAmount]  = useState(() => {
     try { return localStorage.getItem('deskra_dashboard_hide_amount') === '1' } catch { return false }
   })
@@ -173,15 +172,17 @@ export default function Dashboard() {
   const unsoldSortBatang  = Object.fromEntries(SORTIMENS.map(m => [m, unsoldRows.filter(r => (r.sortimen || '').toUpperCase() === m).reduce((s, r) => s + (r.batang || 0), 0)]))
   const unsoldSortVolume  = Object.fromEntries(SORTIMENS.map(m => [m, unsoldRows.filter(r => (r.sortimen || '').toUpperCase() === m).reduce((s, r) => s + Number(r.volume || 0), 0)]))
 
-  const soldSortVolume = Object.fromEntries(SORTIMENS.map(m => [m, sortVolume[m] - unsoldSortVolume[m]]))
-  const soldSortBatang = Object.fromEntries(SORTIMENS.map(m => [m, sortBatang[m] - unsoldSortBatang[m]]))
-
   const totalAll = periodes.reduce((sum, p) => sum + (p.total_uk || 0), 0)
 
   const h    = now.getHours() % 12 || 12
   const mm   = String(now.getMinutes()).padStart(2, '0')
   const ss   = String(now.getSeconds()).padStart(2, '0')
   const ampm = now.getHours() >= 12 ? 'PM' : 'AM'
+  const hour = now.getHours()
+  const greeting = hour >= 4 && hour < 10 ? 'selamat pagi'
+    : hour >= 10 && hour < 15 ? 'selamat siang'
+    : hour >= 15 && hour < 18 ? 'selamat sore'
+    : 'selamat malam'
 
   if (!tpkId) return <TpkRequiredState />
 
@@ -217,7 +218,7 @@ export default function Dashboard() {
               — dashboard
             </p>
             <h1 className="text-2xl font-bold" style={{ color: '#f0f0f0', letterSpacing: '-0.02em' }}>
-              {profile?.nama_operator || 'Operator'}
+              {greeting}, {profile?.nama_operator || 'Operator'}
             </h1>
             <p className="text-sm mt-1 font-mono" style={{ color: '#4a4a4a' }}>
               {tpk?.kode_tpk ? `${tpk.kode_tpk} · ${namaTpk}` : namaTpk}
@@ -264,9 +265,20 @@ export default function Dashboard() {
 
         {/* statistik */}
         <section className="mb-10">
-          <p className="text-xs font-mono tracking-widest uppercase mb-4" style={{ color: '#00ff88' }}>
-            — statistik
-          </p>
+          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+            <p className="text-xs font-mono tracking-widest uppercase" style={{ color: '#00ff88' }}>
+              — statistik
+            </p>
+            <Link
+              to="/register-kapling"
+              className="text-xs font-mono transition-colors"
+              style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#00ff88' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}
+            >
+              lihat statistik lengkap →
+            </Link>
+          </div>
           {statsLoading ? (
             <TableSkeleton rows={3} columns={3} />
           ) : (
@@ -308,8 +320,7 @@ export default function Dashboard() {
 
               {/* Total Kapling */}
               <div
-                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 0, transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease', cursor: 'pointer' }}
-                onClick={() => setExpandedCard(expandedCard === 'kapling' ? null : 'kapling')}
+                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 0, transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease' }}
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
               >
@@ -337,33 +348,11 @@ export default function Dashboard() {
                     ))}
                   </div>
                 </div>
-                <div style={{ overflow: 'hidden', maxHeight: expandedCard === 'kapling' ? 200 : 0, transition: 'max-height 0.3s ease', marginTop: expandedCard === 'kapling' ? 12 : 0 }}>
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
-                    <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>proporsi volume per sortimen</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {SORTIMENS.map(m => {
-                        const pct = totalVolume > 0 ? (sortVolume[m] / totalVolume) * 100 : 0
-                        return (
-                          <div key={m}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                              <span style={{ fontSize: 10, fontWeight: 600, fontFamily: 'monospace', color: 'rgba(255,255,255,0.5)' }}>{m}</span>
-                              <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.35)' }}>{sortVolume[m].toFixed(3)} m³ · {pct.toFixed(1)}%</span>
-                            </div>
-                            <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }}>
-                              <div style={{ height: '100%', width: `${pct}%`, background: 'rgba(255,255,255,0.25)', borderRadius: 2, transition: 'width 0.4s ease' }} />
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* Sisa Persediaan */}
               <div
-                style={{ background: 'rgba(255,170,0,0.04)', border: '1px solid rgba(255,170,0,0.15)', borderRadius: 4, padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease', cursor: 'pointer' }}
-                onClick={() => setExpandedCard(expandedCard === 'sisa' ? null : 'sisa')}
+                style={{ background: 'rgba(255,170,0,0.04)', border: '1px solid rgba(255,170,0,0.15)', borderRadius: 4, padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease' }}
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(255,170,0,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,170,0,0.28)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = 'rgba(255,170,0,0.15)' }}
               >
@@ -380,36 +369,6 @@ export default function Dashboard() {
                       <p style={{ fontSize: 10, color: 'rgba(255,170,0,0.45)', fontFamily: 'monospace', marginTop: 2 }}>{unsoldSortBatang[m].toLocaleString('id')} btg</p>
                     </div>
                   ))}
-                </div>
-                <div style={{ overflow: 'hidden', maxHeight: expandedCard === 'sisa' ? 220 : 0, transition: 'max-height 0.3s ease', marginTop: expandedCard === 'sisa' ? 12 : 0 }}>
-                  <div style={{ borderTop: '1px solid rgba(255,170,0,0.12)', paddingTop: 12 }}>
-                    <p style={{ fontSize: 9, color: 'rgba(255,170,0,0.3)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>terjual vs sisa per sortimen</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      {SORTIMENS.map(m => {
-                        const total = sortVolume[m]
-                        const sold = soldSortVolume[m]
-                        const sisa = unsoldSortVolume[m]
-                        const soldPct = total > 0 ? (sold / total) * 100 : 0
-                        return (
-                          <div key={m}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                              <span style={{ fontSize: 10, fontWeight: 600, fontFamily: 'monospace', color: 'rgba(255,170,0,0.7)' }}>{m}</span>
-                              <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.3)' }}>
-                                <span style={{ color: 'rgba(0,255,136,0.6)' }}>{sold.toFixed(3)}</span> / <span style={{ color: 'rgba(255,170,0,0.6)' }}>{sisa.toFixed(3)}</span> m³
-                              </span>
-                            </div>
-                            <div style={{ height: 5, background: 'rgba(255,170,0,0.12)', borderRadius: 2, overflow: 'hidden' }}>
-                              <div style={{ height: '100%', width: `${soldPct}%`, background: 'rgba(0,255,136,0.45)', borderRadius: 2, transition: 'width 0.4s ease' }} />
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
-                              <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgba(0,255,136,0.45)' }}>terjual {soldPct.toFixed(1)}%</span>
-                              <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'rgba(255,170,0,0.45)' }}>sisa {(100 - soldPct).toFixed(1)}%</span>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -435,12 +394,23 @@ export default function Dashboard() {
                 {hideAmount ? <EyeOff size={13}/> : <Eye size={13}/>}
               </button>
             </div>
-            {periodes.length > 0 && (
-              <span className="text-xs font-mono flex items-center gap-1.5" style={{ color: '#4a4a4a' }}>
-                <TrendingUp size={11}/>
-                {maskRupiah(totalAll)}
-              </span>
-            )}
+            <div className="flex items-center gap-4">
+              {periodes.length > 0 && (
+                <span className="text-xs font-mono flex items-center gap-1.5" style={{ color: '#4a4a4a' }}>
+                  <TrendingUp size={11}/>
+                  {maskRupiah(totalAll)}
+                </span>
+              )}
+              <Link
+                to="/main-link"
+                className="text-xs font-mono transition-colors"
+                style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#00ff88' }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}
+              >
+                kelola periode →
+              </Link>
+            </div>
           </div>
 
           <div style={{
@@ -448,10 +418,8 @@ export default function Dashboard() {
             border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: 4,
             overflow: 'hidden',
-            maxHeight: expandedCard ? 100 : 2000,
-            transition: 'max-height 0.35s ease',
           }}>
-            <div style={{ paddingTop: expandedCard ? 8 : 0, paddingBottom: expandedCard ? 8 : 0, transition: 'padding 0.35s ease' }}>
+            <div>
             {loading ? (
               <TableSkeleton rows={6} columns={4} />
             ) : error ? (
