@@ -1,6 +1,15 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.51.0',
+    date: '2026-07-16',
+    items: [
+      { type: 'feat', text: 'redesain Dashboard: card statistik ringkas tanpa expand, sapaan waktu, link ke Statistik Kapling dan kelola periode' },
+      { type: 'feat', text: 'badge periode di header sidebar dipisah dari nama TPK agar tidak terpotong dan lebih terbaca' },
+      { type: 'feat', text: 'input Database Pejabat selalu uppercase; data lama ikut di-uppercase via migrasi' },
+    ]
+  },
+  {
     version: '0.50.0',
     date: '2026-07-16',
     items: [
