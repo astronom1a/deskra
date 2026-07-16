@@ -17,6 +17,7 @@ import DatabaseAlamatBongkar from './pages/database/DatabaseAlamatBongkar'
 import TumpukKapling from './pages/TumpukKapling'
 import DetailPekerjaan from './pages/DetailPekerjaan'
 import RegisterKapling from './pages/register-kapling'
+import StatistikKapling from './pages/register-kapling/StatistikKapling'
 import DkhpSkshhk from './pages/DkhpSkshhk'
 import Dk310             from './pages/dk310/Dk310'
 import Dk310Detail       from './pages/dk310/Dk310Detail'
@@ -171,7 +172,8 @@ function AppRoutes() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="register-kapling" element={<RegisterKapling />} />
+        <Route path="register-kapling" element={<StatistikKapling />} />
+        <Route path="register-kapling/tabel" element={<RegisterKapling />} />
         <Route path="dkhp-skshhk" element={<DkhpSkshhk />} />
         <Route path="dk310/penambahan"       element={<Dk310 />} />
         <Route path="dk310/penambahan/:id"  element={<Dk310Detail />} />

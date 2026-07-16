@@ -1,6 +1,13 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.49.0',
+    date: '2026-07-16',
+    items: [
+      { type: 'feat', text: 'Register Kapling dipecah jadi dua sub-menu: Statistik (default, berisi card rincian) dan Tabel Register — tabel kini mendapat tinggi layar penuh' },
+    ]
+  },
+  {
     version: '0.48.0',
     date: '2026-07-16',
     items: [

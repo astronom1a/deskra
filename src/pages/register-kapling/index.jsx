@@ -13,7 +13,6 @@ import RegisterKaplingFixPrefixModal from './modals/RegisterKaplingFixPrefixModa
 import RegisterKaplingHeader from './components/RegisterKaplingHeader.jsx'
 import RegisterKaplingInvoicePreview from './modals/RegisterKaplingInvoicePreview.jsx'
 import RegisterKaplingQuickInvoisModal from './modals/RegisterKaplingQuickInvoisModal.jsx'
-import RegisterKaplingMetricCards from './components/RegisterKaplingMetricCards.jsx'
 import RegisterKaplingSettingsModal from './modals/RegisterKaplingSettingsModal.jsx'
 import RegisterKaplingSortPanel from './components/RegisterKaplingSortPanel.jsx'
 import RegisterKaplingStyles from './components/RegisterKaplingStyles.jsx'
@@ -53,37 +52,6 @@ export default function RegisterKapling() {
         setSelectedYear={page.setSelectedYear}
         setShowSettings={page.setShowSettings}
       />
-
-      {page.rows.length > 0 && (
-        <RegisterKaplingMetricCards
-          accPihak3Batang={page.accPihak3Batang}
-          accPihak3Volume={page.accPihak3Volume}
-          accUnsoldBatang={page.accUnsoldBatang}
-          accUnsoldVolume={page.accUnsoldVolume}
-          blokBreakdown={page.blokBreakdown}
-          expandedCard={page.expandedCard}
-          isYearFiltered={page.isYearFiltered}
-          kaplingInfo={page.kaplingInfo}
-          missingInvoices={page.missingInvoices}
-          penguranganInvoices={page.penguranganInvoices}
-          pihak3Batang={page.pihak3Batang}
-          pihak3Rows={page.pihak3Rows}
-          pihak3SortBatang={page.pihak3SortBatang}
-          pihak3SortVolume={page.pihak3SortVolume}
-          pihak3Volume={page.pihak3Volume}
-          setExpandedCard={page.setExpandedCard}
-          soldSortVolume={page.soldSortVolume}
-          sortBatang={page.sortBatang}
-          sortVolume={page.sortVolume}
-          totalBatang={page.totalBatang}
-          totalMissingCount={page.totalMissingCount}
-          totalVolume={page.totalVolume}
-          unsoldBatang={page.unsoldBatang}
-          unsoldSortBatang={page.unsoldSortBatang}
-          unsoldSortVolume={page.unsoldSortVolume}
-          unsoldVolume={page.unsoldVolume}
-        />
-      )}
 
       {/* ── Modals ─────────────────────────────────────────────────────────── */}
 

@@ -5,6 +5,7 @@ import {
   ChevronDown, ChevronRight, ChevronLeft, ClipboardList, Wallet, ScrollText,
   Settings as SettingsIcon, Building2, ShieldCheck, LogOut,
   ArrowLeft, FileBarChart2, ScanLine, MapPin, History, Database, Menu,
+  BarChart3, Table2,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -18,7 +19,13 @@ import { gsap } from 'gsap'
 
 const operatorNavItems = [
   { label: 'Dashboard',       path: '/dashboard',       icon: LayoutDashboard },
-  { label: 'Register Kapling',path: '/register-kapling',icon: ClipboardList },
+  {
+    label: 'Register Kapling', icon: ClipboardList,
+    children: [
+      { label: 'Statistik',      path: '/register-kapling',       icon: BarChart3, end: true },
+      { label: 'Tabel Register', path: '/register-kapling/tabel', icon: Table2 },
+    ],
+  },
   { label: 'DKHP SKSHHK',    path: '/dkhp-skshhk',     icon: ScrollText },
   { label: 'Kayu Bernomor',  path: '/kayu-bernomor',   icon: ScanLine },
   { label: 'Log Aktivitas',  path: '/activity-log',    icon: History },
@@ -158,7 +165,7 @@ function SidebarItem({ item, collapsed, onExpand }) {
   return (
     <NavLink
       to={item.path}
-      end={item.path === '/admin'}
+      end={item.path === '/admin' || item.end}
       title={collapsed ? item.label : undefined}
       className={({ isActive }) => `sb-link ${isActive ? 'sb-link-active' : ''}`}
       style={collapsed ? { justifyContent: 'center', padding: '7px 0', gap: 0, borderLeftColor: 'transparent' } : {}}
