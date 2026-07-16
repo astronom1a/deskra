@@ -1,6 +1,16 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.50.0',
+    date: '2026-07-16',
+    items: [
+      { type: 'feat', text: 'redesain halaman login: layout split dua panel, wordmark deskra_ dengan kursor berkedip, input underline, animasi loading titik + sweep' },
+      { type: 'feat', text: 'redesain sidebar: wordmark menggantikan logo orbital, versi pindah ke footer, label DK310 diperjelas (Penambahan/Pengurangan)' },
+      { type: 'feat', text: 'card Statistik Kapling langsung menampilkan detail tanpa klik, grid adaptif mengikuti viewport, rincian per sortimen digabung agar mudah dibaca' },
+      { type: 'style', text: 'latar Dashboard jadi dot grid statis — ornamen geometris beranimasi dihapus agar ringan' },
+    ]
+  },
+  {
     version: '0.49.0',
     date: '2026-07-16',
     items: [
