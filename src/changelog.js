@@ -1,6 +1,14 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.54.0',
+    date: '2026-07-17',
+    items: [
+      { type: 'feat', text: 'submenu baru Register Invois: daftar invois + pembeli dengan parse otomatis nomor invois (akun 3-5 digit, tanggal YYMMDD, jam 4-5 digit) dan saran pembeli dari akun yang sama' },
+      { type: 'feat', text: 'sync dua arah invois ↔ register kapling: pembeli entri invois menyebar ke semua kapling se-invois, invois baru di register otomatis terdaftar, dan input no. invois menarik pembeli dari daftar' },
+    ]
+  },
+  {
     version: '0.53.1',
     date: '2026-07-17',
     items: [
