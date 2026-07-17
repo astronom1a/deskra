@@ -2,7 +2,10 @@ import { Fragment, useEffect, useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { ArrowLeft, FileBarChart2, ChevronDown, ChevronRight, AlertCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../lib/AuthProvider'
+import { getEffectiveTpkId } from '../../lib/effectiveTpk'
 import Toast, { useToast } from '../../components/ui/Toast'
+import TpkRequiredState from '../../components/layout/TpkRequiredState'
 import { PageLoader } from '../../components/ui/LoadingState'
 import { useIsMobile } from '../../lib/hooks/useIsMobile'
 
@@ -149,6 +152,8 @@ export default function Dk310Detail() {
   const backPath = location.pathname.includes('pengurangan') ? '/dk310/pengurangan' : '/dk310/penambahan'
   const isMobile = useIsMobile()
   const { toast, showToast } = useToast(3000)
+  const { profile, activeTpkId } = useAuth()
+  const tpkId = getEffectiveTpkId({ activeTpkId, profile })
 
   const [period,     setPeriod]     = useState(null)
   const [sbList,     setSbList]     = useState([])
@@ -156,15 +161,20 @@ export default function Dk310Detail() {
   const [fetchError, setFetchError] = useState(false)
   const [expanded,   setExpanded]   = useState(new Set())
 
-  useEffect(() => { fetchData() }, [id])
+  useEffect(() => { if (tpkId) fetchData() }, [id, tpkId])
 
   async function fetchData() {
     setLoading(true)
     const [{ data: p, error: pe }, { data: sb, error: sbe }] = await Promise.all([
-      supabase.from('tabel_dk310_periods').select('*').eq('id', id).single(),
+      supabase
+        .from('tabel_dk310_periods')
+        .select('id, periode, kph, bkph, masa_pembayaran, tanggal_cetak, jenis, penambahan_btg, penambahan_m3, sisa_lalu_btg, sisa_lalu_m3, jumlah_persediaan_btg, jumlah_persediaan_m3, jumlah_pengurangan_btg, jumlah_pengurangan_m3, sisa_sekarang_btg, sisa_sekarang_m3')
+        .eq('id', id)
+        .eq('tpk_id', tpkId)
+        .single(),
       supabase
         .from('tabel_dk310_surat_bukti')
-        .select('*, tabel_dk310_surat_bukti_mutu(*)')
+        .select('id, urutan, jenis, tanggal, nomor_surat, jumlah_total_btg, jumlah_total_m3, tabel_dk310_surat_bukti_mutu(id, kategori, mutu_code, mutu_label, btg, m3)')
         .eq('period_id', id)
         .order('urutan'),
     ])
@@ -186,6 +196,8 @@ export default function Dk310Detail() {
       return next
     })
   }
+
+  if (!tpkId) return <TpkRequiredState />
 
   if (loading) return (
     <PageLoader label="memuat detail DK310..." />

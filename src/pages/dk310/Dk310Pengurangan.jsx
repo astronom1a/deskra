@@ -201,6 +201,20 @@ export default function Dk310Pengurangan() {
       showToast(err.message, 'error'); return
     }
     setImporting(true)
+    const { data: existing, error: existingErr } = await supabase
+      .from('tabel_dk310_periods')
+      .select('id')
+      .eq('tpk_id', scopedTpkId)
+      .eq('jenis', 'pengurangan')
+      .eq('periode', preview.periodData.periode)
+      .maybeSingle()
+    if (existingErr) { setImporting(false); showToast(existingErr.message, 'error'); return }
+    if (existing) {
+      setImporting(false)
+      showToast(`Periode ${preview.periodData.periode} sudah pernah diimport.`, 'error')
+      return
+    }
+
     const { data: period, error: periodErr } = await supabase
       .from('tabel_dk310_periods')
       .insert({ ...preview.periodData, tpk_id: scopedTpkId, created_by: profile?.id, jenis: 'pengurangan' })

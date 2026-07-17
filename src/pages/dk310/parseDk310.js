@@ -53,7 +53,9 @@ function parseHeader(rows) {
     : null
   const masaMatch = masa_pembayaran.match(/^([IVXLC]+)\s*[-–]\s*\w+\s*(\d{4})/i)
   const periode = masaMatch ? `${masaMatch[1]}-${masaMatch[2]}` : masa_pembayaran
-  const bkphRow = rows.find((r, i) => i > 180 && r?.[0] && /^BKPH/i.test(String(r[0])))
+  const sisaIdx = findRow(rows, 'sisa sekarang')
+  const bkphStart = sisaIdx >= 0 ? sisaIdx : 10
+  const bkphRow = rows.find((r, i) => i > bkphStart && r?.[0] && /^BKPH/i.test(String(r[0])))
   const bkph = bkphRow ? String(bkphRow[0]).trim() : ''
   return { kph, bkph, masa_pembayaran, periode, tanggal_cetak }
 }
@@ -65,7 +67,7 @@ function parseSuratBukti(rows) {
     const btgRow = rows[i]
     if (!btgRow) { i++; continue }
     const col0 = btgRow[0]
-    if (col0 && /^(penambahan|sisa yang lalu|jumlah persediaan|jumlah pengurangan|sisa sekarang)/i.test(String(col0))) break
+    if (col0 && /^(jumlah\s+)?(penambahan|sisa yang lalu|jumlah persediaan|jumlah pengurangan|sisa sekarang)/i.test(String(col0))) break
     if (!col0 || !btgRow[2]) { i++; continue }
     const jenis = String(col0).trim()
     const tanggal = String(btgRow[1] || '').trim()
@@ -101,17 +103,18 @@ function parseSummary(rows) {
   const penguranganIdx  = findRow(rows, 'jumlah pengurangan')
   const sisaIdx         = findRow(rows, 'sisa sekarang')
   const g = (idx) => idx >= 0 ? numOrNull(rows[idx]?.[22]) : null
+  const gNext = (idx) => idx >= 0 ? g(nextNonBlank(rows, idx + 1)) : null
   return {
     penambahan_btg:         g(penIdx),
-    penambahan_m3:          g(nextNonBlank(rows, penIdx + 1)),
+    penambahan_m3:          gNext(penIdx),
     sisa_lalu_btg:          g(sisaLaluIdx),
-    sisa_lalu_m3:           g(nextNonBlank(rows, sisaLaluIdx + 1)),
+    sisa_lalu_m3:           gNext(sisaLaluIdx),
     jumlah_persediaan_btg:  g(persIdx),
-    jumlah_persediaan_m3:   g(nextNonBlank(rows, persIdx + 1)),
+    jumlah_persediaan_m3:   gNext(persIdx),
     jumlah_pengurangan_btg: g(penguranganIdx),
-    jumlah_pengurangan_m3:  g(nextNonBlank(rows, penguranganIdx + 1)),
+    jumlah_pengurangan_m3:  gNext(penguranganIdx),
     sisa_sekarang_btg:      g(sisaIdx),
-    sisa_sekarang_m3:       g(nextNonBlank(rows, sisaIdx + 1)),
+    sisa_sekarang_m3:       gNext(sisaIdx),
   }
 }
 

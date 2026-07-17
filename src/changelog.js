@@ -1,6 +1,16 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.55.1',
+    date: '2026-07-17',
+    items: [
+      { type: 'fix', text: 'kartu ringkasan DK310+ tidak lagi dobel-hitung sisa lalu/persediaan/sisa sekarang saat ada banyak periode — sekarang pakai nilai periode terbaru, bukan dijumlah' },
+      { type: 'fix', text: 'cegah import Excel DK310 (penambahan & pengurangan) dua kali untuk periode yang sama' },
+      { type: 'fix', text: 'detail DK310 kini di-scope per TPK — mencegah akses detail periode milik TPK lain via URL' },
+      { type: 'fix', text: 'perbaiki parser DK310: baris ringkasan tidak lagi ikut terbaca sebagai surat bukti, nilai m³ tidak salah baca saat baris ringkasan tidak ketemu, dan pencarian BKPH tidak lagi bergantung indeks baris tetap' },
+    ]
+  },
+  {
     version: '0.55.0',
     date: '2026-07-17',
     items: [

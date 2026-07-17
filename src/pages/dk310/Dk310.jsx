@@ -53,6 +53,25 @@ function parseMasaBulan(masa) {
   return stripped || null
 }
 
+const ROMAN_MAP = { I: 1, V: 5, X: 10, L: 50, C: 100 }
+function romanToInt(str) {
+  let result = 0
+  for (let i = 0; i < str.length; i++) {
+    const cur = ROMAN_MAP[str[i]] || 0
+    const next = ROMAN_MAP[str[i + 1]] || 0
+    result += cur < next ? -cur : cur
+  }
+  return result
+}
+function periodSortKey(p) {
+  const m = String(p.periode || '').match(/^([IVXLC]+)-(\d{4})/i)
+  if (!m) return 0
+  return Number(m[2]) * 100 + romanToInt(m[1].toUpperCase())
+}
+
+const FLOW_KEYS    = ['penambahan', 'jumlah_pengurangan']
+const BALANCE_KEYS = ['sisa_lalu', 'jumlah_persediaan', 'sisa_sekarang']
+
 const TH = {
   padding: '8px 10px', textAlign: 'left', fontWeight: 600, fontSize: 10,
   color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap',
@@ -115,6 +134,20 @@ export default function Dk310() {
       showToast(err.message, 'error'); return
     }
     setImporting(true)
+    const { data: existing, error: existingErr } = await supabase
+      .from('tabel_dk310_periods')
+      .select('id')
+      .eq('tpk_id', scopedTpkId)
+      .eq('jenis', 'penambahan')
+      .eq('periode', preview.periodData.periode)
+      .maybeSingle()
+    if (existingErr) { setImporting(false); showToast(existingErr.message, 'error'); return }
+    if (existing) {
+      setImporting(false)
+      showToast(`Periode ${preview.periodData.periode} sudah pernah diimport.`, 'error')
+      return
+    }
+
     const { data: period, error: periodErr } = await supabase
       .from('tabel_dk310_periods')
       .insert({ ...preview.periodData, tpk_id: scopedTpkId, created_by: profile?.id, jenis: 'penambahan' })
@@ -168,13 +201,22 @@ export default function Dk310() {
     showToast('Periode berhasil dihapus.')
   }
 
+  // Penambahan & pengurangan adalah nilai arus (flow) — dijumlah antar periode.
+  // Sisa lalu/persediaan/sekarang adalah saldo (stock) — ambil dari periode terbaru saja.
   const totals = periods.reduce((acc, p) => {
-    for (const c of CARDS) {
-      acc[c.key + '_btg'] = (acc[c.key + '_btg'] || 0) + (p[c.key + '_btg'] || 0)
-      acc[c.key + '_m3']  = (acc[c.key + '_m3']  || 0) + (p[c.key + '_m3']  || 0)
+    for (const key of FLOW_KEYS) {
+      acc[key + '_btg'] = (acc[key + '_btg'] || 0) + (p[key + '_btg'] || 0)
+      acc[key + '_m3']  = (acc[key + '_m3']  || 0) + (p[key + '_m3']  || 0)
     }
     return acc
   }, {})
+  const latestPeriod = periods.reduce((latest, p) => (
+    !latest || periodSortKey(p) > periodSortKey(latest) ? p : latest
+  ), null)
+  for (const key of BALANCE_KEYS) {
+    totals[key + '_btg'] = latestPeriod?.[key + '_btg'] ?? null
+    totals[key + '_m3']  = latestPeriod?.[key + '_m3']  ?? null
+  }
 
   if (!tpkId) return <TpkRequiredState />
 
