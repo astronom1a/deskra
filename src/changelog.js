@@ -1,6 +1,14 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.53.0',
+    date: '2026-07-17',
+    items: [
+      { type: 'feat', text: 'sync retroaktif dua arah: input DKHP manual di Register Kapling otomatis menarik SKSHHK & pembeli dari menu DKHP SKSHHK; input SKSHHK manual otomatis mengisi entri DKHP SKSHHK dan kapling lain ber-DKHP sama (via DB trigger)' },
+      { type: 'feat', text: 'backfill satu kali: pembeli/SKSHHK kosong di register terisi dari entri DKHP SKSHHK yang sudah ada' },
+    ]
+  },
+  {
     version: '0.52.0',
     date: '2026-07-17',
     items: [
