@@ -5,7 +5,7 @@ import {
   ChevronDown, ChevronRight, ChevronLeft, ClipboardList, Wallet, ScrollText,
   Settings as SettingsIcon, Building2, ShieldCheck, LogOut,
   ArrowLeft, FileBarChart2, ScanLine, MapPin, History, Database, Menu,
-  BarChart3, Table2,
+  BarChart3, Table2, Receipt,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -22,8 +22,9 @@ const operatorNavItems = [
   {
     label: 'Register Kapling', icon: ClipboardList,
     children: [
-      { label: 'Statistik',      path: '/register-kapling',       icon: BarChart3, end: true },
-      { label: 'Tabel Register', path: '/register-kapling/tabel', icon: Table2 },
+      { label: 'Statistik',       path: '/register-kapling',        icon: BarChart3, end: true },
+      { label: 'Tabel Register',  path: '/register-kapling/tabel',  icon: Table2 },
+      { label: 'Register Invois', path: '/register-kapling/invois', icon: Receipt },
     ],
   },
   { label: 'DKHP SKSHHK',    path: '/dkhp-skshhk',     icon: ScrollText },

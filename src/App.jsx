@@ -18,6 +18,7 @@ import TumpukKapling from './pages/TumpukKapling'
 import DetailPekerjaan from './pages/DetailPekerjaan'
 import RegisterKapling from './pages/register-kapling'
 import StatistikKapling from './pages/register-kapling/StatistikKapling'
+import RegisterInvois from './pages/register-invois'
 import DkhpSkshhk from './pages/DkhpSkshhk'
 import Dk310             from './pages/dk310/Dk310'
 import Dk310Detail       from './pages/dk310/Dk310Detail'
@@ -174,6 +175,7 @@ function AppRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="register-kapling" element={<StatistikKapling />} />
         <Route path="register-kapling/tabel" element={<RegisterKapling />} />
+        <Route path="register-kapling/invois" element={<RegisterInvois />} />
         <Route path="dkhp-skshhk" element={<DkhpSkshhk />} />
         <Route path="dk310/penambahan"       element={<Dk310 />} />
         <Route path="dk310/penambahan/:id"  element={<Dk310Detail />} />
