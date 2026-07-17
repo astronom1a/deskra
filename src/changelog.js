@@ -1,6 +1,13 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.53.1',
+    date: '2026-07-17',
+    items: [
+      { type: 'fix', text: 'pembeli di register mengacu ke input invois: sync dari DKHP SKSHHK hanya mengisi pembeli yang kosong, tidak lagi menimpa nama pembeli per-invois (satu DKHP bisa memuat banyak pembeli)' },
+    ]
+  },
+  {
     version: '0.53.0',
     date: '2026-07-17',
     items: [
