@@ -1,6 +1,15 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.55.0',
+    date: '2026-07-17',
+    items: [
+      { type: 'feat', text: 'Register Invois jadi 3 tab: Register Pembeli (akun + nama), Register Invois, dan Rekap Sortimen (batang & kubikasi per invois per sortimen, otomatis dari register kapling)' },
+      { type: 'fix', text: 'nama pembeli dibersihkan dari email/KTP/NPWP/alamat/detail transaksi yang terbawa import PDF — parser diperbaiki + data lama dibersihkan via migrasi (594 invois, 2.402 baris register)' },
+      { type: 'feat', text: 'master pembeli per nomor akun: saran pembeli di form invois, auto-daftar akun baru saat simpan invois, tombol tarik dari register invois, dan isi otomatis invois se-akun yang pembelinya kosong' },
+    ]
+  },
+  {
     version: '0.54.2',
     date: '2026-07-17',
     items: [
