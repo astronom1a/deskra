@@ -1,6 +1,14 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.54.2',
+    date: '2026-07-17',
+    items: [
+      { type: 'fix', text: 'perbaiki import path usang di seluruh file test sisa refactor folder register-kapling — suite lengkap 94 test kembali jalan' },
+      { type: 'refactor', text: 'pdfjs dimuat lazy saat import invois PDF dipakai — bundle tidak termuat di awal dan modul bisa dites di Node' },
+    ]
+  },
+  {
     version: '0.54.1',
     date: '2026-07-17',
     items: [
