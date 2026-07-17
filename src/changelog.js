@@ -1,6 +1,13 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.55.2',
+    date: '2026-07-17',
+    items: [
+      { type: 'refactor', text: 'pindah logika buildBreakdown DK310 (yang terduplikasi di Dk310Detail dan Dk310Pengurangan) ke satu util dk310Breakdown.js' },
+    ]
+  },
+  {
     version: '0.55.1',
     date: '2026-07-17',
     items: [
