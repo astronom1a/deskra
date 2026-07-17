@@ -1,6 +1,13 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.56.1',
+    date: '2026-07-17',
+    items: [
+      { type: 'style', text: 'indikator koneksi realtime (dot hijau/live) dipindah jadi hanya di sidebar (mepet kanan, sejajar tombol ciutkan), pakai ikon Zap (pulse) hijau/kuning dan ZapOff merah — dihapus dari kartu Statistik Kapling & header Register Kapling yang sebelumnya duplikat' },
+    ]
+  },
+  {
     version: '0.56.0',
     date: '2026-07-17',
     items: [

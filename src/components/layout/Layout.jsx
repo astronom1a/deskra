@@ -5,7 +5,7 @@ import {
   ChevronDown, ChevronRight, ChevronLeft, ClipboardList, Wallet, ScrollText,
   Settings as SettingsIcon, Building2, ShieldCheck, LogOut,
   ArrowLeft, FileBarChart2, ScanLine, MapPin, History, Database, Menu,
-  BarChart3, Table2, Receipt,
+  BarChart3, Table2, Receipt, Zap, ZapOff,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -162,6 +162,21 @@ function SidebarItem({ item, collapsed, onExpand }) {
   )
 }
 
+// ── Realtime indicator ──────────────────────────────────────────────────────
+const REALTIME_META = {
+  connected:    { Icon: Zap,    label: 'Terhubung — data live',      color: '#00ff88', className: 'animate-pulse' },
+  disconnected: { Icon: ZapOff, label: 'Terputus — coba muat ulang', color: '#ff4444', className: undefined },
+  connecting:   { Icon: Zap,    label: 'Menghubungkan…',             color: '#ffaa00', className: 'animate-pulse' },
+}
+function RealtimeIndicator({ size = 12, status }) {
+  const meta = REALTIME_META[status] ?? REALTIME_META.connecting
+  return (
+    <span title={meta.label} style={{ display: 'inline-flex', flexShrink: 0 }}>
+      <meta.Icon size={size} className={meta.className} style={{ color: meta.color }} />
+    </span>
+  )
+}
+
 // ── Layout ────────────────────────────────────────────────────────────────────
 export default function Layout() {
   const navigate   = useNavigate()
@@ -298,14 +313,6 @@ export default function Layout() {
                   <p className="font-bold font-mono" style={{ color: '#f0f0f0', fontSize: 16, letterSpacing: '-0.02em' }}>
                     deskra<span className="sb-cursor">_</span>
                   </p>
-                  <span
-                    title={realtimeStatus === 'connected' ? 'Live' : realtimeStatus === 'disconnected' ? 'Offline' : 'Connecting'}
-                    style={{
-                      width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-                      background: realtimeStatus === 'connected' ? '#00ff88' : realtimeStatus === 'disconnected' ? '#ff4444' : '#ffaa00',
-                      boxShadow: realtimeStatus === 'connected' ? '0 0 6px rgba(0,255,136,0.6)' : 'none',
-                    }}
-                  />
                 </div>
                 {isAdmin && !activeTpkId ? (
                   <div className="flex items-center gap-1 mt-1">
@@ -328,14 +335,16 @@ export default function Layout() {
                   </>
                 )}
               </div>
-              <button
-                onClick={isMobile ? () => setMobileOpen(false) : toggleCollapsed}
-                title={isMobile ? 'Tutup menu' : 'Ciutkan sidebar'}
-                className="sb-toggle"
-                style={{ flexShrink: 0 }}
-              >
-                <ChevronLeft size={12} />
-              </button>
+              <div className="flex items-center gap-2" style={{ flexShrink: 0 }}>
+                <RealtimeIndicator status={realtimeStatus} />
+                <button
+                  onClick={isMobile ? () => setMobileOpen(false) : toggleCollapsed}
+                  title={isMobile ? 'Tutup menu' : 'Ciutkan sidebar'}
+                  className="sb-toggle"
+                >
+                  <ChevronLeft size={12} />
+                </button>
+              </div>
             </>
           )}
         </div>
@@ -450,10 +459,9 @@ export default function Layout() {
               <Menu size={14} />
             </button>
             <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#f0f0f0', letterSpacing: '-0.01em' }}>deskra</span>
-            <span style={{
-              width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-              background: realtimeStatus === 'connected' ? '#00ff88' : realtimeStatus === 'disconnected' ? '#ff4444' : '#ffaa00',
-            }} />
+            <span style={{ marginLeft: 'auto' }}>
+              <RealtimeIndicator size={13} status={realtimeStatus} />
+            </span>
           </div>
         )}
         <PageTransition>

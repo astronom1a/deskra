@@ -53,7 +53,18 @@
       "Bash(mkdir -p \"F:\\\\Project\\\\CODING\\\\Deskra\\\\docs\\\\superpowers\\\\specs\")",
       "Skill(code-review:code-review)",
       "Skill(code-review:code-review:*)",
-      "Bash(git commit -m 'refactor: ekstrak SortIcon dan ActionButton, tambah aria-label di DkhpSkshhk *)"
+      "Bash(git commit -m 'refactor: ekstrak SortIcon dan ActionButton, tambah aria-label di DkhpSkshhk *)",
+      "Bash(grep -v \"import\\\\|from\\\\|//\")",
+      "Bash(supabase --version)",
+      "Bash(npx supabase *)",
+      "mcp__c38127be-9853-48f3-bd8f-c4d8ea4eaefe__deploy_edge_function",
+      "Bash(npm run *)",
+      "Bash(dir \"D:\\\\New\\\\CODING\\\\deskra\\\\public\" /b)",
+      "Bash(dir \"D:\\\\New\\\\CODING\\\\deskra\\\\src\\\\assets\" /b /s)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

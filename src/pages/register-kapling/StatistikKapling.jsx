@@ -14,12 +14,6 @@ export default function StatistikKapling() {
 
   if (!page.tpkId) return <TpkRequiredState />
 
-  const rt = {
-    connected:    { bg: 'rgba(0,255,136,0.08)',   border: 'rgba(0,255,136,0.2)',   color: '#00ff88', label: 'live'       },
-    disconnected: { bg: 'rgba(255,107,107,0.08)', border: 'rgba(255,107,107,0.2)', color: '#ff6b6b', label: 'offline'    },
-    connecting:   { bg: 'rgba(255,170,0,0.08)',   border: 'rgba(255,170,0,0.2)',   color: '#ffaa00', label: 'connecting' },
-  }[page.realtimeStatus] ?? { bg: 'rgba(255,170,0,0.08)', border: 'rgba(255,170,0,0.2)', color: '#ffaa00', label: 'connecting' }
-
   return (
     <div className="ds-page" style={{ minHeight: '100%', background: '#0a0a0a', color: '#f0f0f0' }}>
       <RegisterKaplingStyles />
@@ -31,14 +25,6 @@ export default function StatistikKapling() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <BarChart3 size={18} style={{ color: '#00ff88' }} />
             <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>Statistik Kapling</h1>
-            <span style={{
-              display: 'flex', alignItems: 'center', gap: 5, padding: '2px 8px', borderRadius: 3,
-              fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
-              background: rt.bg, border: `1px solid ${rt.border}`, color: rt.color,
-            }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: rt.color }} />
-              {rt.label}
-            </span>
           </div>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>
             ringkasan & rincian data register kapling

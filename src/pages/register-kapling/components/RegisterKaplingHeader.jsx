@@ -16,7 +16,6 @@ export default function RegisterKaplingHeader({
   onInvoisFileChange,
   onAddRow,
   onOpenFixPrefix,
-  realtimeStatus,
   rows,
   selectedYear,
   setDraftMap,
@@ -48,12 +47,6 @@ export default function RegisterKaplingHeader({
       .map(r => String(r.no_invois).trim())
   ).size
 
-  const rt = {
-    connected:    { bg: 'rgba(0,255,136,0.08)',   border: 'rgba(0,255,136,0.2)',   color: '#00ff88', label: 'live'       },
-    disconnected: { bg: 'rgba(255,107,107,0.08)', border: 'rgba(255,107,107,0.2)', color: '#ff6b6b', label: 'offline'    },
-    connecting:   { bg: 'rgba(255,170,0,0.08)',   border: 'rgba(255,170,0,0.2)',   color: '#ffaa00', label: 'connecting' },
-  }[realtimeStatus] ?? { bg: 'rgba(255,170,0,0.08)', border: 'rgba(255,170,0,0.2)', color: '#ffaa00', label: 'connecting' }
-
   const iconBtn = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: '7px 9px', background: 'rgba(255,255,255,0.04)',
@@ -63,18 +56,10 @@ export default function RegisterKaplingHeader({
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>
 
-      {/* Title + realtime badge */}
+      {/* Title */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <h1 style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f0', fontFamily: 'monospace' }}>Register Kapling</h1>
-          <span style={{
-            display: 'flex', alignItems: 'center', gap: 5, padding: '2px 8px', borderRadius: 3,
-            fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
-            background: rt.bg, border: `1px solid ${rt.border}`, color: rt.color,
-          }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: rt.color }} />
-            {rt.label}
-          </span>
         </div>
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>
           data register kapling dari file dp kapling (.xlsx)

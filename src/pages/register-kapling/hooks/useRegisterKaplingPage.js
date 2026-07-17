@@ -84,7 +84,6 @@ export function useRegisterKaplingPage() {
 
   const [rows, setRows]                     = useState([])
   const [loading, setLoading]               = useState(true)
-  const [realtimeStatus, setRealtimeStatus] = useState('connecting')
   const [penguranganInvoices, setPenguranganInvoices] = useState([])
   const [dkhpEntries, setDkhpEntries]       = useState([])
   const [skippedInvoices, setSkippedInvoices] = useState([])
@@ -162,7 +161,6 @@ export function useRegisterKaplingPage() {
       setRows([])
       setSelectedIds(new Set())
       setLoading(false)
-      setRealtimeStatus('disconnected')
       return
     }
 
@@ -175,11 +173,7 @@ export function useRegisterKaplingPage() {
         table: 'tabel_register_kapling',
         filter: `tpk_id=eq.${tpkId}`,
       }, () => fetchData())
-      .subscribe(status => {
-        if (status === 'SUBSCRIBED') setRealtimeStatus('connected')
-        else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') setRealtimeStatus('disconnected')
-        else setRealtimeStatus('connecting')
-      })
+      .subscribe()
 
     return () => { supabase.removeChannel(channel) }
   }, [tpkId])
@@ -557,7 +551,7 @@ export function useRegisterKaplingPage() {
   return {
     tpkId,
     // data
-    rows, loading, realtimeStatus, penguranganInvoices,
+    rows, loading, penguranganInvoices,
     // toast
     toast, showToast,
     // excel import

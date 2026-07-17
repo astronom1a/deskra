@@ -45,7 +45,6 @@ export default function RegisterKapling() {
         onInvoisFileChange={page.handleInvoisFileChange}
         onAddRow={() => page.setEditRow({ ...page.EMPTY_ROW })}
         onOpenFixPrefix={page.handleOpenFixPrefix}
-        realtimeStatus={page.realtimeStatus}
         rows={page.rows}
         selectedYear={page.selectedYear}
         setDraftMap={page.setDraftMap}
