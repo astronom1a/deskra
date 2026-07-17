@@ -1,6 +1,14 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.55.3',
+    date: '2026-07-17',
+    items: [
+      { type: 'fix', text: 'periode DK310 kini menyertakan bulan (mis. "I-Mei-2026"), bukan cuma romawi+tahun — import bulan berbeda dalam semester yang sama sempat numpuk jadi satu periode dan bikin import gagal ("JSON object requested, multiple (or no) rows returned")' },
+      { type: 'chore', text: 'backfill periode DK310 lama dari masa_pembayaran + tambah unique index (tpk_id, jenis, periode) agar duplikat tidak terulang' },
+    ]
+  },
+  {
     version: '0.55.2',
     date: '2026-07-17',
     items: [

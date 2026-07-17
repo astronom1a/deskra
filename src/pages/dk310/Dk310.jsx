@@ -63,10 +63,15 @@ function romanToInt(str) {
   }
   return result
 }
+const BULAN_MAP = {
+  januari: 1, februari: 2, maret: 3, april: 4, mei: 5, juni: 6,
+  juli: 7, agustus: 8, september: 9, oktober: 10, november: 11, desember: 12,
+}
 function periodSortKey(p) {
-  const m = String(p.periode || '').match(/^([IVXLC]+)-(\d{4})/i)
+  const m = String(p.periode || '').match(/^([IVXLC]+)-(\w+)-(\d{4})$/i)
   if (!m) return 0
-  return Number(m[2]) * 100 + romanToInt(m[1].toUpperCase())
+  const bulan = BULAN_MAP[m[2].toLowerCase()] || 0
+  return Number(m[3]) * 1000 + bulan * 10 + romanToInt(m[1].toUpperCase())
 }
 
 const FLOW_KEYS    = ['penambahan', 'jumlah_pengurangan']

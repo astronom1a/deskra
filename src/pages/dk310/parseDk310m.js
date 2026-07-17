@@ -57,8 +57,8 @@ function parseHeader(rows) {
   const tanggal_cetak = tglParts.length === 3
     ? `${tglParts[2]}-${tglParts[1]}-${tglParts[0]}`
     : null
-  const masaMatch = masa_pembayaran.match(/^([IVXLC]+)\s*[-–]\s*\w+\s*(\d{4})/i)
-  const periode = masaMatch ? `${masaMatch[1]}-${masaMatch[2]}` : masa_pembayaran
+  const masaMatch = masa_pembayaran.match(/^([IVXLC]+)\s*[-–]\s*(\S+)\s*(\d{4})/i)
+  const periode = masaMatch ? `${masaMatch[1]}-${masaMatch[2]}-${masaMatch[3]}` : masa_pembayaran
   const bkphRow = rows.find(r => r?.[0] && /^BKPH/i.test(String(r[0])))
   const bkph = bkphRow ? String(bkphRow[0]).trim() : ''
   return { kph, bkph, masa_pembayaran, periode, tanggal_cetak }
