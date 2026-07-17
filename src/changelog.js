@@ -1,6 +1,13 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.56.0',
+    date: '2026-07-17',
+    items: [
+      { type: 'feat', text: 'tambah tombol "tandai tidak berlaku" di kartu Invois Terlewat (Register Kapling) — untuk invois dari periode sebelum aplikasi dipakai yang kapling-nya memang tidak pernah diinput, bisa dikecualikan dari daftar/hitungan tanpa perlu data kapling palsu' },
+    ]
+  },
+  {
     version: '0.55.3',
     date: '2026-07-17',
     items: [

@@ -1,3 +1,4 @@
+import { EyeOff, RotateCcw } from 'lucide-react'
 import { INVOIS_PREFIX_MAP, RK_BADGE_BASE, SORTIMENS } from '../utils/registerKaplingConstants'
 
 export default function RegisterKaplingMetricCards({
@@ -11,6 +12,8 @@ export default function RegisterKaplingMetricCards({
   missingDkhp,
   kaplingInfo,
   missingInvoices,
+  onSkipInvoice,
+  onUnskipInvoice,
   penguranganInvoices,
   pihak3Batang,
   pihak3Rows,
@@ -27,6 +30,8 @@ export default function RegisterKaplingMetricCards({
   unsoldSortBatang,
   unsoldSortVolume,
   unsoldVolume,
+  skippedInvoices = [],
+  skippingInvoice = null,
 }) {
   return (
     <div className="rk-metric-grid">
@@ -131,10 +136,49 @@ export default function RegisterKaplingMetricCards({
                     <div key={inv} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 11, color: 'rgba(255,107,107,0.4)', fontFamily: 'monospace', minWidth: 18, textAlign: 'right' }}>{i + 1}.</span>
                       {pfx && <span style={{ ...RK_BADGE_BASE, background: pfx.bg, color: pfx.color, border: `1px solid ${pfx.border}`, fontSize: 10 }}>{prefix}</span>}
-                      <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.6)' }}>{inv}</span>
+                      <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.6)', flex: 1 }}>{inv}</span>
+                      {onSkipInvoice && (
+                        <button
+                          onClick={() => onSkipInvoice(inv)}
+                          disabled={skippingInvoice === inv}
+                          title="Tandai tidak berlaku (di luar cakupan data)"
+                          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 6px', fontSize: 9, fontFamily: 'monospace', borderRadius: 2, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.3)', cursor: skippingInvoice === inv ? 'not-allowed' : 'pointer', flexShrink: 0 }}
+                          onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)' }}
+                          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)' }}
+                        >
+                          <EyeOff size={10} /> {skippingInvoice === inv ? '...' : 'skip'}
+                        </button>
+                      )}
                     </div>
                   )
                 })}
+              </div>
+            </div>
+          </div>
+        )}
+        {skippedInvoices.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
+              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+                {skippedInvoices.length} invois ditandai tidak berlaku
+              </p>
+              <div className="scrollbar-thin" style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 120, overflowY: 'auto', paddingRight: 6 }}>
+                {skippedInvoices.map(s => (
+                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.35)', flex: 1 }}>{s.no_invois}</span>
+                    {onUnskipInvoice && (
+                      <button
+                        onClick={() => onUnskipInvoice(s.id)}
+                        title="Kembalikan ke daftar invois terlewat"
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 6px', fontSize: 9, fontFamily: 'monospace', borderRadius: 2, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', flexShrink: 0 }}
+                        onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)' }}
+                        onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)' }}
+                      >
+                        <RotateCcw size={10} /> batalkan
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>

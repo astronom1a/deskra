@@ -37,6 +37,7 @@ export function buildRegisterKaplingMetrics({
   penguranganInvoices,
   rows,
   selectedYear = null,
+  skippedInvoices = [],
   sortimens,
 }) {
   // Set "sudah terinput" dari SEMUA baris — invois yang terinput di kapling
@@ -44,6 +45,10 @@ export function buildRegisterKaplingMetrics({
   // lewat tanggal yang terkandung di nomor invois; nomor yang tidak
   // mengikuti pattern tetap ditampilkan agar tidak luput dicek.
   const registered = new Set((allRows ?? rows).map(row => row.no_invois).filter(Boolean))
+  // Invois dari periode sebelum aplikasi dipakai (kapling-nya memang tidak
+  // pernah diinput) ditandai manual "tidak berlaku" agar tidak selamanya
+  // kehitung terlewat — lihat tabel_dk310_invois_skip.
+  const skipped = new Set(skippedInvoices.map(s => s.no_invois))
   const scopedInvoices = selectedYear
     ? penguranganInvoices.filter(invoice => {
         const parsed = parseInvois(invoice)
@@ -51,7 +56,7 @@ export function buildRegisterKaplingMetrics({
       })
     : penguranganInvoices
   const missingInvoices = scopedInvoices.length
-    ? [...new Set(scopedInvoices.filter(invoice => !registered.has(invoice)))]
+    ? [...new Set(scopedInvoices.filter(invoice => !registered.has(invoice) && !skipped.has(invoice)))]
     : []
   const unsoldRows = rows.filter(row => !row.no_invois)
   const totalBatang = sumBatang(rows)

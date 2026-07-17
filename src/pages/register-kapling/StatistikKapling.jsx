@@ -86,6 +86,10 @@ export default function StatistikKapling() {
           missingDkhp={page.missingDkhp}
           missingInvoices={page.missingInvoices}
           penguranganInvoices={page.penguranganInvoices}
+          skippedInvoices={page.skippedInvoices}
+          skippingInvoice={page.skippingInvoice}
+          onSkipInvoice={page.handleSkipInvoice}
+          onUnskipInvoice={page.handleUnskipInvoice}
           pihak3Batang={page.pihak3Batang}
           pihak3Rows={page.pihak3Rows}
           pihak3SortBatang={page.pihak3SortBatang}

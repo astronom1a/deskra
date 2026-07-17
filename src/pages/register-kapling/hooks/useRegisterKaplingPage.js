@@ -40,11 +40,14 @@ import {
   saveDeletedRow,
   saveEditedRow,
   saveQuickInvoisRow,
+  saveSkipInvoice,
+  saveUnskipInvoice,
 } from '../utils/registerKaplingCrud'
 import {
   fetchDkhpEntries,
   fetchPenguranganInvoices,
   fetchRegisterKaplingRows,
+  fetchSkippedInvoices,
 } from '../utils/registerKaplingDataLoader'
 import {
   COL_MAP_STORAGE_KEY,
@@ -84,6 +87,8 @@ export function useRegisterKaplingPage() {
   const [realtimeStatus, setRealtimeStatus] = useState('connecting')
   const [penguranganInvoices, setPenguranganInvoices] = useState([])
   const [dkhpEntries, setDkhpEntries]       = useState([])
+  const [skippedInvoices, setSkippedInvoices] = useState([])
+  const [skippingInvoice, setSkippingInvoice] = useState(null)
 
   const [importing, setImporting]           = useState(false)
   const [preview, setPreview]               = useState(null)
@@ -183,15 +188,17 @@ export function useRegisterKaplingPage() {
     if (!tpkId) return
     setLoading(true)
     try {
-      const [loadedRows, loadedInvoices, loadedDkhp] = await Promise.all([
+      const [loadedRows, loadedInvoices, loadedDkhp, loadedSkipped] = await Promise.all([
         fetchRegisterKaplingRows({ supabase, tpkId }),
         fetchPenguranganInvoices({ supabase, tpkId }),
         fetchDkhpEntries({ supabase, tpkId }),
+        fetchSkippedInvoices({ supabase, tpkId }),
       ])
       setRows(loadedRows)
       setSelectedIds(new Set())
       setPenguranganInvoices(loadedInvoices)
       setDkhpEntries(loadedDkhp)
+      setSkippedInvoices(loadedSkipped)
     } catch (error) {
       showToast(error.message, 'error')
     }
@@ -484,7 +491,24 @@ export function useRegisterKaplingPage() {
     sortBatang, sortVolume,
     totalBatang, totalVolume,
     unsoldBatang, unsoldSortBatang, unsoldSortVolume, unsoldVolume,
-  } = useMemo(() => buildRegisterKaplingMetrics({ allRows: rows, penguranganInvoices, rows: yearRows, selectedYear, sortimens: SORTIMENS }), [penguranganInvoices, rows, selectedYear, yearRows])
+  } = useMemo(() => buildRegisterKaplingMetrics({ allRows: rows, penguranganInvoices, rows: yearRows, selectedYear, skippedInvoices, sortimens: SORTIMENS }), [penguranganInvoices, rows, selectedYear, skippedInvoices, yearRows])
+
+  // ── Skip invois (di luar cakupan data, mis. sebelum aplikasi dipakai) ────
+  async function handleSkipInvoice(noInvois) {
+    if (!tpkId) return
+    setSkippingInvoice(noInvois)
+    const result = await saveSkipInvoice({ noInvois, supabase, tpkId, userId: profile?.id })
+    setSkippingInvoice(null)
+    showToast(result.message, result.type)
+    if (result.refresh) fetchData()
+  }
+
+  async function handleUnskipInvoice(id) {
+    if (!tpkId) return
+    const result = await saveUnskipInvoice({ id, supabase, tpkId })
+    showToast(result.message, result.type)
+    if (result.refresh) fetchData()
+  }
 
   // DKHP dari menu DKHP SKSHHK yang belum terinput di register kapling.
   // Set registered pakai SEMUA rows (bukan yearRows) agar DKHP yang terinput
@@ -575,6 +599,7 @@ export function useRegisterKaplingPage() {
     // computed metrics
     kaplingInfo, totalMissingCount,
     blokBreakdown, missingInvoices, missingDkhp, dkhpEntries,
+    skippedInvoices, skippingInvoice, handleSkipInvoice, handleUnskipInvoice,
     pihak3Batang, pihak3Rows, pihak3SortBatang, pihak3SortVolume, pihak3Volume,
     accUnsoldVolume, accUnsoldBatang, accPihak3Volume, accPihak3Batang,
     soldSortBatang, soldSortVolume, sortBatang, sortVolume,

@@ -74,6 +74,17 @@ test('missingInvoices memfilter sisi DK310 berdasar tahun di nomor invois', () =
   assert.deepEqual(metrics.missingInvoices, ['44312507121436', 'INV-NONPATTERN'])
 })
 
+test('missingInvoices mengecualikan invois yang ditandai tidak berlaku (skip)', () => {
+  const metrics = buildRegisterKaplingMetrics({
+    penguranganInvoices: ['INV-1', 'INV-2', 'INV-3'],
+    rows: [{ no_invois: 'INV-1', sortimen: 'AI', batang: 1, volume: 1 }],
+    skippedInvoices: [{ no_invois: 'INV-2' }],
+    sortimens: ['AI'],
+  })
+
+  assert.deepEqual(metrics.missingInvoices, ['INV-3'])
+})
+
 test('countMissingKaplings sums missing kapling ranges', () => {
   assert.equal(countMissingKaplings(null), 0)
   assert.equal(countMissingKaplings({ missing: [{ from: '2', to: '2' }, { from: '5', to: '7' }] }), 4)

@@ -148,6 +148,34 @@ export async function clearDkhpConflict({ rowId, supabase, tpkId }) {
   return { error }
 }
 
+export async function saveSkipInvoice({ keterangan, noInvois, supabase, tpkId, userId }) {
+  const { error } = await supabase
+    .from('tabel_dk310_invois_skip')
+    .insert({ tpk_id: tpkId, no_invois: noInvois, keterangan: keterangan || null, created_by: userId })
+
+  if (error) return actionError(error.message)
+  return {
+    message: `Invois ${noInvois} ditandai tidak berlaku`,
+    refresh: true,
+    type: 'success',
+  }
+}
+
+export async function saveUnskipInvoice({ id, supabase, tpkId }) {
+  const { error } = await supabase
+    .from('tabel_dk310_invois_skip')
+    .delete()
+    .eq('tpk_id', tpkId)
+    .eq('id', id)
+
+  if (error) return actionError(error.message)
+  return {
+    message: 'Invois dikembalikan ke daftar terlewat',
+    refresh: true,
+    type: 'success',
+  }
+}
+
 function actionError(message) {
   return {
     closeEditor: false,

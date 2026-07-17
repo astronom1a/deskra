@@ -55,3 +55,14 @@ export async function fetchPenguranganInvoices({ supabase, tpkId }) {
   if (suratBuktiError) throw suratBuktiError
   return (suratBuktiRows || []).map(row => row.nomor_surat).filter(Boolean)
 }
+
+export async function fetchSkippedInvoices({ supabase, tpkId }) {
+  const { data, error } = await supabase
+    .from('tabel_dk310_invois_skip')
+    .select('id,no_invois,keterangan')
+    .eq('tpk_id', tpkId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
