@@ -1,4 +1,5 @@
 import { buildInvoiceKaplingUpdates } from '../../../lib/tenantScope.js'
+import { cleanPembeliName } from '../../register-invois/utils/cleanPembeliName.js'
 
 // pdfjs butuh API browser (DOMMatrix dll), jadi dimuat lazy saat benar-benar
 // parse PDF — modul ini tetap bisa di-load di Node (test) dan bundle pdfjs
@@ -33,7 +34,7 @@ export async function parsePdfInvoice(file) {
 
   const pembeliMatch = fullText.match(/(?:Sudah|Telah)\s+Terima\s+Dari\s*:\s*([^\n]+)/i)
   const pembeli = pembeliMatch
-    ? pembeliMatch[1].replace(/\s+/g, ' ').replace(/Recived from.*/i, '').trim()
+    ? cleanPembeliName(pembeliMatch[1].replace(/\s+/g, ' ').replace(/Recived from.*/i, '')) || null
     : null
 
   const kaplingMatches = [...fullText.matchAll(/\b(\d{13})\b/g)]
