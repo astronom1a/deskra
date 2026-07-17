@@ -5,7 +5,7 @@ import {
   getRegisterKaplingDisplayVal,
   searchRegisterKaplingRows,
   sortRegisterKaplingRows,
-} from '../src/pages/registerKaplingTable.js'
+} from '../src/pages/register-kapling/utils/registerKaplingTable.js'
 
 const rows = [
   { id: 'a', no_kapling: '003', mutu: 'AI', status: 'INDUSTRI', cacat: 'BUN', volume: 2, batang: 1, panjang: '300 - 300', diameter_tebal: '40 - 40', pembeli: 'Sari, Jalan Mawar' },

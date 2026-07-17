@@ -8,7 +8,7 @@ import {
   saveBatchDeleteRows,
   saveDeletedRow,
   saveEditedRow,
-} from '../src/pages/registerKaplingCrud.js'
+} from '../src/pages/register-kapling/utils/registerKaplingCrud.js'
 
 test('buildEditPayload normalizes nullable fields and numeric values', () => {
   const payload = buildEditPayload({

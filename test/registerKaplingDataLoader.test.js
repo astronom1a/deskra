@@ -3,7 +3,7 @@ import test from 'node:test'
 import {
   fetchPenguranganInvoices,
   fetchRegisterKaplingRows,
-} from '../src/pages/registerKaplingDataLoader.js'
+} from '../src/pages/register-kapling/utils/registerKaplingDataLoader.js'
 
 function createSupabaseMock(handlers) {
   return {

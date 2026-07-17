@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { DEFAULT_COL_MAP } from '../src/pages/registerKaplingConstants.js'
+import { DEFAULT_COL_MAP } from '../src/pages/register-kapling/utils/registerKaplingConstants.js'
 import {
   analyzeKapling,
   getMutuLabel,
   parseRowsWithMap,
   simplifyRange,
-} from '../src/pages/registerKaplingUtils.js'
+} from '../src/pages/register-kapling/utils/registerKaplingUtils.js'
 
 test('getMutuLabel combines mutu with status and defect suffixes', () => {
   assert.equal(getMutuLabel({ mutu: 'AI', status: 'INDUSTRI', cacat: 'BUN' }), 'AI IN BC')

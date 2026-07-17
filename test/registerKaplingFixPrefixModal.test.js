@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
 test('RegisterKaplingFixPrefixModal owns invoice prefix repair UI', () => {
-  const source = readFileSync(new URL('../src/pages/RegisterKaplingFixPrefixModal.jsx', import.meta.url), 'utf8')
+  const source = readFileSync(new URL('../src/pages/register-kapling/modals/RegisterKaplingFixPrefixModal.jsx', import.meta.url), 'utf8')
 
   assert.match(source, /export default function RegisterKaplingFixPrefixModal/)
   assert.match(source, /perbaiki prefix invois/)

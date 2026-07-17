@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
 test('RegisterKaplingEditModal owns add and edit form sections', () => {
-  const source = readFileSync(new URL('../src/pages/RegisterKaplingEditModal.jsx', import.meta.url), 'utf8')
+  const source = readFileSync(new URL('../src/pages/register-kapling/modals/RegisterKaplingEditModal.jsx', import.meta.url), 'utf8')
 
   assert.match(source, /export default function RegisterKaplingEditModal/)
   assert.match(source, /tambah kapling/)

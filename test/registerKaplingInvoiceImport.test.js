@@ -5,7 +5,7 @@ import {
   prepareInvoiceImportPreview,
   saveInvoiceImportPreview,
   summarizeInvoiceParseResult,
-} from '../src/pages/registerKaplingInvoiceImport.js'
+} from '../src/pages/register-kapling/utils/registerKaplingInvoiceImport.js'
 
 test('summarizeInvoiceParseResult matches invoice kaplings against register rows', () => {
   const rowsByKapling = new Map([

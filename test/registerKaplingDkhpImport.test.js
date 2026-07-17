@@ -6,7 +6,7 @@ import {
   saveDkhpForRows,
   saveDkhpImportPreview,
   summarizeDkhpWorkbookRows,
-} from '../src/pages/registerKaplingDkhpImport.js'
+} from '../src/pages/register-kapling/utils/registerKaplingDkhpImport.js'
 
 test('summarizeDkhpWorkbookRows extracts DKHP number, matched rows, conflicts, and AIII batang', () => {
   const rowsByKapling = new Map([

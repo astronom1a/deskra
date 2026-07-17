@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
 test('RegisterKaplingDkhpModal owns DKHP input and conflict confirmation UI', () => {
-  const source = readFileSync(new URL('../src/pages/RegisterKaplingDkhpModal.jsx', import.meta.url), 'utf8')
+  const source = readFileSync(new URL('../src/pages/register-kapling/modals/RegisterKaplingDkhpModal.jsx', import.meta.url), 'utf8')
 
   assert.match(source, /export default function RegisterKaplingDkhpModal/)
   assert.match(source, /Input DKHP/)

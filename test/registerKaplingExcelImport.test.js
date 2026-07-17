@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { DEFAULT_COL_MAP, FIELD_DEFS } from '../src/pages/registerKaplingConstants.js'
+import { DEFAULT_COL_MAP, FIELD_DEFS } from '../src/pages/register-kapling/utils/registerKaplingConstants.js'
 import {
   buildExcelImportInsertRows,
   buildExcelImportPreview,
   buildExcelImportUpdatePatch,
   prepareExcelImportPreview,
   saveExcelImportPreview,
-} from '../src/pages/registerKaplingExcelImport.js'
+} from '../src/pages/register-kapling/utils/registerKaplingExcelImport.js'
 
 test('buildExcelImportPreview separates new rows, skipped rows, and empty-field updates', () => {
   const parsedRows = [

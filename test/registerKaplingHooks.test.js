@@ -3,11 +3,11 @@ import test from 'node:test'
 import {
   readStoredJson,
   writeStoredJson,
-} from '../src/pages/useRegisterKaplingColumnSettings.js'
+} from '../src/pages/register-kapling/hooks/useRegisterKaplingColumnSettings.js'
 import {
   getNextRegisterKaplingSorts,
   getNextRegisterKaplingSelection,
-} from '../src/pages/useRegisterKaplingTableControls.js'
+} from '../src/pages/register-kapling/hooks/useRegisterKaplingTableControls.js'
 
 function createStorage(initial = {}) {
   const store = { ...initial }

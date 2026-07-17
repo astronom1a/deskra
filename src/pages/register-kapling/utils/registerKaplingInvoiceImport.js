@@ -1,12 +1,24 @@
-import * as pdfjsLib from 'pdfjs-dist'
 import { buildInvoiceKaplingUpdates } from '../../../lib/tenantScope.js'
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).href
+// pdfjs butuh API browser (DOMMatrix dll), jadi dimuat lazy saat benar-benar
+// parse PDF — modul ini tetap bisa di-load di Node (test) dan bundle pdfjs
+// tidak ikut termuat sebelum fitur import invois dipakai.
+let pdfjsPromise = null
+function loadPdfjs() {
+  if (!pdfjsPromise) {
+    pdfjsPromise = import('pdfjs-dist').then(pdfjsLib => {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.min.mjs',
+        import.meta.url
+      ).href
+      return pdfjsLib
+    })
+  }
+  return pdfjsPromise
+}
 
 export async function parsePdfInvoice(file) {
+  const pdfjsLib = await loadPdfjs()
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
   let fullText = ''

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { PageLoader, TableSkeleton } from '../src/components/LoadingState.js'
+import { PageLoader, TableSkeleton } from '../src/components/ui/LoadingState.js'
 
 test('PageLoader renders accessible scanline loading state', () => {
   const html = renderToStaticMarkup(PageLoader({ label: 'memuat halaman...' }))

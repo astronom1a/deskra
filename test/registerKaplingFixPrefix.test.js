@@ -4,7 +4,7 @@ import {
   buildFixPrefixMap,
   buildFixPrefixUpdate,
   saveFixPrefixUpdates,
-} from '../src/pages/registerKaplingFixPrefix.js'
+} from '../src/pages/register-kapling/utils/registerKaplingFixPrefix.js'
 
 const invoicePrefixMap = {
   ECR: {},

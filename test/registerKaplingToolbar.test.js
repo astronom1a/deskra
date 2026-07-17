@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
-const source = readFileSync(new URL('../src/pages/RegisterKaplingToolbar.jsx', import.meta.url), 'utf8')
+const source = readFileSync(new URL('../src/pages/register-kapling/components/RegisterKaplingToolbar.jsx', import.meta.url), 'utf8')
 
 test('RegisterKaplingToolbar owns table controls', () => {
   assert.match(source, /export default function RegisterKaplingToolbar/)

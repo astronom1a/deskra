@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
 test('RegisterKaplingContextMenu owns row and batch context actions', () => {
-  const source = readFileSync(new URL('../src/pages/RegisterKaplingContextMenu.jsx', import.meta.url), 'utf8')
+  const source = readFileSync(new URL('../src/pages/register-kapling/components/RegisterKaplingContextMenu.jsx', import.meta.url), 'utf8')
 
   assert.match(source, /export default function RegisterKaplingContextMenu/)
   assert.match(source, /onEdit/)

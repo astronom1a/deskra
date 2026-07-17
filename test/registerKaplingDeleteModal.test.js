@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
 test('RegisterKaplingDeleteModal owns single and batch delete confirmation UI', () => {
-  const source = readFileSync(new URL('../src/pages/RegisterKaplingDeleteModal.jsx', import.meta.url), 'utf8')
+  const source = readFileSync(new URL('../src/pages/register-kapling/modals/RegisterKaplingDeleteModal.jsx', import.meta.url), 'utf8')
 
   assert.match(source, /export default function RegisterKaplingDeleteModal/)
   assert.match(source, /mode/)

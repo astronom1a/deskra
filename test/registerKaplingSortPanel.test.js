@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
 test('RegisterKaplingSortPanel owns sort modal controls', () => {
-  const source = readFileSync(new URL('../src/pages/RegisterKaplingSortPanel.jsx', import.meta.url), 'utf8')
+  const source = readFileSync(new URL('../src/pages/register-kapling/components/RegisterKaplingSortPanel.jsx', import.meta.url), 'utf8')
 
   assert.match(source, /export default function RegisterKaplingSortPanel/)
   assert.match(source, /belum ada aturan pengurutan/)
