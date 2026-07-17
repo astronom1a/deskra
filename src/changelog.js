@@ -1,6 +1,14 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.52.0',
+    date: '2026-07-17',
+    items: [
+      { type: 'feat', text: 'card baru di Statistik Kapling: daftar no. DKHP dari menu DKHP SKSHHK yang belum terinput di Register Kapling' },
+      { type: 'fix', text: 'trigger sync DKHP tidak lagi menghapus skshhk/pembeli di register saat entri DKHP baru dibuat dengan kolom kosong atau saat hanya pembeli yang diedit' },
+    ]
+  },
+  {
     version: '0.51.0',
     date: '2026-07-16',
     items: [
