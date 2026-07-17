@@ -1,6 +1,13 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.56.2',
+    date: '2026-07-17',
+    items: [
+      { type: 'fix', text: 'perbaiki invois duplikat di Register Invois — trigger no_invois yang tidak menghapus entri lama saat nomor invois berganti (mis. "perbaiki prefix") kini membersihkan entri yatimnya' },
+    ]
+  },
+  {
     version: '0.56.1',
     date: '2026-07-17',
     items: [
