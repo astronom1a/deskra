@@ -42,6 +42,7 @@ import {
   saveQuickInvoisRow,
 } from '../utils/registerKaplingCrud'
 import {
+  fetchDkhpEntries,
   fetchPenguranganInvoices,
   fetchRegisterKaplingRows,
 } from '../utils/registerKaplingDataLoader'
@@ -82,6 +83,7 @@ export function useRegisterKaplingPage() {
   const [loading, setLoading]               = useState(true)
   const [realtimeStatus, setRealtimeStatus] = useState('connecting')
   const [penguranganInvoices, setPenguranganInvoices] = useState([])
+  const [dkhpEntries, setDkhpEntries]       = useState([])
 
   const [importing, setImporting]           = useState(false)
   const [preview, setPreview]               = useState(null)
@@ -181,13 +183,15 @@ export function useRegisterKaplingPage() {
     if (!tpkId) return
     setLoading(true)
     try {
-      const [loadedRows, loadedInvoices] = await Promise.all([
+      const [loadedRows, loadedInvoices, loadedDkhp] = await Promise.all([
         fetchRegisterKaplingRows({ supabase, tpkId }),
         fetchPenguranganInvoices({ supabase, tpkId }),
+        fetchDkhpEntries({ supabase, tpkId }),
       ])
       setRows(loadedRows)
       setSelectedIds(new Set())
       setPenguranganInvoices(loadedInvoices)
+      setDkhpEntries(loadedDkhp)
     } catch (error) {
       showToast(error.message, 'error')
     }
@@ -482,6 +486,20 @@ export function useRegisterKaplingPage() {
     unsoldBatang, unsoldSortBatang, unsoldSortVolume, unsoldVolume,
   } = useMemo(() => buildRegisterKaplingMetrics({ penguranganInvoices, rows: yearRows, sortimens: SORTIMENS }), [penguranganInvoices, yearRows])
 
+  // DKHP dari menu DKHP SKSHHK yang belum terinput di register kapling.
+  // Set registered pakai SEMUA rows (bukan yearRows) agar DKHP yang terinput
+  // di kapling tahun lain tidak salah terhitung sebagai missing.
+  const missingDkhp = useMemo(() => {
+    if (!dkhpEntries.length) return []
+    const registered = new Set(rows.map(r => String(r.dkhp ?? '').trim()).filter(Boolean))
+    const source = selectedYear
+      ? dkhpEntries.filter(e => e.tanggal && new Date(e.tanggal).getFullYear() === selectedYear)
+      : dkhpEntries
+    return [...new Set(source.map(e => String(e.no_dkhp ?? '').trim()).filter(Boolean))]
+      .filter(n => !registered.has(n))
+      .sort((a, b) => (Number(a) || 0) - (Number(b) || 0))
+  }, [dkhpEntries, rows, selectedYear])
+
   // Akumulasi semua tahun — hanya berbeda dari metric utama saat year filter aktif
   const accUnsoldVolume  = useMemo(() => rows.filter(r => !r.no_invois).reduce((s, r) => s + Number(r.volume || 0), 0), [rows])
   const accUnsoldBatang  = useMemo(() => rows.filter(r => !r.no_invois).reduce((s, r) => s + (r.batang || 0), 0), [rows])
@@ -556,7 +574,7 @@ export function useRegisterKaplingPage() {
     filteredBatang, filteredVolume,
     // computed metrics
     kaplingInfo, totalMissingCount,
-    blokBreakdown, missingInvoices,
+    blokBreakdown, missingInvoices, missingDkhp, dkhpEntries,
     pihak3Batang, pihak3Rows, pihak3SortBatang, pihak3SortVolume, pihak3Volume,
     accUnsoldVolume, accUnsoldBatang, accPihak3Volume, accPihak3Batang,
     soldSortBatang, soldSortVolume, sortBatang, sortVolume,

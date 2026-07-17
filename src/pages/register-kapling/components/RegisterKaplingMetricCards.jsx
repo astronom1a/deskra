@@ -6,7 +6,9 @@ export default function RegisterKaplingMetricCards({
   accUnsoldBatang,
   accUnsoldVolume,
   blokBreakdown,
+  hasDkhpData,
   isYearFiltered,
+  missingDkhp,
   kaplingInfo,
   missingInvoices,
   penguranganInvoices,
@@ -136,6 +138,53 @@ export default function RegisterKaplingMetricCards({
               </div>
             </div>
           </div>
+        )}
+      </div>
+
+      {/* Card 2b: DKHP Belum Terinput */}
+      <div
+        style={{
+          background: missingDkhp.length > 0 ? 'rgba(56,189,248,0.04)' : 'rgba(0,255,136,0.03)',
+          border: `1px solid ${missingDkhp.length > 0 ? 'rgba(56,189,248,0.18)' : 'rgba(0,255,136,0.12)'}`,
+          borderRadius: 3, padding: '16px 20px',
+          transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.transform = 'translateY(-2px)'
+          e.currentTarget.style.boxShadow = missingDkhp.length > 0 ? '0 8px 24px rgba(56,189,248,0.1)' : '0 8px 24px rgba(0,255,136,0.08)'
+          e.currentTarget.style.borderColor = missingDkhp.length > 0 ? 'rgba(56,189,248,0.32)' : 'rgba(0,255,136,0.24)'
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.transform = ''
+          e.currentTarget.style.boxShadow = ''
+          e.currentTarget.style.borderColor = missingDkhp.length > 0 ? 'rgba(56,189,248,0.18)' : 'rgba(0,255,136,0.12)'
+        }}
+      >
+        <p style={{ fontSize: 11, color: missingDkhp.length > 0 ? 'rgba(56,189,248,0.7)' : 'rgba(0,255,136,0.5)', marginBottom: 4, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>dkhp belum terinput</p>
+        {!hasDkhpData ? (
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', marginTop: 6 }}>belum ada data dkhp skshhk</p>
+        ) : missingDkhp.length === 0 ? (
+          <>
+            <p style={{ fontSize: 22, fontWeight: 700, color: '#00ff88', fontFamily: 'monospace', lineHeight: 1 }}>0</p>
+            <p style={{ fontSize: 11, color: 'rgba(0,255,136,0.5)', marginTop: 5, fontFamily: 'monospace' }}>semua dkhp sudah terinput di register</p>
+          </>
+        ) : (
+          <>
+            <p style={{ fontSize: 22, fontWeight: 700, color: '#38bdf8', fontFamily: 'monospace', lineHeight: 1 }}>{missingDkhp.length}</p>
+            <p style={{ fontSize: 11, color: 'rgba(56,189,248,0.5)', fontFamily: 'monospace', marginTop: 5 }}>no. dkhp dari menu DKHP SKSHHK belum ada di register</p>
+            <div style={{ marginTop: 12 }}>
+              <div style={{ borderTop: '1px solid rgba(56,189,248,0.15)', paddingTop: 12 }}>
+                <p style={{ fontSize: 10, color: 'rgba(56,189,248,0.4)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>daftar no. dkhp</p>
+                <div className="scrollbar-thin" style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxHeight: 220, overflowY: 'auto', paddingRight: 6 }}>
+                  {missingDkhp.map(no => (
+                    <span key={no} style={{ fontSize: 11, fontFamily: 'monospace', background: 'rgba(56,189,248,0.08)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.2)', borderRadius: 2, padding: '1px 6px', whiteSpace: 'nowrap' }}>
+                      {no}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

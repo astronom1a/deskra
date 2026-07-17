@@ -80,8 +80,10 @@ export default function StatistikKapling() {
           accUnsoldBatang={page.accUnsoldBatang}
           accUnsoldVolume={page.accUnsoldVolume}
           blokBreakdown={page.blokBreakdown}
+          hasDkhpData={page.dkhpEntries.length > 0}
           isYearFiltered={page.isYearFiltered}
           kaplingInfo={page.kaplingInfo}
+          missingDkhp={page.missingDkhp}
           missingInvoices={page.missingInvoices}
           penguranganInvoices={page.penguranganInvoices}
           pihak3Batang={page.pihak3Batang}

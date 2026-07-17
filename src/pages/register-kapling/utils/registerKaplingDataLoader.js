@@ -19,6 +19,24 @@ export async function fetchRegisterKaplingRows({ pageSize = 500, supabase, tpkId
   return all
 }
 
+export async function fetchDkhpEntries({ pageSize = 1000, supabase, tpkId }) {
+  const all = []
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from('tabel_dkhp_skshhk')
+      .select('no_dkhp,tanggal')
+      .eq('tpk_id', tpkId)
+      .order('no_dkhp', { ascending: true })
+      .range(from, from + pageSize - 1)
+
+    if (error) throw error
+    if (!data || data.length === 0) break
+    all.push(...data)
+    if (data.length < pageSize) break
+  }
+  return all
+}
+
 export async function fetchPenguranganInvoices({ supabase, tpkId }) {
   const { data: periods, error: periodsError } = await supabase
     .from('tabel_dk310_periods')
