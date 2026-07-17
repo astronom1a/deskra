@@ -1,6 +1,13 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.54.1',
+    date: '2026-07-17',
+    items: [
+      { type: 'fix', text: 'invois terlewat: invois yang terinput di kapling tahun lain tidak lagi dihitung terlewat, dan filter tahun kini juga menyaring sisi DK310 berdasar tanggal di nomor invois' },
+    ]
+  },
+  {
     version: '0.54.0',
     date: '2026-07-17',
     items: [
