@@ -3,7 +3,7 @@ import test from 'node:test'
 import {
   buildRegisterKaplingMetrics,
   countMissingKaplings,
-} from '../src/pages/registerKaplingMetrics.js'
+} from '../src/pages/register-kapling/utils/registerKaplingMetrics.js'
 
 test('buildRegisterKaplingMetrics calculates totals, unsold, sortimen, and blok breakdown', () => {
   const rows = [
@@ -43,6 +43,35 @@ test('buildRegisterKaplingMetrics uses dash label for rows without blok', () => 
   })
 
   assert.deepEqual(metrics.blokBreakdown, [['—', { batang: 1, volume: 1 }]])
+})
+
+test('missingInvoices memakai semua baris, bukan hanya baris tahun terpilih', () => {
+  const allRows = [
+    { no_invois: '44312607121436', sortimen: 'AI', batang: 1, volume: 1 }, // kapling tahun lain
+  ]
+  const metrics = buildRegisterKaplingMetrics({
+    allRows,
+    penguranganInvoices: ['44312607121436'],
+    rows: [], // year filter aktif, tidak ada baris di tahun itu
+    selectedYear: 2025,
+    sortimens: ['AI'],
+  })
+
+  // sudah terinput di kapling tahun lain → bukan invois terlewat
+  assert.deepEqual(metrics.missingInvoices, [])
+})
+
+test('missingInvoices memfilter sisi DK310 berdasar tahun di nomor invois', () => {
+  const metrics = buildRegisterKaplingMetrics({
+    allRows: [],
+    penguranganInvoices: ['44312607121436', '44312507121436', 'INV-NONPATTERN'],
+    rows: [],
+    selectedYear: 2025,
+    sortimens: ['AI'],
+  })
+
+  // invois 2026 tersaring keluar; invois 2025 dan nomor non-pattern tetap tampil
+  assert.deepEqual(metrics.missingInvoices, ['44312507121436', 'INV-NONPATTERN'])
 })
 
 test('countMissingKaplings sums missing kapling ranges', () => {

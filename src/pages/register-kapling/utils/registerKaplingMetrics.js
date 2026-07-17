@@ -1,3 +1,5 @@
+import { parseInvois } from '../../register-invois/utils/parseInvois.js'
+
 function sumBatang(rows) {
   return rows.reduce((sum, row) => sum + (row.batang || 0), 0)
 }
@@ -31,13 +33,25 @@ export function countMissingKaplings(kaplingInfo) {
 }
 
 export function buildRegisterKaplingMetrics({
+  allRows,
   penguranganInvoices,
   rows,
+  selectedYear = null,
   sortimens,
 }) {
-  const registered = new Set(rows.map(row => row.no_invois).filter(Boolean))
-  const missingInvoices = penguranganInvoices.length
-    ? [...new Set(penguranganInvoices.filter(invoice => !registered.has(invoice)))]
+  // Set "sudah terinput" dari SEMUA baris — invois yang terinput di kapling
+  // tahun lain bukan invois terlewat. Filter tahun diterapkan ke sisi DK310
+  // lewat tanggal yang terkandung di nomor invois; nomor yang tidak
+  // mengikuti pattern tetap ditampilkan agar tidak luput dicek.
+  const registered = new Set((allRows ?? rows).map(row => row.no_invois).filter(Boolean))
+  const scopedInvoices = selectedYear
+    ? penguranganInvoices.filter(invoice => {
+        const parsed = parseInvois(invoice)
+        return !parsed || Number(parsed.tanggal.slice(0, 4)) === selectedYear
+      })
+    : penguranganInvoices
+  const missingInvoices = scopedInvoices.length
+    ? [...new Set(scopedInvoices.filter(invoice => !registered.has(invoice)))]
     : []
   const unsoldRows = rows.filter(row => !row.no_invois)
   const totalBatang = sumBatang(rows)

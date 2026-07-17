@@ -484,7 +484,7 @@ export function useRegisterKaplingPage() {
     sortBatang, sortVolume,
     totalBatang, totalVolume,
     unsoldBatang, unsoldSortBatang, unsoldSortVolume, unsoldVolume,
-  } = useMemo(() => buildRegisterKaplingMetrics({ penguranganInvoices, rows: yearRows, sortimens: SORTIMENS }), [penguranganInvoices, yearRows])
+  } = useMemo(() => buildRegisterKaplingMetrics({ allRows: rows, penguranganInvoices, rows: yearRows, selectedYear, sortimens: SORTIMENS }), [penguranganInvoices, rows, selectedYear, yearRows])
 
   // DKHP dari menu DKHP SKSHHK yang belum terinput di register kapling.
   // Set registered pakai SEMUA rows (bukan yearRows) agar DKHP yang terinput
