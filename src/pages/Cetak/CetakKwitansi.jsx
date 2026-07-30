@@ -27,7 +27,10 @@ const ITEM_CONFIG = {
   // custom_<id> handled inline
 }
 
-const JENIS_LABEL = { JATI: 'JATI', RIMBA_MAHONI: 'MAHONI', RIMBA_KEDAWUNG: 'KEDAWUNG' }
+const JENIS_LABEL = {
+  JATI: 'JATI', RIMBA_MAHONI: 'MAHONI', RIMBA_KEDAWUNG: 'KEDAWUNG',
+  JOHAR: 'JOHAR', KLAMPIS: 'KLAMPIS', RIMBA_CAMPURAN: 'RIMBA CAMPURAN',
+}
 
 export default function CetakKwitansi() {
   return (
@@ -607,16 +610,13 @@ function computeSubRows(subSrc, data, totalFisik) {
   let result = []
 
   if (subSrc === 'tumpuk') {
-    result = [
-      { label: 'JATI',     fisik: get('JATI') },
-      { label: 'MAHONI',   fisik: get('RIMBA_MAHONI') },
-      { label: 'KEDAWUNG', fisik: get('RIMBA_KEDAWUNG') },
-    ]
+    // Semua jenis yang ada datanya di periode ini ikut breakdown Penomoran/Sabuk.
+    const jenisAda = [...new Set(t.map(r => r.jenis))]
+    result = jenisAda.map(j => ({ label: JENIS_LABEL[j] || j, fisik: get(j) }))
   } else if (subSrc === 'tumpuk_slag') {
-    result = [
-      { label: 'JATI',   fisik: get('JATI') },
-      { label: 'MAHONI', fisik: get('RIMBA_MAHONI') },
-    ]
+    // Hanya jenis yang dicentang "Ikut Slaghammer" di halaman Tumpuk Kapling.
+    const jenisSlag = [...new Set(t.filter(r => r.ikut_slaghammer).map(r => r.jenis))]
+    result = jenisSlag.map(j => ({ label: JENIS_LABEL[j] || j, fisik: get(j) }))
   } else if (subSrc === 'tanda_laku') {
     const tl = data.tandaLaku || []
     const grouped = {}
