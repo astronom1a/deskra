@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { Save, CalendarDays, Sparkles, Layers, Lock } from 'lucide-react'
+import { Save, CalendarDays, Sparkles, Layers, Lock, Plus, Trash2 } from 'lucide-react'
 import { DEFAULT_TARIF_PERIODE, TUMPUK_TARIF_KODE } from '../lib/rekapPekerjaan'
 import { useAuth } from '../lib/AuthProvider'
 import { requireTpkId } from '../lib/tenantScope'
@@ -9,11 +9,21 @@ import TpkRequiredState from '../components/layout/TpkRequiredState'
 import Toast, { useToast } from '../components/ui/Toast'
 import { useIsMobile } from '../lib/hooks/useIsMobile'
 
+// Jenis legacy — dipakai "Generate Default" untuk seed 9 baris seperti sebelumnya.
 const JENIS_LIST = [
   { key: 'JATI', label: 'Tumpuk Kapling JATI' },
   { key: 'RIMBA_MAHONI', label: 'Tumpuk Kapling RIMBA (Mahoni)' },
   { key: 'RIMBA_KEDAWUNG', label: 'Tumpuk Kapling RIMBA (Kedawung)' },
 ]
+// Semua jenis yang bisa dipilih lewat "Tambah Item".
+const JENIS_OPTIONS = [
+  ...JENIS_LIST,
+  { key: 'JOHAR', label: 'Tumpuk Kapling JOHAR' },
+  { key: 'KLAMPIS', label: 'Tumpuk Kapling KLAMPIS' },
+  { key: 'RIMBA_CAMPURAN', label: 'Tumpuk Kapling RIMBA (Campuran)' },
+]
+// Jenis yang selalu ikut Slaghammer — checkbox-nya dikunci.
+const JENIS_FIXED_SLAG = ['JATI', 'RIMBA_MAHONI']
 const SORTIMEN_LIST = ['AI', 'AII', 'AIII']
 // Tarif default fallback — dipakai bila Tarif Periode di Main Link belum di-set.
 const DEFAULT_TARIF = {
@@ -47,8 +57,12 @@ export default function TumpukKapling() {
   const [summary, setSummary] = useState({ penomoran: 0, sabuk: 0, slaghammer: 0 })
   // Tarif per sortimen — sumber: tabel_tarif_periode (dikelola di Main Link)
   const [tarifSortimen, setTarifSortimen] = useState(DEFAULT_TARIF)
+  const [newJenisSelect, setNewJenisSelect] = useState('')
   const { toast, showToast } = useToast(3000)
   const [loading, setLoading] = useState(false)
+  // Snapshot jenis yang ada di DB saat fetch terakhir — dipakai untuk
+  // mendeteksi jenis yang dihapus user (perlu di-DELETE saat Simpan).
+  const initialJenisRef = useRef(new Set())
 
   useEffect(() => {
     if (tpkId) fetchPeriodes()
@@ -82,6 +96,8 @@ export default function TumpukKapling() {
       supabase.from('tabel_tarif_periode').select('kode,tarif').eq('tpk_id', scopedTpkId).eq('periode_id', periodeId),
     ])
     setRows(rowData || [])
+    initialJenisRef.current = new Set((rowData || []).map(r => r.jenis))
+    setNewJenisSelect('')
     // Build map sortimen → tarif (fallback: DEFAULT_TARIF_PERIODE)
     const tarifByKode = Object.fromEntries((tarifData || []).map(t => [t.kode, t.tarif]))
     setTarifSortimen({
@@ -96,7 +112,7 @@ export default function TumpukKapling() {
   function fetchSummary(sourceRows) {
     const total = sourceRows.reduce((sum, row) => sum + Number(row.volume || 0), 0)
     const slagTotal = sourceRows
-      .filter(row => ['JATI', 'RIMBA_MAHONI'].includes(row.jenis))
+      .filter(row => row.ikut_slaghammer)
       .reduce((sum, row) => sum + Number(row.volume || 0), 0)
     setSummary({
       penomoran: { fisik: total, tarif: 900, nilai: total * 900 },
@@ -136,6 +152,7 @@ export default function TumpukKapling() {
       sortimen: row.sortimen,
       volume: 0,
       tarif: row.tarif,
+      ikut_slaghammer: JENIS_FIXED_SLAG.includes(row.jenis),
     }))
     const { error } = await supabase
       .from('tabel_tumpuk_kapling')
@@ -160,8 +177,34 @@ export default function TumpukKapling() {
         jenis, sortimen,
         volume: val,
         tarif: tarifSortimen[sortimen] ?? DEFAULT_TARIF[sortimen],
+        ikut_slaghammer: JENIS_FIXED_SLAG.includes(jenis),
       }]
     })
+  }
+
+  function addJenisBlock(jenisKey) {
+    if (!jenisKey || !selectedPeriode) return
+    setRows(prev => [
+      ...prev,
+      ...SORTIMEN_LIST.map(s => ({
+        _key: `${jenisKey}-${s}`,
+        periode_id: selectedPeriode.id,
+        jenis: jenisKey,
+        sortimen: s,
+        volume: 0,
+        tarif: tarifSortimen[s] ?? DEFAULT_TARIF[s],
+        ikut_slaghammer: JENIS_FIXED_SLAG.includes(jenisKey),
+      })),
+    ])
+    setNewJenisSelect('')
+  }
+
+  function removeJenisBlock(jenisKey) {
+    setRows(prev => prev.filter(r => r.jenis !== jenisKey))
+  }
+
+  function toggleSlaghammer(jenisKey, checked) {
+    setRows(prev => prev.map(r => r.jenis === jenisKey ? { ...r, ikut_slaghammer: checked } : r))
   }
 
   async function handleSave() {
@@ -169,8 +212,26 @@ export default function TumpukKapling() {
     const scopedTpkId = requireTpkId(selectedPeriode.tpk_id || tpkId)
     setLoading(true)
 
+    const currentJenisSet = new Set(rows.map(r => r.jenis))
+    const removedJenis = [...initialJenisRef.current].filter(j => !currentJenisSet.has(j))
+
+    if (removedJenis.length) {
+      const { error: deleteError } = await supabase
+        .from('tabel_tumpuk_kapling')
+        .delete()
+        .eq('tpk_id', scopedTpkId)
+        .eq('periode_id', selectedPeriode.id)
+        .in('jenis', removedJenis)
+      if (deleteError) {
+        showToast(deleteError.message, 'error')
+        setLoading(false)
+        return
+      }
+    }
+
     const payload = []
-    for (const j of JENIS_LIST) {
+    for (const j of JENIS_OPTIONS) {
+      if (!currentJenisSet.has(j.key)) continue
       for (const s of SORTIMEN_LIST) {
         const row = getRow(j.key, s)
         payload.push({
@@ -181,38 +242,46 @@ export default function TumpukKapling() {
           volume: parseFloat(row?.volume) || 0,
           // Tarif selalu diambil dari Tarif Periode (Main Link), bukan dari user.
           tarif: tarifSortimen[s] ?? DEFAULT_TARIF[s],
+          ikut_slaghammer: JENIS_FIXED_SLAG.includes(j.key) ? true : !!row?.ikut_slaghammer,
         })
       }
     }
 
-    const { error } = await supabase
-      .from('tabel_tumpuk_kapling')
-      .upsert(payload, { onConflict: 'periode_id,jenis,sortimen' })
-
-    if (error) {
-      showToast(error.message, 'error')
-    } else {
-      showToast('Data Tumpuk Kapling tersimpan')
-      fetchData(selectedPeriode.id)
+    if (payload.length) {
+      const { error } = await supabase
+        .from('tabel_tumpuk_kapling')
+        .upsert(payload, { onConflict: 'periode_id,jenis,sortimen' })
+      if (error) {
+        showToast(error.message, 'error')
+        setLoading(false)
+        return
+      }
     }
+
+    showToast('Data Tumpuk Kapling tersimpan')
+    fetchData(selectedPeriode.id)
     setLoading(false)
   }
 
   const hasData = rows.length > 0
-  const grid = hasData ? rows : (selectedPeriode ? buildEmptyGrid(selectedPeriode.id) : [])
+  const activeJenisSet = new Set(rows.map(r => r.jenis))
+  const activeJenis = JENIS_OPTIONS.filter(j => activeJenisSet.has(j.key))
 
   function totalPerJenis(jenis) {
     return SORTIMEN_LIST.reduce((sum, s) => {
-      const r = grid.find(x => x.jenis === jenis && x.sortimen === s)
+      const r = rows.find(x => x.jenis === jenis && x.sortimen === s)
       return sum + (parseFloat(r?.volume) || 0)
     }, 0)
   }
   function nilaiPerJenis(jenis) {
     return SORTIMEN_LIST.reduce((sum, s) => {
-      const r = grid.find(x => x.jenis === jenis && x.sortimen === s)
+      const r = rows.find(x => x.jenis === jenis && x.sortimen === s)
       const tarif = tarifSortimen[s] ?? DEFAULT_TARIF[s]
       return sum + (parseFloat(r?.volume) || 0) * tarif
     }, 0)
+  }
+  function isJenisSlagChecked(jenis) {
+    return !!rows.find(x => x.jenis === jenis)?.ikut_slaghammer
   }
 
   if (!tpkId) return <TpkRequiredState />
@@ -278,7 +347,7 @@ export default function TumpukKapling() {
             <div style={{ background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 3, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'monospace', fontSize: 12, color: '#ffaa00' }}>
                 <Sparkles size={14}/>
-                <span>Belum ada data untuk periode ini. Gunakan grid di bawah atau generate 9 baris default.</span>
+                <span>Belum ada data untuk periode ini. Tambah item jenis di bawah, atau generate 9 baris default.</span>
               </div>
               <button
                 onClick={handleSeed}
@@ -287,67 +356,115 @@ export default function TumpukKapling() {
             </div>
           )}
 
-          {/* Grid input per jenis */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
-            {JENIS_LIST.map(j => (
-              <div key={j.key} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.015)', flexWrap: 'wrap', gap: 6 }}>
-                  <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: '#f0f0f0' }}>{j.label}</p>
-                  <div style={{ display: 'flex', gap: 16, fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
-                    <span>Total: <strong style={{ color: '#f0f0f0' }}>{formatNum(totalPerJenis(j.key))} M³</strong></span>
-                    <span style={{ color: '#00ff88', fontWeight: 600 }}>{formatRupiah(nilaiPerJenis(j.key))}</span>
+          {/* Grid input per jenis — dinamis, hanya jenis yang aktif ditampilkan */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 12 }}>
+            {activeJenis.map(j => {
+              const isFixedSlag = JENIS_FIXED_SLAG.includes(j.key)
+              return (
+                <div key={j.key} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.015)', flexWrap: 'wrap', gap: 10 }}>
+                    <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: '#f0f0f0' }}>{j.label}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.4)', cursor: isFixedSlag ? 'default' : 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={isFixedSlag || isJenisSlagChecked(j.key)}
+                          disabled={isFixedSlag}
+                          onChange={e => toggleSlaghammer(j.key, e.target.checked)}
+                        />
+                        Ikut Slaghammer {isFixedSlag && <Lock size={9}/>}
+                      </label>
+                      <div style={{ display: 'flex', gap: 16, fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
+                        <span>Total: <strong style={{ color: '#f0f0f0' }}>{formatNum(totalPerJenis(j.key))} M³</strong></span>
+                        <span style={{ color: '#00ff88', fontWeight: 600 }}>{formatRupiah(nilaiPerJenis(j.key))}</span>
+                      </div>
+                      <button
+                        onClick={() => removeJenisBlock(j.key)}
+                        title="Hapus jenis ini"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                        onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                      ><Trash2 size={13}/></button>
+                    </div>
                   </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ padding: '7px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: 80 }}>Sortimen</th>
+                        <th style={{ padding: '7px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: 140 }}>Volume (M³)</th>
+                        <th style={{ padding: '7px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: 140 }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>Tarif <Lock size={10}/></span>
+                        </th>
+                        <th style={{ padding: '7px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>Nilai</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {SORTIMEN_LIST.map(s => {
+                        const r = rows.find(x => x.jenis === j.key && x.sortimen === s)
+                        const vol = parseFloat(r?.volume) || 0
+                        const trf = tarifSortimen[s] ?? DEFAULT_TARIF[s]
+                        return (
+                          <tr key={s} className="tk-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <td style={{ padding: '7px 12px', fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>{s}</td>
+                            <td style={{ padding: '5px 12px' }}>
+                              <input
+                                type="number" step="0.001"
+                                value={r?.volume ?? ''}
+                                onChange={e => updateVolume(j.key, s, e.target.value)}
+                                className="tk-input"
+                                style={{ width: '100%', padding: '5px 8px', textAlign: 'right', boxSizing: 'border-box' }}
+                                placeholder="0"
+                              />
+                            </td>
+                            <td style={{ padding: '7px 12px', textAlign: 'right', color: 'rgba(255,255,255,0.35)' }}>
+                              {formatRupiah(trf)}
+                            </td>
+                            <td style={{ padding: '7px 12px', textAlign: 'right', fontWeight: 600, color: vol > 0 ? '#f0f0f0' : 'rgba(255,255,255,0.2)' }}>
+                              {formatRupiah(vol * trf)}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ padding: '7px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: 80 }}>Sortimen</th>
-                      <th style={{ padding: '7px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: 140 }}>Volume (M³)</th>
-                      <th style={{ padding: '7px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', width: 140 }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>Tarif <Lock size={10}/></span>
-                      </th>
-                      <th style={{ padding: '7px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>Nilai</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {SORTIMEN_LIST.map(s => {
-                      const r = grid.find(x => x.jenis === j.key && x.sortimen === s)
-                      const vol = parseFloat(r?.volume) || 0
-                      const trf = tarifSortimen[s] ?? DEFAULT_TARIF[s]
-                      return (
-                        <tr key={s} className="tk-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                          <td style={{ padding: '7px 12px', fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>{s}</td>
-                          <td style={{ padding: '5px 12px' }}>
-                            <input
-                              type="number" step="0.001"
-                              value={r?.volume ?? ''}
-                              onChange={e => updateVolume(j.key, s, e.target.value)}
-                              className="tk-input"
-                              style={{ width: '100%', padding: '5px 8px', textAlign: 'right', boxSizing: 'border-box' }}
-                              placeholder="0"
-                            />
-                          </td>
-                          <td style={{ padding: '7px 12px', textAlign: 'right', color: 'rgba(255,255,255,0.35)' }}>
-                            {formatRupiah(trf)}
-                          </td>
-                          <td style={{ padding: '7px 12px', textAlign: 'right', fontWeight: 600, color: vol > 0 ? '#f0f0f0' : 'rgba(255,255,255,0.2)' }}>
-                            {formatRupiah(vol * trf)}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ))}
+              )
+            })}
           </div>
+
+          {/* Tambah Item — pilih jenis yang belum aktif */}
+          {activeJenis.length < JENIS_OPTIONS.length && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <select
+                value={newJenisSelect}
+                onChange={e => setNewJenisSelect(e.target.value)}
+                className="tk-input"
+                style={{ padding: '6px 10px' }}
+              >
+                <option value="">Pilih jenis...</option>
+                {JENIS_OPTIONS.filter(j => !activeJenisSet.has(j.key)).map(j => (
+                  <option key={j.key} value={j.key}>{j.label}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => addJenisBlock(newJenisSelect)}
+                disabled={!newJenisSelect}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px',
+                  background: 'rgba(0,255,136,0.1)', border: '1px solid rgba(0,255,136,0.25)', borderRadius: 3,
+                  color: '#00ff88', fontFamily: 'monospace', fontSize: 11, fontWeight: 700,
+                  cursor: newJenisSelect ? 'pointer' : 'not-allowed', opacity: newJenisSelect ? 1 : 0.5,
+                }}
+              ><Plus size={12}/> Tambah Item</button>
+            </div>
+          )}
 
           {/* Summary turunan */}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
             {[
               { label: 'Penomoran Kapling', data: summary.penomoran, note: 'Semua jenis',   accent: '#60a5fa' },
               { label: 'Sabuk Kapling',     data: summary.sabuk,     note: '= Penomoran',   accent: '#34d399' },
-              { label: 'Slaghammer',        data: summary.slaghammer, note: 'JATI + Mahoni', accent: '#fb923c' },
+              { label: 'Slaghammer',        data: summary.slaghammer, note: 'Sesuai checklist per jenis', accent: '#fb923c' },
             ].map(c => (
               <div key={c.label} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, padding: '14px 16px' }}>
                 <p style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: c.accent, marginBottom: 2 }}>{c.label}</p>
