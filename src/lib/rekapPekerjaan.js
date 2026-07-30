@@ -89,7 +89,7 @@ export async function buildRows(periodeId, periodeLabel, options = {}) {
 
   const t = tumpuk || []
   const totalPenomoran = t.reduce((s,r) => s+(r.volume||0), 0)
-  const totalSlag = t.filter(r=>['JATI','RIMBA_MAHONI'].includes(r.jenis))
+  const totalSlag = t.filter(r => r.ikut_slaghammer)
     .reduce((s,r) => s+(r.volume||0), 0)
 
   const byJenis = (jenis) => {
@@ -103,11 +103,14 @@ export async function buildRows(periodeId, periodeLabel, options = {}) {
     return { fisik, nilai, tarif: fisik>0 ? nilai/fisik : 0 }
   }
 
-  const nilaiBrongkol = (brongkol||[]).reduce((s,r)=>s+(r.volume||0)*(r.tarif||0),0)
-  const nilaiJati     = byJenis('JATI').nilai
-  const nilaiMahoni   = byJenis('RIMBA_MAHONI').nilai
-  const nilaiKedawung = byJenis('RIMBA_KEDAWUNG').nilai
-  const h29 = nilaiJati + nilaiMahoni + nilaiKedawung + nilaiBrongkol
+  const nilaiBrongkol      = (brongkol||[]).reduce((s,r)=>s+(r.volume||0)*(r.tarif||0),0)
+  const nilaiJati          = byJenis('JATI').nilai
+  const nilaiMahoni        = byJenis('RIMBA_MAHONI').nilai
+  const nilaiKedawung      = byJenis('RIMBA_KEDAWUNG').nilai
+  const nilaiJohar         = byJenis('JOHAR').nilai
+  const nilaiKlampis       = byJenis('KLAMPIS').nilai
+  const nilaiRimbaCampuran = byJenis('RIMBA_CAMPURAN').nilai
+  const h29 = nilaiJati + nilaiMahoni + nilaiKedawung + nilaiJohar + nilaiKlampis + nilaiRimbaCampuran + nilaiBrongkol
 
   const tandaFisik   = (tandaLaku||[]).reduce((s,r)=>s+(r.volume||0),0)
   const brongkolFisik = (brongkol||[]).reduce((s,r)=>s+(r.volume||0),0)
@@ -141,6 +144,12 @@ export async function buildRows(periodeId, periodeLabel, options = {}) {
       satuan:'M3', ...byJenis('RIMBA_MAHONI'), _noMode:'none', _src:'auto' },
     { _key:'tumpuk_kedawung', kode_rek:'51.69.44', uraian:'TUMPUK KAPLING RIMBA (KEDAWUNG)',
       satuan:'M3', ...byJenis('RIMBA_KEDAWUNG'), _noMode:'none', _src:'auto' },
+    { _key:'tumpuk_johar', kode_rek:'51.69.44', uraian:'TUMPUK KAPLING JOHAR',
+      satuan:'M3', ...byJenis('JOHAR'), _noMode:'none', _src:'auto' },
+    { _key:'tumpuk_klampis', kode_rek:'51.69.44', uraian:'TUMPUK KAPLING KLAMPIS',
+      satuan:'M3', ...byJenis('KLAMPIS'), _noMode:'none', _src:'auto' },
+    { _key:'tumpuk_rimba_campuran', kode_rek:'51.69.44', uraian:'TUMPUK KAPLING RIMBA (CAMPURAN)',
+      satuan:'M3', ...byJenis('RIMBA_CAMPURAN'), _noMode:'none', _src:'auto' },
     { _key:'brongkol', kode_rek:'51.69.44', uraian:'TUMPUK BRONGKOL',
       satuan:'SM', fisik:brongkolFisik, tarif:tarifMap.brongkol, _noMode:'none', _src:'auto' },
     // Barcode dipecah per jenis biar masing-masing punya kwitansi sendiri
