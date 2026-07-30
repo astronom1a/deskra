@@ -1,6 +1,15 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.57.0',
+    date: '2026-07-30',
+    items: [
+      { type: 'feat', text: 'Tumpuk Kapling: input jenis kini dinamis (tambah/hapus blok jenis via "Tambah Item"), tidak lagi grid tetap 3 jenis' },
+      { type: 'feat', text: 'tambah 3 jenis baru di Tumpuk Kapling: Johar, Klampis, Rimba Campuran' },
+      { type: 'feat', text: 'Slaghammer kini checklist per jenis per periode (JATI & Rimba Mahoni tetap fix ikut, jenis lain — termasuk Rimba Kedawung — opsional, default tidak ikut)' },
+    ]
+  },
+  {
     version: '0.56.2',
     date: '2026-07-17',
     items: [
