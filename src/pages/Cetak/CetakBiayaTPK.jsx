@@ -79,8 +79,9 @@ function BiayaTPKDoc({ periode }) {
     const tarif = matches[0]?.tarif || 0
     return { sortimen: s, volume, tarif, nilai: Math.round(volume * tarif) }
   })
+  const RIMBA_GROUP_JENIS = ['RIMBA_MAHONI', 'RIMBA_KEDAWUNG', 'JOHAR', 'KLAMPIS', 'RIMBA_CAMPURAN']
   const sortimenJati  = sortimenOf(j => j === 'JATI')
-  const sortimenRimba = sortimenOf(j => j === 'RIMBA_MAHONI' || j === 'RIMBA_KEDAWUNG')
+  const sortimenRimba = sortimenOf(j => RIMBA_GROUP_JENIS.includes(j))
   const totalJati  = sortimenJati.reduce((s, x) => s + x.nilai, 0)
   const totalRimba = sortimenRimba.reduce((s, x) => s + x.nilai, 0)
   const totalJatiVol  = sortimenJati.reduce((s, x) => s + x.volume, 0)
