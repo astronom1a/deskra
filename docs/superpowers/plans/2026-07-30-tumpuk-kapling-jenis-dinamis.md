@@ -1,3 +1,274 @@
+# Tumpuk Kapling — Jenis Dinamis & Slaghammer Checklist Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Ubah menu Tumpuk Kapling dari grid statis 3 jenis menjadi blok jenis dinamis (tambah/hapus via "Tambah Item"), tambah 3 jenis baru (Johar, Klampis, Rimba Campuran), dan ubah Slaghammer dari hardcode JATI+Mahoni menjadi checklist per jenis per periode.
+
+**Architecture:** Kolom `jenis` di `tabel_tumpuk_kapling` (Postgres enum) diperluas dengan 3 nilai baru. Kolom baru `ikut_slaghammer` (boolean) jadi satu-satunya sumber kebenaran untuk kalkulasi Slaghammer di seluruh aplikasi (halaman input, rekap, dan laporan cetak) — menggantikan filter `jenis` yang hardcode. Halaman input (`TumpukKapling.jsx`) merender blok per jenis berdasarkan jenis unik yang ada di state `rows`, bukan array tetap.
+
+**Tech Stack:** React 18 + Vite, Supabase (Postgres), Bahasa Indonesia untuk UI/komentar. Tidak ada TypeScript, tidak ada test runner untuk halaman ini (verifikasi manual di browser, sesuai `CLAUDE.md`).
+
+---
+
+## Spec
+
+Lihat `docs/superpowers/specs/2026-07-30-tumpuk-kapling-jenis-dinamis-design.md` untuk detail keputusan desain lengkap.
+
+## File yang disentuh
+
+- Create: `supabase/migrations/20260730100000_tumpuk_kapling_jenis_baru.sql`
+- Create: `supabase/migrations/20260730100001_tumpuk_kapling_slaghammer_flag.sql`
+- Modify: `src/lib/rekapPekerjaan.js`
+- Modify: `src/pages/TumpukKapling.jsx` (rewrite penuh)
+- Modify: `src/pages/Cetak/CetakBiayaTPK.jsx`
+- Modify: `src/pages/Cetak/CetakKwitansi.jsx`
+- Modify: `src/pages/Cetak/CetakLampiran31.jsx`
+- Modify: `package.json`
+- Modify: `src/changelog.js`
+
+---
+
+### Task 1: Migration — tambah 3 nilai enum `jenis_kapling`
+
+**Files:**
+- Create: `supabase/migrations/20260730100000_tumpuk_kapling_jenis_baru.sql`
+
+- [ ] **Step 1: Tulis file migration**
+
+```sql
+-- ============================================================
+-- DESKRA — Tumpuk Kapling: tambah jenis baru
+-- Johar, Klampis, Rimba Campuran
+-- File ini HANYA berisi ALTER TYPE ADD VALUE — jangan tambah
+-- statement lain di sini (lihat catatan di migration berikutnya).
+-- ============================================================
+
+alter type jenis_kapling add value if not exists 'JOHAR';
+alter type jenis_kapling add value if not exists 'KLAMPIS';
+alter type jenis_kapling add value if not exists 'RIMBA_CAMPURAN';
+```
+
+- [ ] **Step 2: Jalankan migrasi**
+
+```bash
+npm run migrate
+```
+
+Expected: output menunjukkan `20260730100000_tumpuk_kapling_jenis_baru.sql` berhasil dijalankan (`✓ Selesai`).
+
+- [ ] **Step 3: Verifikasi manual di Supabase SQL editor**
+
+Jalankan query berikut di Supabase dashboard → SQL Editor:
+
+```sql
+select unnest(enum_range(null::jenis_kapling));
+```
+
+Expected: hasil berisi 6 baris — `JATI`, `RIMBA_MAHONI`, `RIMBA_KEDAWUNG`, `JOHAR`, `KLAMPIS`, `RIMBA_CAMPURAN`.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add supabase/migrations/20260730100000_tumpuk_kapling_jenis_baru.sql
+git commit -m "feat: tambah jenis Johar, Klampis, Rimba Campuran ke enum jenis_kapling"
+```
+
+---
+
+### Task 2: Migration — kolom `ikut_slaghammer` + backfill + view + seed function
+
+**Files:**
+- Create: `supabase/migrations/20260730100001_tumpuk_kapling_slaghammer_flag.sql`
+
+- [ ] **Step 1: Tulis file migration**
+
+```sql
+-- ============================================================
+-- DESKRA — Tumpuk Kapling: Slaghammer jadi checklist per jenis
+-- JATI & RIMBA_MAHONI selalu ikut (fix), jenis lain opsional
+-- per periode via checkbox di UI (default: tidak ikut).
+-- ============================================================
+
+alter table tabel_tumpuk_kapling
+  add column if not exists ikut_slaghammer boolean not null default false;
+
+-- Backfill data lama: JATI & RIMBA_MAHONI otomatis ikut Slaghammer
+-- (perilaku sama seperti sebelum perubahan ini).
+update tabel_tumpuk_kapling set ikut_slaghammer = true
+  where jenis in ('JATI', 'RIMBA_MAHONI');
+
+-- View v_slaghammer sekarang baca kolom ikut_slaghammer, bukan
+-- filter jenis hardcode — otomatis benar untuk jenis apa pun.
+create or replace view v_slaghammer
+with (security_invoker = true) as
+select
+  periode_id,
+  sum(volume)            as fisik,
+  3000::numeric          as tarif,
+  sum(volume) * 3000     as nilai
+from tabel_tumpuk_kapling
+where ikut_slaghammer = true
+group by periode_id;
+
+-- seed_tumpuk_kapling(): insert eksplisit kolom ikut_slaghammer
+-- supaya JATI & RIMBA_MAHONI tetap true, RIMBA_KEDAWUNG false —
+-- perilaku "Generate Default" (9 baris) tidak berubah.
+create or replace function seed_tumpuk_kapling(p_periode_id uuid)
+returns void as $$
+declare
+  v_tpk_id uuid;
+begin
+  select tpk_id into v_tpk_id from tabel_periode where id = p_periode_id;
+
+  insert into tabel_tumpuk_kapling (periode_id, tpk_id, jenis, sortimen, volume, tarif, ikut_slaghammer) values
+    (p_periode_id, v_tpk_id, 'JATI',           'AI',   0, 19000, true),
+    (p_periode_id, v_tpk_id, 'JATI',           'AII',  0, 21500, true),
+    (p_periode_id, v_tpk_id, 'JATI',           'AIII', 0, 24800, true),
+    (p_periode_id, v_tpk_id, 'RIMBA_MAHONI',   'AI',   0, 19000, true),
+    (p_periode_id, v_tpk_id, 'RIMBA_MAHONI',   'AII',  0, 21500, true),
+    (p_periode_id, v_tpk_id, 'RIMBA_MAHONI',   'AIII', 0, 24800, true),
+    (p_periode_id, v_tpk_id, 'RIMBA_KEDAWUNG', 'AI',   0, 19000, false),
+    (p_periode_id, v_tpk_id, 'RIMBA_KEDAWUNG', 'AII',  0, 21500, false),
+    (p_periode_id, v_tpk_id, 'RIMBA_KEDAWUNG', 'AIII', 0, 24800, false)
+  on conflict (periode_id, jenis, sortimen) do nothing;
+end;
+$$ language plpgsql;
+```
+
+- [ ] **Step 2: Jalankan migrasi**
+
+```bash
+npm run migrate
+```
+
+Expected: `20260730100001_tumpuk_kapling_slaghammer_flag.sql` berhasil dijalankan.
+
+- [ ] **Step 3: Verifikasi manual di Supabase SQL editor**
+
+```sql
+select jenis, sortimen, ikut_slaghammer from tabel_tumpuk_kapling order by jenis, sortimen limit 20;
+```
+
+Expected: baris dengan `jenis = 'JATI'` atau `'RIMBA_MAHONI'` punya `ikut_slaghammer = true`, baris `jenis = 'RIMBA_KEDAWUNG'` punya `ikut_slaghammer = false`.
+
+```sql
+select * from v_slaghammer limit 5;
+```
+
+Expected: query jalan tanpa error dan nilainya sama dengan sebelum migrasi (bandingkan dengan angka Slaghammer yang tampil di halaman Tumpuk Kapling untuk periode yang sama sebelum deploy).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add supabase/migrations/20260730100001_tumpuk_kapling_slaghammer_flag.sql
+git commit -m "feat: kolom ikut_slaghammer di tabel_tumpuk_kapling, Slaghammer jadi checklist per jenis"
+```
+
+---
+
+### Task 3: `rekapPekerjaan.js` — pakai `ikut_slaghammer`, tambah 3 baris rekap baru
+
+**Files:**
+- Modify: `src/lib/rekapPekerjaan.js:92-93` (totalSlag)
+- Modify: `src/lib/rekapPekerjaan.js:107-110` (nilai per jenis + h29)
+- Modify: `src/lib/rekapPekerjaan.js:138-143` (rows array)
+
+- [ ] **Step 1: Ganti kalkulasi `totalSlag`**
+
+Ganti (baris 92-93):
+
+```js
+  const totalSlag = t.filter(r=>['JATI','RIMBA_MAHONI'].includes(r.jenis))
+    .reduce((s,r) => s+(r.volume||0), 0)
+```
+
+Jadi:
+
+```js
+  const totalSlag = t.filter(r => r.ikut_slaghammer)
+    .reduce((s,r) => s+(r.volume||0), 0)
+```
+
+- [ ] **Step 2: Tambah nilai per jenis baru & perluas `h29`**
+
+Ganti (baris 106-110):
+
+```js
+  const nilaiBrongkol = (brongkol||[]).reduce((s,r)=>s+(r.volume||0)*(r.tarif||0),0)
+  const nilaiJati     = byJenis('JATI').nilai
+  const nilaiMahoni   = byJenis('RIMBA_MAHONI').nilai
+  const nilaiKedawung = byJenis('RIMBA_KEDAWUNG').nilai
+  const h29 = nilaiJati + nilaiMahoni + nilaiKedawung + nilaiBrongkol
+```
+
+Jadi:
+
+```js
+  const nilaiBrongkol      = (brongkol||[]).reduce((s,r)=>s+(r.volume||0)*(r.tarif||0),0)
+  const nilaiJati          = byJenis('JATI').nilai
+  const nilaiMahoni        = byJenis('RIMBA_MAHONI').nilai
+  const nilaiKedawung      = byJenis('RIMBA_KEDAWUNG').nilai
+  const nilaiJohar         = byJenis('JOHAR').nilai
+  const nilaiKlampis       = byJenis('KLAMPIS').nilai
+  const nilaiRimbaCampuran = byJenis('RIMBA_CAMPURAN').nilai
+  const h29 = nilaiJati + nilaiMahoni + nilaiKedawung + nilaiJohar + nilaiKlampis + nilaiRimbaCampuran + nilaiBrongkol
+```
+
+- [ ] **Step 3: Tambah 3 baris rekap baru**
+
+Ganti (baris 138-143):
+
+```js
+    { _key:'tumpuk_jati', kode_rek:'51.69.44', uraian:'TUMPUK KAPLING JATI',
+      satuan:'M3', ...byJenis('JATI'), _noMode:'group', _groupValue:h29, _src:'auto' },
+    { _key:'tumpuk_mahoni', kode_rek:'51.69.44', uraian:'TUMPUK KAPLING RIMBA (MAHONI)',
+      satuan:'M3', ...byJenis('RIMBA_MAHONI'), _noMode:'none', _src:'auto' },
+    { _key:'tumpuk_kedawung', kode_rek:'51.69.44', uraian:'TUMPUK KAPLING RIMBA (KEDAWUNG)',
+      satuan:'M3', ...byJenis('RIMBA_KEDAWUNG'), _noMode:'none', _src:'auto' },
+```
+
+Jadi:
+
+```js
+    { _key:'tumpuk_jati', kode_rek:'51.69.44', uraian:'TUMPUK KAPLING JATI',
+      satuan:'M3', ...byJenis('JATI'), _noMode:'group', _groupValue:h29, _src:'auto' },
+    { _key:'tumpuk_mahoni', kode_rek:'51.69.44', uraian:'TUMPUK KAPLING RIMBA (MAHONI)',
+      satuan:'M3', ...byJenis('RIMBA_MAHONI'), _noMode:'none', _src:'auto' },
+    { _key:'tumpuk_kedawung', kode_rek:'51.69.44', uraian:'TUMPUK KAPLING RIMBA (KEDAWUNG)',
+      satuan:'M3', ...byJenis('RIMBA_KEDAWUNG'), _noMode:'none', _src:'auto' },
+    { _key:'tumpuk_johar', kode_rek:'51.69.44', uraian:'TUMPUK KAPLING JOHAR',
+      satuan:'M3', ...byJenis('JOHAR'), _noMode:'none', _src:'auto' },
+    { _key:'tumpuk_klampis', kode_rek:'51.69.44', uraian:'TUMPUK KAPLING KLAMPIS',
+      satuan:'M3', ...byJenis('KLAMPIS'), _noMode:'none', _src:'auto' },
+    { _key:'tumpuk_rimba_campuran', kode_rek:'51.69.44', uraian:'TUMPUK KAPLING RIMBA (CAMPURAN)',
+      satuan:'M3', ...byJenis('RIMBA_CAMPURAN'), _noMode:'none', _src:'auto' },
+```
+
+- [ ] **Step 4: Verifikasi manual**
+
+```bash
+npm run dev
+```
+
+Buka halaman Main Link, pilih periode yang sudah punya data Tumpuk Kapling (JATI/Mahoni/Kedawung) dan pastikan angka rekap "PENOMORAN KAPLING", "SABUK KAPLING", "SLAGHAMMER", dan "TUMPUK KAPLING JATI/RIMBA" tetap sama seperti sebelum perubahan (belum ada data Johar/Klampis/Rimba Campuran di DB, jadi barisnya akan tampil dengan fisik 0 dan tidak memengaruhi total).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/lib/rekapPekerjaan.js
+git commit -m "feat: rekapPekerjaan dukung jenis tumpuk kapling baru & slaghammer berbasis checklist"
+```
+
+---
+
+### Task 4: `TumpukKapling.jsx` — rewrite ke blok jenis dinamis
+
+**Files:**
+- Modify: `src/pages/TumpukKapling.jsx` (rewrite penuh)
+
+- [ ] **Step 1: Tulis ulang seluruh file**
+
+```jsx
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { Save, CalendarDays, Sparkles, Layers, Lock, Plus, Trash2 } from 'lucide-react'
@@ -488,3 +759,243 @@ export default function TumpukKapling() {
     </div>
   )
 }
+```
+
+- [ ] **Step 2: Jalankan dev server dan verifikasi manual**
+
+```bash
+npm run dev
+```
+
+Buka halaman Tumpuk Kapling di browser, lalu cek:
+1. Periode yang sudah punya data (JATI/Mahoni/Kedawung) — 3 blok tampil seperti sebelumnya, blok JATI & Mahoni checkbox "Ikut Slaghammer" tercentang & disabled (ada ikon lock), blok Kedawung checkbox kosong & bisa diklik.
+2. Klik dropdown "Tambah Item" → pilih "Tumpuk Kapling JOHAR" → klik "Tambah Item" → blok baru muncul dengan 3 baris sortimen kosong, checkbox Slaghammer tidak tercentang & bisa diklik.
+3. Isi volume di blok Johar, centang "Ikut Slaghammer", klik "Simpan Data" → toast sukses, blok Johar tetap ada setelah reload data, checkbox tetap tercentang.
+4. Card ringkasan "Slaghammer" nilainya naik sesuai volume Johar yang baru dicentang.
+5. Klik ikon trash di header blok Kedawung → blok hilang dari layar → klik "Simpan Data" → reload halaman (ganti periode lalu balik) → blok Kedawung tidak muncul lagi (row-nya sudah terhapus dari DB).
+6. Klik "Generate Default" di periode baru (belum ada data) → 3 blok legacy muncul (JATI, Mahoni, Kedawung) dengan volume 0.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/pages/TumpukKapling.jsx
+git commit -m "feat: Tumpuk Kapling — blok jenis dinamis (tambah/hapus item) + checklist Slaghammer per jenis"
+```
+
+---
+
+### Task 5: `CetakBiayaTPK.jsx` — grouping cetak jenis baru ke blok RIMBA
+
+**Files:**
+- Modify: `src/pages/Cetak/CetakBiayaTPK.jsx:82-83`
+
+- [ ] **Step 1: Perluas filter `sortimenRimba`**
+
+Ganti:
+
+```js
+  const sortimenJati  = sortimenOf(j => j === 'JATI')
+  const sortimenRimba = sortimenOf(j => j === 'RIMBA_MAHONI' || j === 'RIMBA_KEDAWUNG')
+```
+
+Jadi:
+
+```js
+  const RIMBA_GROUP_JENIS = ['RIMBA_MAHONI', 'RIMBA_KEDAWUNG', 'JOHAR', 'KLAMPIS', 'RIMBA_CAMPURAN']
+  const sortimenJati  = sortimenOf(j => j === 'JATI')
+  const sortimenRimba = sortimenOf(j => RIMBA_GROUP_JENIS.includes(j))
+```
+
+- [ ] **Step 2: Verifikasi manual**
+
+Buka halaman Cetak Biaya TPK untuk periode yang punya data Tumpuk Kapling. Pastikan blok "TUMPUK KAPLING JATI" dan "TUMPUK KAPLING RIMBA" nilainya tidak berubah dibanding sebelum perubahan (karena belum ada data Johar/Klampis/Rimba Campuran, filter tambahan tidak mengubah hasil).
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/pages/Cetak/CetakBiayaTPK.jsx
+git commit -m "feat: Cetak Biaya TPK — gabung jenis tumpuk kapling baru ke blok RIMBA"
+```
+
+---
+
+### Task 6: `CetakKwitansi.jsx` — label & breakdown jenis baru
+
+**Files:**
+- Modify: `src/pages/Cetak/CetakKwitansi.jsx:30` (JENIS_LABEL)
+- Modify: `src/pages/Cetak/CetakKwitansi.jsx:609-619` (computeSubRows)
+
+- [ ] **Step 1: Perluas `JENIS_LABEL`**
+
+Ganti (baris 30):
+
+```js
+const JENIS_LABEL = { JATI: 'JATI', RIMBA_MAHONI: 'MAHONI', RIMBA_KEDAWUNG: 'KEDAWUNG' }
+```
+
+Jadi:
+
+```js
+const JENIS_LABEL = {
+  JATI: 'JATI', RIMBA_MAHONI: 'MAHONI', RIMBA_KEDAWUNG: 'KEDAWUNG',
+  JOHAR: 'JOHAR', KLAMPIS: 'KLAMPIS', RIMBA_CAMPURAN: 'RIMBA CAMPURAN',
+}
+```
+
+- [ ] **Step 2: Perluas breakdown `subSrc === 'tumpuk'` dan ganti `subSrc === 'tumpuk_slag'` jadi dinamis**
+
+Ganti (baris 609-619):
+
+```js
+  if (subSrc === 'tumpuk') {
+    result = [
+      { label: 'JATI',     fisik: get('JATI') },
+      { label: 'MAHONI',   fisik: get('RIMBA_MAHONI') },
+      { label: 'KEDAWUNG', fisik: get('RIMBA_KEDAWUNG') },
+    ]
+  } else if (subSrc === 'tumpuk_slag') {
+    result = [
+      { label: 'JATI',   fisik: get('JATI') },
+      { label: 'MAHONI', fisik: get('RIMBA_MAHONI') },
+    ]
+  } else if (subSrc === 'tanda_laku') {
+```
+
+Jadi:
+
+```js
+  if (subSrc === 'tumpuk') {
+    // Semua jenis yang ada datanya di periode ini ikut breakdown Penomoran/Sabuk.
+    const jenisAda = [...new Set(t.map(r => r.jenis))]
+    result = jenisAda.map(j => ({ label: JENIS_LABEL[j] || j, fisik: get(j) }))
+  } else if (subSrc === 'tumpuk_slag') {
+    // Hanya jenis yang dicentang "Ikut Slaghammer" di halaman Tumpuk Kapling.
+    const jenisSlag = [...new Set(t.filter(r => r.ikut_slaghammer).map(r => r.jenis))]
+    result = jenisSlag.map(j => ({ label: JENIS_LABEL[j] || j, fisik: get(j) }))
+  } else if (subSrc === 'tanda_laku') {
+```
+
+- [ ] **Step 3: Verifikasi manual**
+
+Buka halaman Cetak Kwitansi untuk item `tumpuk` dan `slaghammer` (URL `/cetak/kwitansi/:periodeId/tumpuk` dan `/slaghammer` atau lewat menu terkait) untuk periode dengan data JATI/Mahoni/Kedawung — pastikan sub-baris breakdown-nya sama seperti sebelum perubahan (JATI, MAHONI muncul di breakdown Slaghammer; JATI, MAHONI, KEDAWUNG muncul di breakdown Penomoran/Sabuk kalau semua > 0).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/pages/Cetak/CetakKwitansi.jsx
+git commit -m "feat: Cetak Kwitansi — breakdown jenis tumpuk kapling dinamis & label jenis baru"
+```
+
+---
+
+### Task 7: `CetakLampiran31.jsx` — label & urutan jenis baru
+
+**Files:**
+- Modify: `src/pages/Cetak/CetakLampiran31.jsx:238-239`
+
+- [ ] **Step 1: Perluas `JENIS_LABEL` dan `JENIS_ORDER`**
+
+Ganti (baris 238-239):
+
+```js
+const JENIS_LABEL = { JATI: 'KAYU JATI', RIMBA_MAHONI: 'KAYU MAHONI', RIMBA_KEDAWUNG: 'KAYU KEDAWUNG' }
+const JENIS_ORDER = ['JATI', 'RIMBA_MAHONI', 'RIMBA_KEDAWUNG']
+```
+
+Jadi:
+
+```js
+const JENIS_LABEL = {
+  JATI: 'KAYU JATI', RIMBA_MAHONI: 'KAYU MAHONI', RIMBA_KEDAWUNG: 'KAYU KEDAWUNG',
+  JOHAR: 'KAYU JOHAR', KLAMPIS: 'KAYU KLAMPIS', RIMBA_CAMPURAN: 'KAYU RIMBA CAMPURAN',
+}
+const JENIS_ORDER = ['JATI', 'RIMBA_MAHONI', 'RIMBA_KEDAWUNG', 'JOHAR', 'KLAMPIS', 'RIMBA_CAMPURAN']
+```
+
+- [ ] **Step 2: Verifikasi manual**
+
+Buka halaman Cetak Lampiran 31 untuk periode dengan data Tumpuk Kapling — pastikan tabel "Bea tumpuk kapling" tampil sama seperti sebelum perubahan (jenis dengan volume 0 otomatis tidak muncul karena loop sudah memfilter `volume > 0`).
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/pages/Cetak/CetakLampiran31.jsx
+git commit -m "feat: Cetak Lampiran 31 — dukung label jenis tumpuk kapling baru"
+```
+
+---
+
+### Task 8: Version bump & changelog
+
+**Files:**
+- Modify: `package.json`
+- Modify: `src/changelog.js`
+
+- [ ] **Step 1: Bump versi di `package.json`**
+
+Ganti (baris 4):
+
+```json
+  "version": "0.56.1",
+```
+
+Jadi:
+
+```json
+  "version": "0.57.0",
+```
+
+- [ ] **Step 2: Tambah entry changelog**
+
+Tambahkan di awal array `changelog` pada `src/changelog.js` (sebelum entry `0.56.1`):
+
+```js
+  {
+    version: '0.57.0',
+    date: '2026-07-30',
+    items: [
+      { type: 'feat', text: 'Tumpuk Kapling: input jenis kini dinamis (tambah/hapus blok jenis via "Tambah Item"), tidak lagi grid tetap 3 jenis' },
+      { type: 'feat', text: 'tambah 3 jenis baru di Tumpuk Kapling: Johar, Klampis, Rimba Campuran' },
+      { type: 'feat', text: 'Slaghammer kini checklist per jenis per periode (JATI & Rimba Mahoni tetap fix ikut, jenis lain — termasuk Rimba Kedawung — opsional, default tidak ikut)' },
+    ]
+  },
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add package.json src/changelog.js
+git commit -m "chore: bump versi ke v0.57.0"
+```
+
+---
+
+### Task 9: Verifikasi end-to-end & push
+
+- [ ] **Step 1: Verifikasi build**
+
+```bash
+npm run build
+```
+
+Expected: build selesai tanpa error.
+
+- [ ] **Step 2: Verifikasi alur penuh di browser (dev server)**
+
+```bash
+npm run dev
+```
+
+1. Buka Tumpuk Kapling → pilih periode kosong → klik "Generate Default" → 3 blok legacy muncul.
+2. Tambah item "Johar" → isi volume AI=5, centang Ikut Slaghammer → Simpan Data.
+3. Buka Main Link / rekap periode yang sama → pastikan baris "TUMPUK KAPLING JOHAR" muncul dengan nilai sesuai, dan Slaghammer bertambah sesuai volume Johar.
+4. Buka Cetak Biaya TPK periode yang sama → nilai blok "TUMPUK KAPLING RIMBA" sudah termasuk Johar.
+5. Buka Cetak Lampiran 31 periode yang sama → baris "KAYU JOHAR" muncul di tabel Bea Tumpuk Kapling.
+
+- [ ] **Step 3: Push**
+
+```bash
+git push
+```
+
+Sesuai `CLAUDE.md`, migration & perubahan versi/changelog wajib langsung push tanpa menunggu konfirmasi — tapi karena task ini juga mencakup banyak perubahan halaman UI (`TumpukKapling.jsx`, halaman Cetak), konfirmasi ke user dulu sebelum push kalau belum eksplisit diminta.

@@ -36,6 +36,7 @@ const CetakPermintaanUk       = lazy(() => import('./pages/Cetak/CetakPermintaan
 const CetakKwitansi           = lazy(() => import('./pages/Cetak/CetakKwitansi'))
 const CetakLampiran31         = lazy(() => import('./pages/Cetak/CetakLampiran31'))
 const CetakAbsen              = lazy(() => import('./pages/Cetak/CetakAbsen'))
+const CetakBukuKas            = lazy(() => import('./pages/Cetak/CetakBukuKas'))
 
 function PrintFallback() {
   return (
@@ -203,6 +204,7 @@ function AppRoutes() {
       <Route path="cetak/lampiran-62/:periodeId/:itemKey" element={<PrintSuspense Component={CetakLampiran31} />} />
       <Route path="cetak/absen/:periodeId"               element={<PrintSuspense Component={CetakAbsen} />} />
       <Route path="cetak/absen/:periodeId/:itemKey"      element={<PrintSuspense Component={CetakAbsen} />} />
+      <Route path="cetak/buku-kas/:periodeId"            element={<PrintSuspense Component={CetakBukuKas} />} />
 
       <Route path="*" element={<SmartRedirect />} />
         </Routes>

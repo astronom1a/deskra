@@ -7,7 +7,7 @@ import { fetchActivePejabatSnapshot, refreshPeriodePejabatSnapshot } from '../li
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import ThemedSelect from '../components/ui/ThemedSelect'
 import TpkRequiredState from '../components/layout/TpkRequiredState'
-import { Plus, Save, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, Printer, FileText, ClipboardCheck, Receipt, Wallet, ClipboardList, FileSpreadsheet, Download } from 'lucide-react'
+import { Plus, Save, CalendarDays, X, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, Printer, FileText, ClipboardCheck, Receipt, Wallet, ClipboardList, FileSpreadsheet, Download, BookOpen } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import Toast, { useToast } from '../components/ui/Toast'
 import { logActivity } from '../lib/activityLog'
@@ -663,6 +663,7 @@ export default function MainLink() {
                   { label: 'Gabungan Pembayaran',  icon: Wallet,        action: ()=>openCetak('gabungan-pembayaran') },
                   { label: 'PJ UK',                icon: ClipboardList, action: ()=>openCetak('pj-uk') },
                   { label: 'Permintaan UK',        icon: FileSpreadsheet, action: ()=>openCetak('permintaan-uk') },
+                  { label: 'Buku KAS',             icon: BookOpen,      action: ()=>openCetak('buku-kas') },
                 ].map(({ label, icon: Icon, action }) => (
                   <button key={label} onClick={action}
                     style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 11, fontFamily: 'monospace', background: 'rgba(0,255,136,0.07)', border: '1px solid rgba(0,255,136,0.18)', borderRadius: 3, color: '#00ff88', cursor: 'pointer' }}

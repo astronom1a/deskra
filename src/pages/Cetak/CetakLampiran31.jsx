@@ -235,8 +235,11 @@ function SingleWorkerBody({ data, item, grand, cfg, itemKey }) {
 }
 
 // ── TABLE: Tumpuk Kapling (multi-worker split rata + breakdown jenis/sortimen)
-const JENIS_LABEL = { JATI: 'KAYU JATI', RIMBA_MAHONI: 'KAYU MAHONI', RIMBA_KEDAWUNG: 'KAYU KEDAWUNG' }
-const JENIS_ORDER = ['JATI', 'RIMBA_MAHONI', 'RIMBA_KEDAWUNG']
+const JENIS_LABEL = {
+  JATI: 'KAYU JATI', RIMBA_MAHONI: 'KAYU MAHONI', RIMBA_KEDAWUNG: 'KAYU KEDAWUNG',
+  JOHAR: 'KAYU JOHAR', KLAMPIS: 'KAYU KLAMPIS', RIMBA_CAMPURAN: 'KAYU RIMBA CAMPURAN',
+}
+const JENIS_ORDER = ['JATI', 'RIMBA_MAHONI', 'RIMBA_KEDAWUNG', 'JOHAR', 'KLAMPIS', 'RIMBA_CAMPURAN']
 const SORTIMEN_LABEL = { AI: 'A I', AII: 'A II', AIII: 'A III' }
 const SORTIMEN_ORDER = ['AI', 'AII', 'AIII']
 
