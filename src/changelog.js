@@ -1,6 +1,13 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.58.0',
+    date: '2026-08-27',
+    items: [
+      { type: 'feat', text: 'tambah menu cetak "Buku KAS" di Uang Kerja — rekap penerimaan & pengeluaran uang kerja per periode, dengan opsi input manual saldo kas penutup' },
+    ]
+  },
+  {
     version: '0.57.0',
     date: '2026-07-30',
     items: [
