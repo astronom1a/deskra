@@ -18,6 +18,11 @@ export function formatTanggalLengkap(s) {
   if (!s) return ''
   const d = new Date(s); return `${d.getDate()} ${BULAN_FULL[d.getMonth()]} ${d.getFullYear()}`
 }
+export function formatTanggalSingkat(s) {
+  if (!s) return ''
+  const d = new Date(s)
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`
+}
 export function formatTanggalTtd(s) {
   if (!s) return ''
   const d = new Date(s)

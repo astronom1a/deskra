@@ -1,6 +1,13 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.59.0',
+    date: '2026-08-28',
+    items: [
+      { type: 'feat', text: 'rombak model tabel Cetak Buku KAS mengikuti Blanko KAS: kolom Surat Bukti (Jenis/Tgl/No) & Bukti Kas No. (Persekot/Penghasilan), orientasi landscape, ukuran kertas ikut printer, tanggal format dd/mm/yyyy, garis kolom menerus di belakang teks penutup & tanda tangan' },
+    ]
+  },
+  {
     version: '0.58.0',
     date: '2026-08-27',
     items: [

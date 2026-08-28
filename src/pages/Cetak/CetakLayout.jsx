@@ -30,7 +30,7 @@ export function CetakPageSkeleton({ landscape = false }) {
   )
 }
 
-export default function CetakLayout({ title, landscape = false, children: render }) {
+export default function CetakLayout({ title, landscape = false, autoPageSize = false, children: render }) {
   const { periodeId } = useParams()
   const [periode, setPeriode] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -102,8 +102,8 @@ export default function CetakLayout({ title, landscape = false, children: render
         ><Printer size={14}/> Cetak</button>
       </div>
 
-      {/* Continuous paper 9.5"×11" = 240mm×280mm (portrait) / 280mm×240mm (landscape) */}
-      <style>{`@media print { @page { size: ${landscape ? '280mm 240mm' : '240mm 280mm'}; margin: 0; } .print-area { padding: 10mm !important; color: #000 !important; background: #fff !important; } }`}</style>
+      {/* Continuous paper 9.5"×11" = 240mm×280mm (portrait) / 280mm×240mm (landscape) — autoPageSize: ukuran kertas mengikuti setting printer perangkat, hanya orientasi (landscape/portrait) yang tetap dipaksa */}
+      <style>{`@media print { @page { size: ${autoPageSize ? (landscape ? 'landscape' : 'portrait') : (landscape ? '280mm 240mm' : '240mm 280mm')}; margin: 0; } .print-area { padding: 10mm !important; color: #000 !important; background: #fff !important; } }`}</style>
 
       {/* Konten cetak — kanvas selalu putih, walau app dark mode */}
       <div className={`print-area cetak-canvas mx-auto bg-white text-gray-900 shadow-sm my-6 p-10 print:shadow-none print:my-0 ${landscape ? 'max-w-[280mm]' : 'max-w-[240mm]'}`}>
