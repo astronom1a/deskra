@@ -21,7 +21,7 @@ export default function RegisterKaplingDkhpModal({
             <FileBarChart2 size={13} style={{ display: 'inline', marginRight: 8, color: '#00ff88' }}/>
             Input DKHP
           </span>
-          <button onClick={onCancel} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}><X size={14}/></button>
+          <button onClick={onCancel} aria-label="Tutup" style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}><X size={14}/></button>
         </div>
 
         <div style={{ marginBottom: 16 }}>

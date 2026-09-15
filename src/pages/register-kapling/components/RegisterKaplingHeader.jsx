@@ -90,14 +90,14 @@ export default function RegisterKaplingHeader({
           style={{ ...iconBtn, gap: 6, padding: '7px 10px', fontSize: 12, color: 'rgba(255,255,255,0.5)' }}
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#f0f0f0' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
-        ><Settings size={14} /></button>
+        aria-label="Pengaturan kolom"><Settings size={14} /></button>
 
         {/* Add row */}
         <button onClick={onAddRow} title="Tambah Kapling"
           style={{ ...iconBtn, color: 'rgba(255,255,255,0.65)' }}
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#f0f0f0' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
-        ><Plus size={14} /></button>
+        aria-label="Tambah kapling"><Plus size={14} /></button>
 
         {/* Fix prefix — hanya tampil jika ada invois yang perlu diperbaiki */}
         {needFix > 0 && (
@@ -123,7 +123,7 @@ export default function RegisterKaplingHeader({
           style={{ ...iconBtn, color: 'rgba(255,255,255,0.5)' }}
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.07)'; e.currentTarget.style.color = '#00ff88'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.2)' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
-        ><Download size={14} /></button>
+        aria-label="Unduh data"><Download size={14} /></button>
 
         {/* Import — satu tombol untuk semua jenis import */}
         <div ref={importMenuRef} style={{ position: 'relative' }}>

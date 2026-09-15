@@ -25,7 +25,7 @@ export default function RegisterKaplingExcelImportPreview({
               <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontFamily: 'monospace' }}>{preview.rows.length} baris ditemukan</p>
             </div>
           </div>
-          <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
+          <button onClick={onCancel} aria-label="Tutup" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
         </div>
         <div style={{ padding: '0 24px', flexShrink: 0 }}>
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.04)', borderRadius: 3, padding: 3, marginBottom: 16 }}>

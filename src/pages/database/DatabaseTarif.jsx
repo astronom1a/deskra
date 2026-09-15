@@ -221,11 +221,11 @@ export default function DatabaseTarif() {
                   </td>
                   <td style={{ padding: '10px 10px', width: 60 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
-                      <button onClick={() => openEdit(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                      <button onClick={() => openEdit(row)} aria-label="Edit tarif" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
                         onMouseEnter={e => e.currentTarget.style.color = '#00ff88'}
                         onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
                       ><Pencil size={13}/></button>
-                      <button onClick={() => setDeleteRow(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                      <button onClick={() => setDeleteRow(row)} aria-label="Hapus tarif" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
                         onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
                         onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
                       ><Trash2 size={13}/></button>

@@ -2,10 +2,17 @@ import { FileText, Loader2, X } from 'lucide-react'
 
 export default function RegisterKaplingInvoicePreview({
   isSaving,
+  kaplingSkipList,
   onCancel,
+  onRegisterKapling,
   onSave,
+  onSkipKapling,
+  onUnskipKapling,
   preview,
+  skippingKapling,
 }) {
+  const skipByKapling = new Map(kaplingSkipList.map(entry => [entry.no_kapling, entry]))
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, width: '100%', maxWidth: 560, display: 'flex', flexDirection: 'column', maxHeight: '90vh', padding: 24 }}>
@@ -19,7 +26,7 @@ export default function RegisterKaplingInvoicePreview({
               <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontFamily: 'monospace' }}>{preview.fileCount} file dipilih</p>
             </div>
           </div>
-          <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
+          <button onClick={onCancel} aria-label="Tutup" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
         </div>
 
         <div style={{ overflowY: 'auto', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
@@ -74,6 +81,35 @@ export default function RegisterKaplingInvoicePreview({
                       +{invoice.matched.length - 20} kapling lainnya
                     </div>
                   )}
+                </div>
+              )}
+              {invoice.unmatched.length > 0 && (
+                <div>
+                  {invoice.unmatched.map(noKapling => {
+                    const skip = skipByKapling.get(noKapling)
+                    return (
+                      <div key={`${invoice.noInvois}-${noKapling}`} style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                        <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#ffaa00' }}>{noKapling}</span>
+                        {skip ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>di luar cakupan</span>
+                            <button onClick={() => onUnskipKapling(skip.id)}
+                              style={{ padding: '3px 8px', fontSize: 10, borderRadius: 2, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontFamily: 'monospace' }}
+                            >batalkan</button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button onClick={() => onRegisterKapling(noKapling, invoice)}
+                              style={{ padding: '3px 8px', fontSize: 10, borderRadius: 2, border: '1px solid rgba(0,255,136,0.25)', background: 'rgba(0,255,136,0.08)', color: '#00ff88', cursor: 'pointer', fontFamily: 'monospace' }}
+                            >daftarkan</button>
+                            <button onClick={() => onSkipKapling(noKapling)} disabled={skippingKapling === noKapling}
+                              style={{ padding: '3px 8px', fontSize: 10, borderRadius: 2, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)', cursor: skippingKapling === noKapling ? 'not-allowed' : 'pointer', fontFamily: 'monospace', opacity: skippingKapling === noKapling ? 0.5 : 1 }}
+                            >skip</button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>

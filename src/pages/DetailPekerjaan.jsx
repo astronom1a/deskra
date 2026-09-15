@@ -105,6 +105,7 @@ function SectionPerJenis({
                       value={r.jenis || ''}
                       onChange={e => updateRow(r._key, 'jenis', e.target.value)}
                       list={`jenis-${tableName}`}
+                      className="dp-input"
                       style={dp_inputStyle}
                       placeholder="Jenis pohon..."
                     />
@@ -118,6 +119,7 @@ function SectionPerJenis({
                     type="number" step="0.001"
                     value={r[volumeField] ?? ''}
                     onChange={e => updateRow(r._key, volumeField, e.target.value)}
+                    className="dp-input"
                     style={dp_inputStyleRight}
                   />
                 </td>
@@ -126,6 +128,7 @@ function SectionPerJenis({
                     type="number"
                     value={r.tarif ?? ''}
                     onChange={e => updateRow(r._key, 'tarif', e.target.value)}
+                    className="dp-input"
                     style={dp_inputStyleRight}
                   />
                 </td>
@@ -496,12 +499,14 @@ export default function DetailPekerjaan() {
                   <div>
                     <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: 6 }}>Jumlah Orang (otomatis dari Database Tenaga)</label>
                     <input type="number" value={tenagaBantu.jumlah_orang} readOnly
+                      className="dp-input"
                       style={{ ...dp_inputStyle, background: 'rgba(255,255,255,0.01)', cursor: 'not-allowed' }}/>
                   </div>
                   <div>
                     <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: 6 }}>Tarif per Orang</label>
                     <input type="number" value={tenagaBantu.tarif_per_orang}
                       onChange={e => setTenagaBantu(p => ({ ...p, tarif_per_orang: e.target.value }))}
+                      className="dp-input"
                       style={dp_inputStyle}/>
                   </div>
                   <div>
@@ -538,6 +543,7 @@ export default function DetailPekerjaan() {
                   <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: 6 }}>Nominal (otomatis periode II)</label>
                   <input type="number" value={kebersihan.nominal}
                     onChange={e => setKebersihan(p => ({ ...p, nominal: e.target.value }))}
+                    className="dp-input"
                     style={dp_inputStyle}/>
                 </div>
               ) : (
@@ -568,12 +574,14 @@ export default function DetailPekerjaan() {
                     <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: 6 }}>Nominal</label>
                     <input type="number" value={listrik.nominal}
                       onChange={e => setListrik(p => ({ ...p, nominal: e.target.value }))}
+                      className="dp-input"
                       style={dp_inputStyle}/>
                   </div>
                   <div>
                     <label style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: 6 }}>No. Meter</label>
                     <input value={listrik.no_meter || ''}
                       onChange={e => setListrik(p => ({ ...p, no_meter: e.target.value }))}
+                      className="dp-input"
                       style={dp_inputStyle} placeholder="516740016889"/>
                   </div>
                 </div>
@@ -638,20 +646,24 @@ export default function DetailPekerjaan() {
                             >
                               <td style={{ padding: '5px 12px' }}>
                                 <input value={r.label || ''} onChange={e => updateCustom(r._key, 'label', e.target.value)}
+                                  className="dp-input"
                                   style={dp_inputStyle} placeholder="Nama pekerjaan..."/>
                               </td>
                               <td style={{ padding: '5px 12px', width: 100 }}>
                                 <input value={r.satuan || ''} onChange={e => updateCustom(r._key, 'satuan', e.target.value)}
+                                  className="dp-input"
                                   style={dp_inputStyle} placeholder="KALI"/>
                               </td>
                               <td style={{ padding: '5px 12px', width: 130 }}>
                                 <input type="number" step="0.001" value={r.fisik ?? ''}
                                   onChange={e => updateCustom(r._key, 'fisik', e.target.value)}
+                                  className="dp-input"
                                   style={dp_inputStyleRight}/>
                               </td>
                               <td style={{ padding: '5px 12px', width: 130 }}>
                                 <input type="number" value={r.tarif ?? ''}
                                   onChange={e => updateCustom(r._key, 'tarif', e.target.value)}
+                                  className="dp-input"
                                   style={dp_inputStyleRight}/>
                               </td>
                               <td style={{ padding: '7px 12px', textAlign: 'right', fontWeight: 600, color: nilai > 0 ? '#f0f0f0' : 'rgba(255,255,255,0.2)' }}>{formatRupiah(nilai)}</td>

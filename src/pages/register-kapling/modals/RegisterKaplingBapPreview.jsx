@@ -37,7 +37,7 @@ export default function RegisterKaplingBapPreview({ isSaving, onCancel, onSave, 
               <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontFamily: 'monospace' }}>{preview.fileCount} file dipilih</p>
             </div>
           </div>
-          <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14} /></button>
+          <button onClick={onCancel} aria-label="Tutup" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14} /></button>
         </div>
 
         {/* Stats */}

@@ -88,9 +88,14 @@ export default function RegisterKapling() {
       {page.invoisPreview && (
         <RegisterKaplingInvoicePreview
           isSaving={page.invoisSaving}
+          kaplingSkipList={page.kaplingSkipList}
           onCancel={() => page.setInvoisPreview(null)}
+          onRegisterKapling={page.handleRegisterUnmatchedKapling}
           onSave={page.handleInvoisSave}
+          onSkipKapling={page.handleSkipKapling}
+          onUnskipKapling={page.handleUnskipKapling}
           preview={page.invoisPreview}
+          skippingKapling={page.skippingKapling}
         />
       )}
 
@@ -210,6 +215,7 @@ export default function RegisterKapling() {
         onBatchEdit={() => { page.setBatchEditData({ tgl_kapling: '', periode: '', no_blok: '', sertifikasi: '' }); page.setShowBatchEdit(true) }}
         onClearSearch={() => page.setSearchTerm('')}
         onOpenSortPanel={() => { page.setDraftSorts([...page.sorts]); page.setShowSortPanel(true) }}
+        onPageJump={n => page.setCurrentPage(Math.min(page.totalPages, Math.max(1, n)))}
         onPageNext={() => page.setCurrentPage(p => Math.min(page.totalPages, p + 1))}
         onPagePrev={() => page.setCurrentPage(p => Math.max(1, p - 1))}
         onSearchChange={page.setSearchTerm}

@@ -286,12 +286,12 @@ export default function RegisterKaplingTable({
                         onMouseEnter={e => { e.currentTarget.style.color = 'rgba(0,180,255,0.95)'; e.currentTarget.style.background = 'rgba(0,180,255,0.07)' }}
                         onMouseLeave={e => { e.currentTarget.style.color = row.no_invois ? 'rgba(0,180,255,0.9)' : 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
                       ><Receipt size={12}/></button>
-                      <button onClick={() => onEditRow({ ...row })}
+                      <button onClick={() => onEditRow({ ...row })} title="Edit"
                         style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}
                         onMouseEnter={e => { e.currentTarget.style.color = '#f0f0f0'; e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
                         onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}
                       ><Pencil size={12}/></button>
-                      <button onClick={() => onDeleteRow(row)}
+                      <button onClick={() => onDeleteRow(row)} title="Hapus"
                         style={{ padding: 4, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}
                         onMouseEnter={e => { e.currentTarget.style.color = '#ff6b6b'; e.currentTarget.style.background = 'rgba(255,107,107,0.08)' }}
                         onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none' }}

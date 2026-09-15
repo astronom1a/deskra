@@ -87,6 +87,20 @@ export function buildInvoiceImportPreview({
   }
 }
 
+export function rebuildInvoicePreviewMatches({ preview, rows }) {
+  const rowsByKapling = new Map(rows.map(row => [row.no_kapling, row]))
+  const invoices = preview.invoices.map(invoice => {
+    const kaplingList = [...invoice.matched.map(row => row.no_kapling), ...invoice.unmatched]
+    return {
+      ...invoice,
+      matched: kaplingList.map(noKapling => rowsByKapling.get(noKapling)).filter(Boolean),
+      unmatched: kaplingList.filter(noKapling => !rowsByKapling.has(noKapling)),
+    }
+  })
+
+  return buildInvoiceImportPreview({ invoices, errors: preview.errors, fileCount: preview.fileCount })
+}
+
 export async function prepareInvoiceImportPreview({
   files,
   parseInvoice,

@@ -20,7 +20,7 @@ export default function RegisterKaplingSortPanel({
             <p style={{ fontWeight: 600, color: '#f0f0f0', fontFamily: 'monospace', fontSize: 13 }}>urutan data</p>
             <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontFamily: 'monospace' }}>atur prioritas kolom dan arah pengurutan</p>
           </div>
-          <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
+          <button onClick={onCancel} aria-label="Tutup" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
@@ -39,7 +39,7 @@ export default function RegisterKaplingSortPanel({
               <button onClick={() => onToggleSortDir(index)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', fontSize: 11, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.55)', cursor: 'pointer', minWidth: 60, justifyContent: 'center', fontFamily: 'monospace' }}>
                 {sort.dir === 'asc' ? <><ChevronUp size={11}/> A-Z</> : <><ChevronDown size={11}/> Z-A</>}
               </button>
-              <button onClick={() => onRemoveSort(index)} style={{ padding: 6, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}
+              <button onClick={() => onRemoveSort(index)} aria-label="Hapus urutan" style={{ padding: 6, borderRadius: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}
                 onMouseEnter={event => event.currentTarget.style.color = '#ff6b6b'}
                 onMouseLeave={event => event.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
               ><X size={12}/></button>

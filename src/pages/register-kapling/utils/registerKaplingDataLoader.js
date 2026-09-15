@@ -66,3 +66,14 @@ export async function fetchSkippedInvoices({ supabase, tpkId }) {
   if (error) throw error
   return data || []
 }
+
+export async function fetchKaplingSkipList({ supabase, tpkId }) {
+  const { data, error } = await supabase
+    .from('tabel_register_kapling_skip')
+    .select('id,no_kapling,keterangan')
+    .eq('tpk_id', tpkId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}

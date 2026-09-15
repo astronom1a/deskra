@@ -176,6 +176,34 @@ export async function saveUnskipInvoice({ id, supabase, tpkId }) {
   }
 }
 
+export async function saveSkipKapling({ keterangan, noKapling, supabase, tpkId, userId }) {
+  const { error } = await supabase
+    .from('tabel_register_kapling_skip')
+    .insert({ tpk_id: tpkId, no_kapling: noKapling, keterangan: keterangan || null, created_by: userId })
+
+  if (error) return actionError(error.message)
+  return {
+    message: `Kapling ${noKapling} ditandai di luar cakupan data`,
+    refresh: true,
+    type: 'success',
+  }
+}
+
+export async function saveUnskipKapling({ id, supabase, tpkId }) {
+  const { error } = await supabase
+    .from('tabel_register_kapling_skip')
+    .delete()
+    .eq('tpk_id', tpkId)
+    .eq('id', id)
+
+  if (error) return actionError(error.message)
+  return {
+    message: 'Kapling dikembalikan ke daftar belum terdaftar',
+    refresh: true,
+    type: 'success',
+  }
+}
+
 function actionError(message) {
   return {
     closeEditor: false,

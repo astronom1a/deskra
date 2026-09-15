@@ -1,6 +1,16 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.60.0',
+    date: '2026-09-15',
+    items: [
+      { type: 'feat', text: 'Register Kapling: preview import invois sekarang menampilkan daftar nomor kapling yang belum terdaftar, dengan aksi "daftarkan cepat" (buka form tambah kapling terisi otomatis) atau "skip" (tandai di luar cakupan data, mis. periode sebelum aplikasi dipakai)' },
+      { type: 'feat', text: 'Register Kapling: nomor halaman pada paginasi tabel kini bisa diketik langsung, tidak perlu klik next berkali-kali' },
+      { type: 'fix', text: 'Detail Pekerjaan: hilangkan panah spinner bawaan browser pada semua input angka' },
+      { type: 'fix', text: 'tambah aria-label pada tombol icon-only (edit/hapus/tutup/menu) di halaman Database dan Register Kapling agar terbaca oleh screen reader' },
+    ]
+  },
+  {
     version: '0.59.0',
     date: '2026-08-28',
     items: [

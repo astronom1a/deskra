@@ -262,6 +262,7 @@ export default function DatabaseAlamatBongkar() {
           />
           {searchTerm && (
             <button onClick={() => setSearchTerm('')}
+              aria-label="Hapus pencarian"
               style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', lineHeight: 0, padding: 0 }}
               onMouseEnter={e => e.currentTarget.style.color = '#f0f0f0'}
               onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
@@ -287,7 +288,7 @@ export default function DatabaseAlamatBongkar() {
               <p style={{ fontFamily: 'monospace', fontSize: 13, color: '#00ff88', fontWeight: 700 }}>
                 {editId ? 'edit alamat' : 'tambah alamat baru'}
               </p>
-              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', lineHeight: 0 }}
+              <button onClick={() => setShowForm(false)} aria-label="Tutup form" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', lineHeight: 0 }}
                 onMouseEnter={e => e.currentTarget.style.color = '#f0f0f0'}
                 onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
               ><X size={15}/></button>
@@ -356,7 +357,7 @@ export default function DatabaseAlamatBongkar() {
                     )}
                   </div>
                 </div>
-                <button onClick={() => setImportPreview(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', lineHeight: 0, flexShrink: 0 }}
+                <button onClick={() => setImportPreview(null)} aria-label="Tutup pratinjau impor" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', lineHeight: 0, flexShrink: 0 }}
                   onMouseEnter={e => e.currentTarget.style.color = '#f0f0f0'}
                   onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
                 ><X size={15}/></button>
@@ -507,11 +508,11 @@ export default function DatabaseAlamatBongkar() {
                     <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.35)' }}>{row.kota || '—'}</td>
                     <td style={{ padding: '10px 10px', width: 60 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
-                        <button onClick={() => openEdit(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                        <button onClick={() => openEdit(row)} aria-label="Edit alamat" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
                           onMouseEnter={e => e.currentTarget.style.color = '#00ff88'}
                           onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
                         ><Pencil size={13}/></button>
-                        <button onClick={() => setDeleteRow(row)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
+                        <button onClick={() => setDeleteRow(row)} aria-label="Hapus alamat" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(255,255,255,0.2)', lineHeight: 0 }}
                           onMouseEnter={e => e.currentTarget.style.color = '#ff6b6b'}
                           onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
                         ><Trash2 size={13}/></button>

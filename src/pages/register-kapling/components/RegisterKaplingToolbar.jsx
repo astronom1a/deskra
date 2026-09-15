@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Search, SlidersHorizontal, Trash2, X } from 'lucide-react'
 
 export default function RegisterKaplingToolbar({
@@ -9,6 +10,7 @@ export default function RegisterKaplingToolbar({
   onBatchEdit,
   onClearSearch,
   onOpenSortPanel,
+  onPageJump,
   onPageNext,
   onPagePrev,
   onSearchChange,
@@ -27,6 +29,15 @@ export default function RegisterKaplingToolbar({
   sorts,
   totalPages,
 }) {
+  const [pageInput, setPageInput] = useState(String(safePage))
+
+  useEffect(() => { setPageInput(String(safePage)) }, [safePage])
+
+  const jumpToInput = () => {
+    const n = parseInt(pageInput, 10)
+    onPageJump(Number.isNaN(n) ? safePage : n)
+  }
+
   if (!rowsCount) return null
 
   return (
@@ -59,7 +70,21 @@ export default function RegisterKaplingToolbar({
             <button onClick={onPagePrev} disabled={safePage === 1}
               style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 8px', fontSize: 11, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', cursor: safePage === 1 ? 'not-allowed' : 'pointer', opacity: safePage === 1 ? 0.4 : 1, fontFamily: 'monospace' }}
             ><ChevronLeft size={10}/> prev</button>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', padding: '0 6px', fontFamily: 'monospace' }}>{safePage} / {totalPages}</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'rgba(255,255,255,0.4)', padding: '0 6px', fontFamily: 'monospace' }}>
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={pageInput}
+                onChange={e => setPageInput(e.target.value)}
+                onBlur={jumpToInput}
+                onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+                aria-label="Menuju halaman"
+                className="rk-input"
+                style={{ width: 30, height: 20, padding: '0 2px', textAlign: 'center', fontSize: 11, lineHeight: 1 }}
+              />
+              / {totalPages}
+            </span>
             <button onClick={onPageNext} disabled={safePage === totalPages}
               style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 8px', fontSize: 11, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', cursor: safePage === totalPages ? 'not-allowed' : 'pointer', opacity: safePage === totalPages ? 0.4 : 1, fontFamily: 'monospace' }}
             >next <ChevronRight size={10}/></button>
@@ -95,7 +120,7 @@ export default function RegisterKaplingToolbar({
             <Search size={11} style={{ position: 'absolute', left: 7, color: 'rgba(255,255,255,0.3)', pointerEvents: 'none' }}/>
             <input type="text" value={searchTerm} onChange={e => onSearchChange(e.target.value)} placeholder="cari..." className="rk-input" style={{ height: 28, paddingLeft: 22, paddingRight: searchTerm ? 22 : 8, width: 140, fontSize: 11 }}/>
             {searchTerm && (
-              <button onClick={onClearSearch} style={{ position: 'absolute', right: 5, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 0 }}><X size={10}/></button>
+              <button onClick={onClearSearch} aria-label="Hapus pencarian" style={{ position: 'absolute', right: 5, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 0 }}><X size={10}/></button>
             )}
           </div>
         </div>

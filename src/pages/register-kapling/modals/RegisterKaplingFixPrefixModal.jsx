@@ -19,7 +19,7 @@ export default function RegisterKaplingFixPrefixModal({
               dicocokkan dari DK310 Pengurangan - {entries.length} nomor invois akan diperbarui
             </p>
           </div>
-          <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
+          <button onClick={onCancel} aria-label="Tutup" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}><X size={14}/></button>
         </div>
 
         <div style={{ overflowY: 'auto', flex: 1, minHeight: 0, padding: '8px 24px' }}>

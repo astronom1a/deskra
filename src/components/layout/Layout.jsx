@@ -449,6 +449,7 @@ export default function Layout() {
           }}>
             <button
               onClick={() => setMobileOpen(true)}
+              aria-label="Buka menu"
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: 32, height: 32, borderRadius: 3, flexShrink: 0,

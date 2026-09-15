@@ -13,6 +13,7 @@ import {
 import {
   parsePdfInvoice,
   prepareInvoiceImportPreview,
+  rebuildInvoicePreviewMatches,
   saveInvoiceImportPreview,
 } from '../utils/registerKaplingInvoiceImport'
 import {
@@ -41,10 +42,13 @@ import {
   saveEditedRow,
   saveQuickInvoisRow,
   saveSkipInvoice,
+  saveSkipKapling,
   saveUnskipInvoice,
+  saveUnskipKapling,
 } from '../utils/registerKaplingCrud'
 import {
   fetchDkhpEntries,
+  fetchKaplingSkipList,
   fetchPenguranganInvoices,
   fetchRegisterKaplingRows,
   fetchSkippedInvoices,
@@ -88,6 +92,8 @@ export function useRegisterKaplingPage() {
   const [dkhpEntries, setDkhpEntries]       = useState([])
   const [skippedInvoices, setSkippedInvoices] = useState([])
   const [skippingInvoice, setSkippingInvoice] = useState(null)
+  const [kaplingSkipList, setKaplingSkipList] = useState([])
+  const [skippingKapling, setSkippingKapling] = useState(null)
 
   const [importing, setImporting]           = useState(false)
   const [preview, setPreview]               = useState(null)
@@ -182,17 +188,19 @@ export function useRegisterKaplingPage() {
     if (!tpkId) return
     setLoading(true)
     try {
-      const [loadedRows, loadedInvoices, loadedDkhp, loadedSkipped] = await Promise.all([
+      const [loadedRows, loadedInvoices, loadedDkhp, loadedSkipped, loadedKaplingSkip] = await Promise.all([
         fetchRegisterKaplingRows({ supabase, tpkId }),
         fetchPenguranganInvoices({ supabase, tpkId }),
         fetchDkhpEntries({ supabase, tpkId }),
         fetchSkippedInvoices({ supabase, tpkId }),
+        fetchKaplingSkipList({ supabase, tpkId }),
       ])
       setRows(loadedRows)
       setSelectedIds(new Set())
       setPenguranganInvoices(loadedInvoices)
       setDkhpEntries(loadedDkhp)
       setSkippedInvoices(loadedSkipped)
+      setKaplingSkipList(loadedKaplingSkip)
     } catch (error) {
       showToast(error.message, 'error')
     }
@@ -356,6 +364,33 @@ export function useRegisterKaplingPage() {
     setInvoisSaving(false)
     showToast(result.message, result.type)
     if (result.closePreview) setInvoisPreview(null)
+    if (result.refresh) fetchData()
+  }
+
+  // Preview invois cuma snapshot hasil parse — sinkronkan ulang matched/unmatched
+  // tiap `rows` berubah (mis. setelah kapling baru didaftarkan lewat modal
+  // "daftarkan cepat") supaya user langsung lihat statusnya berpindah.
+  useEffect(() => {
+    setInvoisPreview(prev => prev ? rebuildInvoicePreviewMatches({ preview: prev, rows }) : prev)
+  }, [rows])
+
+  function handleRegisterUnmatchedKapling(noKapling, invoice) {
+    setEditRow({ ...EMPTY_ROW, no_kapling: noKapling, no_invois: invoice.noInvois, pembeli: invoice.pembeli || '' })
+  }
+
+  async function handleSkipKapling(noKapling) {
+    if (!tpkId) return
+    setSkippingKapling(noKapling)
+    const result = await saveSkipKapling({ noKapling, supabase, tpkId, userId: profile?.id })
+    setSkippingKapling(null)
+    showToast(result.message, result.type)
+    if (result.refresh) fetchData()
+  }
+
+  async function handleUnskipKapling(id) {
+    if (!tpkId) return
+    const result = await saveUnskipKapling({ id, supabase, tpkId })
+    showToast(result.message, result.type)
     if (result.refresh) fetchData()
   }
 
@@ -569,6 +604,9 @@ export function useRegisterKaplingPage() {
     contextMenu, setContextMenu, handleClearDkhpConflict,
     // invois
     invoisPreview, setInvoisPreview, invoisSaving, handleInvoisFileChange, handleInvoisSave,
+    handleRegisterUnmatchedKapling,
+    // kapling skip (invois lintas periode sebelum aplikasi dipakai)
+    kaplingSkipList, skippingKapling, handleSkipKapling, handleUnskipKapling,
     // fix prefix
     showFixPrefix, setShowFixPrefix, fixPrefixMap, fixPrefixSaving, handleOpenFixPrefix, handleApplyFixPrefix,
     // dkhp modal
