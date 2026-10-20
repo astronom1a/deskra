@@ -48,7 +48,7 @@ Fungsi murni, tanpa dependensi Supabase atau React, sehingga bisa dites dengan
 | `getPeriodeWindow(date)` | `Date` | `{ half, bulan, tahun, label, tglAwal, tglAkhir }` |
 | `getPeriodeSebelumnya(window)` | window | window paruh sebelumnya (lintas tahun aman: I/1 → II/12 tahun lalu) |
 | `hariTersisa(tglAkhir, today)` | ISO date + `Date` | selisih hari, bilangan bulat |
-| `getStatusPeriode(args)` | lihat di bawah | `{ state, reminderAktif, hariTersisa }` |
+| `getStatusPeriode(args)` | lihat di bawah | `{ empty, current, previous, hariTersisa, reminderAktif }` |
 
 `getStatusPeriode` menerima `{ window, periodeRow, totalUk, windowSebelumnya,
 periodeRowSebelumnya, totalUkSebelumnya, today }`.
@@ -60,33 +60,69 @@ objek `Date`, untuk menghindari pergeseran akibat UTC.
 `PERIODE_OPTIONS` dalam `src/pages/MainLink.jsx`. MainLink diubah untuk mengimpor dari
 file baru ini agar label dan tanggal tidak punya dua sumber kebenaran.
 
-### 2. State panel
+### 2. State model
+
+Model ini punya **dua sumbu**, bukan satu daftar datar. `current` menggambarkan periode
+yang sedang berjalan, `previous` menggambarkan periode sebelumnya yang sudah lewat
+`tgl_akhir`. Keduanya berdiri sendiri dan bisa muncul bersamaan — misalnya periode lalu
+`overdue` sementara periode berjalan `missing`.
+
+Nilai state memakai Bahasa Inggris sesuai aturan identifier di CLAUDE.md. Teks yang tampil
+ke user tetap Bahasa Indonesia.
+
+**`empty`** — flag boolean terpisah, bukan nilai state. Bernilai `true` kalau TPK ini belum
+punya periode sama sekali. Saat `true`, kedua sumbu diabaikan dan Dashboard menampilkan
+empty state yang sudah ada ("Belum ada periode"), tidak diubah.
+
+#### Sumbu `current` — periode berjalan
 
 | State | Kondisi | Warna | Tampilan |
 |---|---|---|---|
-| `kosong` | Tidak ada periode sama sekali untuk TPK ini | netral | Empty state yang sudah ada ("Belum ada periode") — tidak diubah |
-| `belum_dibuat` | Window berjalan tidak punya row di `tabel_periode` | amber | "Periode II/10 2026 belum dibuat" + rentang tanggal + sisa hari + tombol `Buat Periode →` |
-| `belum_diinput` | Row ada, total UK = 0 | amber | "Periode II/10 2026 — data belum diinput" + tombol `Input Data →` |
-| `aktif` | Row ada, total UK > 0 | hijau | Nama periode, rentang tanggal, total UK, sisa hari |
-| `terlambat` | Periode **sebelumnya** belum dibuat atau total UK = 0, dan hari ini sudah lewat `tgl_akhir`-nya | merah | "Periode I/10 2026 sudah berakhir dan belum diinput" |
+| `missing` | Window berjalan tidak punya row di `tabel_periode` | amber | "Periode II/10 2026 belum dibuat" + rentang tanggal + sisa hari + tombol `Buat Periode →` |
+| `noData` | Row ada, total UK = 0 | amber | "Periode II/10 2026 — data belum diinput" + tombol `Input Data →` |
+| `onTrack` | Row ada, total UK > 0 | hijau | Nama periode, rentang tanggal, total UK, sisa hari |
 
-`terlambat` ditampilkan sebagai banner terpisah di atas panel periode berjalan, bukan
-menggantikannya — keduanya bisa muncul bersamaan.
+Nominal pada `onTrack` mengikuti toggle mata (`hideAmount`) yang sudah ada di Dashboard.
 
-Nominal pada state `aktif` mengikuti toggle mata (`hideAmount`) yang sudah ada di
-Dashboard.
+#### Sumbu `previous` — periode sebelumnya
+
+| State | Kondisi | Warna | Tampilan |
+|---|---|---|---|
+| `archived` | Sudah lewat `tgl_akhir` **dan** total UK > 0 | netral | Tidak ada banner. Keadaan tenang: periode itu selesai dan terarsip |
+| `overdue` | Sudah lewat `tgl_akhir`, tapi belum dibuat atau total UK = 0 | merah | Banner "Periode I/10 2026 sudah berakhir dan belum diinput" |
+| `none` | Tidak ada periode sebelumnya yang relevan | — | Tidak ada tampilan |
+
+Banner `overdue` muncul di atas panel periode berjalan, bukan menggantikannya.
+
+**Catatan penamaan:** `onTrack` sengaja tidak dinamai `aktif`. Kolom
+`tabel_periode.status` sudah memakai nilai `'aktif'` untuk seluruh 12 baris yang ada
+dengan arti berbeda, sehingga nama itu akan rancu. `archived` juga tidak dipakai untuk
+periode berjalan, karena periode yang masih jalan belum bisa disebut arsip.
+
+#### Kolom STATUS di tabel history
+
+Kolom `STATUS` pada tabel 5 periode terakhir saat ini menampilkan
+`tabel_periode.status` mentah, yang selalu bernilai `aktif` untuk setiap baris sehingga
+tidak membawa informasi apa pun.
+
+Kolom itu diubah menjadi state turunan memakai model yang sama: baris yang sudah lewat
+`tgl_akhir` dan ada datanya ditandai **arsip**, yang sudah lewat tapi kosong ditandai
+**belum lengkap**, dan baris window berjalan ditandai **berjalan**. Kolom
+`tabel_periode.status` tidak lagi dibaca untuk tampilan ini dan tidak diubah isinya.
 
 ### 3. Reminder
 
 Reminder menyala jika salah satu terpenuhi:
 
-- `state ∈ {belum_dibuat, belum_diinput}` **dan** `hariTersisa` ke `tgl_akhir` berada di
-  rentang 0–3 (H-3, H-2, H-1, dan hari-H itu sendiri)
-- `state = terlambat`
+- `current ∈ {missing, noData}` **dan** `hariTersisa` ke `tgl_akhir` berada di rentang 0–3
+  (H-3, H-2, H-1, dan hari-H itu sendiri)
+- `previous = overdue`
+
+`current = onTrack` dan `previous = archived` keduanya tidak pernah membunyikan reminder.
 
 Dua wujud reminder:
 
-**Banner** di Dashboard, di atas panel. Amber untuk H-3..H-0, merah untuk terlambat.
+**Banner** di Dashboard, di atas panel. Amber untuk H-3..H-0, merah untuk `overdue`.
 Contoh teks: *"3 hari lagi periode II/10 2026 berakhir — periode belum dibuat."*
 
 **Badge** titik di `Layout.jsx`, pada parent menu `Uang Kerja` dan child `Main Link`,
@@ -137,8 +173,8 @@ isi file Dashboard saat ini. Versi mobile memakai `useIsMobile` yang sudah ada.
 ## Penanganan Error
 
 Kegagalan query di provider tidak boleh merusak Dashboard maupun Layout. Bila fetch gagal,
-provider mengembalikan `state: null` dan `reminderAktif: false` — panel dan badge tidak
-tampil, sisa Dashboard berjalan normal. Error dicatat ke state provider agar bisa
+provider mengembalikan `current: null`, `previous: 'none'` dan `reminderAktif: false` —
+panel dan badge tidak tampil, sisa Dashboard berjalan normal. Error dicatat agar bisa
 ditampilkan bila diperlukan, tapi tidak memunculkan Toast karena ini pemuatan latar, bukan
 hasil aksi user.
 
@@ -151,7 +187,12 @@ hasil aksi user.
 - Akhir bulan 28/29/30/31, termasuk Februari kabisat dan non-kabisat
 - `getPeriodeSebelumnya` melintasi pergantian tahun (I/1 → II/12 tahun sebelumnya)
 - `hariTersisa` pada H-3, H-1, H-0
-- Tiap cabang `getStatusPeriode`, termasuk `terlambat`
+- Tiap cabang sumbu `current`: `missing`, `noData`, `onTrack`
+- Tiap cabang sumbu `previous`: `archived`, `overdue`, `none`
+- Flag `empty` menang atas kedua sumbu
+- Kombinasi dua sumbu yang bisa terjadi bersamaan, misalnya `previous: overdue` +
+  `current: missing`
+- `reminderAktif` menyala pada `overdue` dan padam pada `onTrack` maupun `archived`
 - Label yang dihasilkan identik dengan format MainLink (`II/10 / 2026`)
 
 Hanya file ini yang dites, sesuai preferensi menjalankan test terbatas pada file terkait.
@@ -167,10 +208,10 @@ Hanya file ini yang dites, sesuai preferensi menjalankan test terbatas pada file
 
 Dengan data nyata per 20 Oktober 2026:
 
-- Window berjalan `II/10 / 2026` (16–31 Okt), row belum ada → state `belum_dibuat`
+- Window berjalan `II/10 / 2026` (16–31 Okt), row belum ada → `current: missing`
 - Sisa 11 hari ke 31 Okt → di luar rentang H-3 → banner dan badge **mati**
 - Periode sebelumnya `I/10 / 2026` punya data fisik nyata (9 tumpuk kapling, 2 tanda laku,
-  1 barcode) → total UK > 0 → **tidak** terlambat
+  1 barcode) → total UK > 0 dan sudah lewat `tgl_akhir` → `previous: archived`
 
-Hasilnya: panel memberi tahu periode belum dibuat, tanpa membunyikan alarm yang belum
-waktunya.
+Hasilnya: panel memberi tahu periode berjalan belum dibuat, periode lalu ditandai sudah
+terarsip, dan tidak ada alarm yang berbunyi sebelum waktunya.
