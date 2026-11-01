@@ -13,6 +13,7 @@ import { useIsMobile } from '../../lib/hooks/useIsMobile'
 import AppResponsiveStyles from '../ui/responsive/AppResponsiveStyles'
 import { useAccount } from '../../lib/hooks/useAccount'
 import { useAuth } from '../../lib/AuthProvider'
+import { useUangKerjaReminder } from '../../lib/UangKerjaReminderProvider'
 import { canUseOperatorRoutes } from '../../lib/adminOperatorContext'
 import { version as appVersion } from '../../../package.json'
 import { gsap } from 'gsap'
@@ -69,8 +70,13 @@ function getPeriodeAktif() {
 }
 
 // ── SidebarItem ───────────────────────────────────────────────────────────────
-function SidebarItem({ item, collapsed, onExpand }) {
+function ReminderDot({ style }) {
+  return <span title="perlu perhatian" style={{ width: 6, height: 6, borderRadius: '50%', background: '#ffaa00', flexShrink: 0, ...style }} />
+}
+
+function SidebarItem({ item, collapsed, onExpand, dotLabels = [] }) {
   const location = useLocation()
+  const showDot = dotLabels.includes(item.label)
   const [open, setOpen] = useState(
     item.children?.some(c => location.pathname.startsWith(c.path))
   )
@@ -108,7 +114,10 @@ function SidebarItem({ item, collapsed, onExpand }) {
           onMouseEnter={e => { if (!anyChildActive) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = anyChildActive ? '#00ff88' : '#f0f0f0' }}
           onMouseLeave={e => { e.currentTarget.style.background = anyChildActive ? 'rgba(0,255,136,0.07)' : 'transparent'; e.currentTarget.style.color = anyChildActive ? '#00ff88' : 'rgba(255,255,255,0.38)' }}
         >
-          {item.icon && <item.icon size={14} />}
+          <span style={{ position: 'relative', display: 'inline-flex' }}>
+            {item.icon && <item.icon size={14} />}
+            {showDot && <ReminderDot style={{ position: 'absolute', top: -2, right: -2 }} />}
+          </span>
         </button>
       )
     }
@@ -122,6 +131,7 @@ function SidebarItem({ item, collapsed, onExpand }) {
           <span className="flex items-center gap-2">
             {item.icon && <item.icon size={12} />}
             {item.label}
+            {showDot && <ReminderDot />}
           </span>
           <span style={{ transition: 'transform 0.2s', transform: open ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-flex' }}>
             <ChevronRight size={11} />
@@ -130,7 +140,7 @@ function SidebarItem({ item, collapsed, onExpand }) {
         <div ref={bodyRef} style={{ overflow: 'hidden', height: open ? 'auto' : 0, opacity: open ? 1 : 0 }}>
           <div className="ml-2 mt-0.5 mb-1 space-y-0.5" style={{ borderLeft: '1px solid rgba(0,255,136,0.15)', paddingLeft: 10 }}>
             {item.children.map(child => (
-              <SidebarItem key={child.path} item={child} collapsed={collapsed} onExpand={onExpand} />
+              <SidebarItem key={child.path} item={child} collapsed={collapsed} onExpand={onExpand} dotLabels={dotLabels} />
             ))}
           </div>
         </div>
@@ -146,10 +156,14 @@ function SidebarItem({ item, collapsed, onExpand }) {
       className={({ isActive }) => `sb-link ${isActive ? 'sb-link-active' : ''}`}
       style={collapsed ? { justifyContent: 'center', padding: '7px 0', gap: 0, borderLeftColor: 'transparent' } : {}}
     >
-      {item.icon && <item.icon size={14} />}
+      <span style={{ position: 'relative', display: 'inline-flex' }}>
+        {item.icon && <item.icon size={14} />}
+        {showDot && collapsed && <ReminderDot style={{ position: 'absolute', top: -2, right: -2 }} />}
+      </span>
       {!collapsed && (
-        <span className="font-mono flex items-center gap-0.5">
+        <span className="font-mono flex items-center gap-1.5">
           {item.label}
+          {showDot && <ReminderDot />}
           {item.indicator && (
             <span style={{
               fontFamily: 'monospace', fontWeight: 700, fontSize: 13,
@@ -188,6 +202,8 @@ export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { account } = useAccount()
   const { tpk, isAdmin, activeTpkId, setActiveTpkId, signOut } = useAuth()
+  const { reminderAktif } = useUangKerjaReminder()
+  const dotLabels = reminderAktif ? ['Uang Kerja', 'Main Link'] : []
   const namaTpk  = tpk?.namatpk || account.namaTpk || 'TPK Wongsorejo'
   const useOperatorContext = canUseOperatorRoutes({ isAdmin, activeTpkId })
   const navItems = useOperatorContext ? operatorNavItems : adminNavItems
@@ -373,7 +389,7 @@ export default function Layout() {
         <nav className="flex-1 overflow-y-auto py-4 space-y-0.5" style={{ scrollbarWidth: 'none', paddingLeft: ec ? 6 : 12, paddingRight: ec ? 6 : 12 }}>
           {navItems.map((item, i) => (
             <div key={item.path || i} data-sb-item>
-              <SidebarItem item={item} collapsed={ec} onExpand={toggleCollapsed} />
+              <SidebarItem item={item} collapsed={ec} onExpand={toggleCollapsed} dotLabels={dotLabels} />
             </div>
           ))}
         </nav>

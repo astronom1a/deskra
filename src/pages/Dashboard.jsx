@@ -3,11 +3,12 @@ import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { computeTotalUK } from '../lib/rekapPekerjaan'
 import {
-  Clock, TrendingUp, AlertCircle, Eye, EyeOff, ArrowRight, CalendarPlus, AlertTriangle,
+  Clock, TrendingUp, AlertCircle, Eye, EyeOff, ArrowRight, CalendarPlus, AlertTriangle, X,
 } from 'lucide-react'
 import { useAccount } from '../lib/hooks/useAccount'
 import { useAuth } from '../lib/AuthProvider'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
+import { useUangKerjaReminder } from '../lib/UangKerjaReminderProvider'
 import TpkRequiredState from '../components/layout/TpkRequiredState'
 import { TableSkeleton, CardGridSkeleton } from '../components/ui/LoadingState'
 import { useIsMobile } from '../lib/hooks/useIsMobile'
@@ -15,11 +16,50 @@ import DataCard from '../components/ui/responsive/DataCard'
 
 const SORTIMENS = ['AI', 'AII', 'AIII']
 
+const DISMISS_KEY = 'deskra_uk_reminder_dismiss'
+function readDismissMap() {
+  try { return JSON.parse(localStorage.getItem(DISMISS_KEY) || '{}') } catch { return {} }
+}
+
+const ROW_STATUS_META = {
+  berjalan:     { label: 'berjalan',      color: '#00ff88' },
+  archived:     { label: 'arsip',         color: '#4a4a4a' },
+  belumLengkap: { label: 'belum lengkap', color: '#ff6b6b' },
+}
+function getRowStatus(p, todayIso) {
+  if (!p.tgl_akhir || todayIso <= p.tgl_akhir) return 'berjalan'
+  return p.total_uk > 0 ? 'archived' : 'belumLengkap'
+}
+
+function ReminderBanner({ color, text, onDismiss }) {
+  const palette = color === 'red'
+    ? { bg: 'rgba(255,107,107,0.06)', border: 'rgba(255,107,107,0.2)', fg: '#ff6b6b' }
+    : { bg: 'rgba(255,170,0,0.06)', border: 'rgba(255,170,0,0.2)', fg: '#ffaa00' }
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 font-mono text-xs mb-2" style={{
+      background: palette.bg, border: `1px solid ${palette.border}`, borderRadius: 3, color: palette.fg,
+    }}>
+      <AlertTriangle size={13} style={{ flexShrink: 0 }} />
+      <span style={{ flex: 1 }}>{text}</span>
+      {onDismiss && (
+        <button onClick={onDismiss} title="Tutup" style={{ color: 'inherit', opacity: 0.6, display: 'flex' }}>
+          <X size={13} />
+        </button>
+      )}
+    </div>
+  )
+}
+
 function formatRupiah(value) {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency', currency: 'IDR',
     minimumFractionDigits: 0, maximumFractionDigits: 0,
   }).format(Math.round(value || 0))
+}
+
+function formatTanggal(s) {
+  if (!s) return '—'
+  return new Date(s).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 function useDateTime() {
@@ -98,7 +138,17 @@ export default function Dashboard() {
   const [hideAmount,  setHideAmount]  = useState(() => {
     try { return localStorage.getItem('deskra_dashboard_hide_amount') === '1' } catch { return false }
   })
+  const [dismissed, setDismissed] = useState(() => readDismissMap())
+  const reminder = useUangKerjaReminder()
   const navigate = useNavigate()
+
+  function dismissBanner(key, todayIso) {
+    setDismissed(prev => {
+      const next = { ...prev, [key]: todayIso }
+      try { localStorage.setItem(DISMISS_KEY, JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
 
   function toggleHideAmount() {
     setHideAmount(prev => {
@@ -156,7 +206,7 @@ export default function Dashboard() {
         for (let from = 0; ; from += PAGE) {
           const { data } = await supabase
             .from('tabel_register_kapling')
-            .select('no_kapling, sortimen, batang, volume, no_invois, created_at')
+            .select('no_kapling, sortimen, batang, volume, no_invois')
             .eq('tpk_id', tpkId)
             .order('no_kapling', { ascending: true })
             .range(from, from + PAGE - 1)
@@ -227,13 +277,13 @@ export default function Dashboard() {
     : hour >= 15 && hour < 18 ? 'selamat sore'
     : 'selamat malam'
 
-  const periodeAktif = periodes.find(p => p.status === 'aktif')
-  const hariMenujuAkhirPeriode = periodeAktif?.tgl_akhir
-    ? Math.ceil((new Date(periodeAktif.tgl_akhir) - mountedAt) / (1000 * 60 * 60 * 24))
-    : null
   const todayStr = mountedAt.toISOString().slice(0, 10)
-  const belumAdaInputHariIni = !statsLoading && kaplingRows.length > 0
-    && !kaplingRows.some(r => r.created_at?.slice(0, 10) === todayStr)
+
+  const showOverdueBanner = reminder.previous === 'overdue' && reminder.windowSebelumnya
+    && dismissed[`prev:${reminder.windowSebelumnya.label}`] !== todayStr
+  const showCurrentBanner = ['missing', 'noData'].includes(reminder.current)
+    && reminder.hariTersisa !== null && reminder.hariTersisa >= 0 && reminder.hariTersisa <= 3
+    && dismissed[reminder.window?.label] !== todayStr
 
   if (!tpkId) return <TpkRequiredState />
 
@@ -278,31 +328,6 @@ export default function Dashboard() {
 
           <DashboardClock />
         </div>
-
-        {/* Peringatan */}
-        {(belumAdaInputHariIni || (hariMenujuAkhirPeriode !== null && hariMenujuAkhirPeriode <= 3)) && (
-          <div className="flex flex-col sm:flex-row gap-2 mb-8">
-            {hariMenujuAkhirPeriode !== null && hariMenujuAkhirPeriode <= 3 && (
-              <div className="flex items-center gap-2 px-3 py-2 font-mono text-xs" style={{
-                background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)',
-                borderRadius: 3, color: '#ffaa00',
-              }}>
-                <AlertTriangle size={13} />
-                periode aktif ({periodeAktif.periode}) berakhir
-                {hariMenujuAkhirPeriode <= 0 ? ' hari ini' : ` dalam ${hariMenujuAkhirPeriode} hari`}
-              </div>
-            )}
-            {belumAdaInputHariIni && (
-              <div className="flex items-center gap-2 px-3 py-2 font-mono text-xs" style={{
-                background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)',
-                borderRadius: 3, color: '#ffaa00',
-              }}>
-                <AlertTriangle size={13} />
-                belum ada input kapling hari ini
-              </div>
-            )}
-          </div>
-        )}
 
         {/* statistik */}
         <section className="mb-10">
@@ -454,6 +479,62 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {!loading && !error && periodes.length > 0 && !reminder.empty && (
+            <div style={{ marginBottom: 12 }}>
+              {showOverdueBanner && (
+                <ReminderBanner
+                  color="red"
+                  text={`Periode ${reminder.windowSebelumnya.label} sudah berakhir dan belum diinput`}
+                  onDismiss={() => dismissBanner(`prev:${reminder.windowSebelumnya.label}`, todayStr)}
+                />
+              )}
+              {showCurrentBanner && (
+                <ReminderBanner
+                  color="amber"
+                  text={`${reminder.hariTersisa <= 0 ? 'Hari ini' : `${reminder.hariTersisa} hari lagi`} periode ${reminder.window.label} berakhir — ${reminder.current === 'missing' ? 'periode belum dibuat' : 'data belum diinput'}.`}
+                  onDismiss={() => dismissBanner(reminder.window.label, todayStr)}
+                />
+              )}
+
+              {reminder.current && reminder.window && (
+                <div style={{
+                  background: reminder.current === 'onTrack' ? 'rgba(0,255,136,0.03)' : 'rgba(255,170,0,0.04)',
+                  border: `1px solid ${reminder.current === 'onTrack' ? 'rgba(0,255,136,0.15)' : 'rgba(255,170,0,0.15)'}`,
+                  borderRadius: 4, padding: '14px 18px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+                }}>
+                  <div>
+                    <p className="font-mono font-semibold" style={{ fontSize: 13, color: reminder.current === 'onTrack' ? '#00ff88' : '#ffaa00' }}>
+                      {reminder.window.label}
+                      {reminder.current !== 'onTrack' && (
+                        <span style={{ fontWeight: 400, color: 'rgba(255,170,0,0.7)' }}>
+                          {' '}— {reminder.current === 'missing' ? 'belum dibuat' : 'data belum diinput'}
+                        </span>
+                      )}
+                    </p>
+                    <p className="font-mono" style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>
+                      {formatTanggal(reminder.window.tglAwal)} – {formatTanggal(reminder.window.tglAkhir)}
+                      {reminder.hariTersisa !== null && reminder.hariTersisa >= 0 && (
+                        <> · sisa {reminder.hariTersisa} hari</>
+                      )}
+                    </p>
+                  </div>
+                  {reminder.current === 'onTrack' ? (
+                    <span className="font-mono font-semibold" style={{ color: '#00ff88', fontSize: 14 }}>{maskRupiah(reminder.totalUk)}</span>
+                  ) : (
+                    <button
+                      onClick={() => navigate('/main-link')}
+                      className="inline-flex items-center gap-1.5 font-mono font-semibold transition-colors"
+                      style={{ padding: '6px 12px', borderRadius: 3, background: 'rgba(255,170,0,0.1)', border: '1px solid rgba(255,170,0,0.25)', color: '#ffaa00', fontSize: 12, cursor: 'pointer' }}
+                    >
+                      {reminder.current === 'missing' ? 'Buat Periode' : 'Input Data'} <ArrowRight size={12} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div style={{
             background: 'rgba(255,255,255,0.02)',
             border: '1px solid rgba(255,255,255,0.07)',
@@ -499,7 +580,9 @@ export default function Dashboard() {
               </div>
             ) : isMobile ? (
               <div className="ds-card-list" style={{ padding: 10 }}>
-                {periodes.map(p => (
+                {periodes.map(p => {
+                  const rowStatus = ROW_STATUS_META[getRowStatus(p, todayStr)]
+                  return (
                   <DataCard
                     key={p.id}
                     title={p.periode}
@@ -509,12 +592,12 @@ export default function Dashboard() {
                         className="inline-flex items-center px-2 py-0.5 text-xs font-mono"
                         style={{
                           borderRadius: 2, flexShrink: 0,
-                          background: p.status === 'aktif' ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${p.status === 'aktif' ? 'rgba(0,255,136,0.2)' : 'rgba(255,255,255,0.08)'}`,
-                          color: p.status === 'aktif' ? '#00ff88' : '#4a4a4a',
+                          background: `${rowStatus.color}14`,
+                          border: `1px solid ${rowStatus.color}33`,
+                          color: rowStatus.color,
                         }}
                       >
-                        {p.status}
+                        {rowStatus.label}
                       </span>
                     }
                     fields={[{
@@ -524,7 +607,8 @@ export default function Dashboard() {
                         : '—',
                     }]}
                   />
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <table className="w-full">
@@ -537,7 +621,9 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {periodes.map((p, i) => (
+                  {periodes.map((p, i) => {
+                    const rowStatus = ROW_STATUS_META[getRowStatus(p, todayStr)]
+                    return (
                     <tr
                       key={p.id}
                       style={{ borderTop: i > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none', transition: 'background 0.15s' }}
@@ -558,16 +644,17 @@ export default function Dashboard() {
                           className="inline-flex items-center px-2 py-0.5 text-xs font-mono"
                           style={{
                             borderRadius: 2,
-                            background: p.status === 'aktif' ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.04)',
-                            border: `1px solid ${p.status === 'aktif' ? 'rgba(0,255,136,0.2)' : 'rgba(255,255,255,0.08)'}`,
-                            color: p.status === 'aktif' ? '#00ff88' : '#4a4a4a',
+                            background: `${rowStatus.color}14`,
+                            border: `1px solid ${rowStatus.color}33`,
+                            color: rowStatus.color,
                           }}
                         >
-                          {p.status}
+                          {rowStatus.label}
                         </span>
                       </td>
                     </tr>
-                  ))}
+                    )
+                  })}
                 </tbody>
               </table>
             )}

@@ -12,6 +12,8 @@ import * as XLSX from 'xlsx'
 import Toast, { useToast } from '../components/ui/Toast'
 import { logActivity } from '../lib/activityLog'
 import { useIsMobile } from '../lib/hooks/useIsMobile'
+import { useUangKerjaReminder } from '../lib/UangKerjaReminderProvider'
+import { getRentangTanggal } from '../lib/periodeBerjalan'
 
 // ─── helpers ────────────────────────────────────────────────
 const BULAN = ['Januari','Februari','Maret','April','Mei','Juni',
@@ -38,16 +40,9 @@ const TARIF_META = [
   { kode: 'barcode',     kode_rek: '51.69.44', uraian: 'PEMASANGAN BARCODE',               satuan: 'BTG' },
 ]
 
-function isLeapYear(y) { return (y%4===0 && y%100!==0) || y%400===0 }
-function lastDay(m,y) {
-  if (m===2) return isLeapYear(y)?29:28
-  return [4,6,9,11].includes(m)?30:31
-}
 function generateTanggal(half, bulan, tahun) {
-  const m = String(bulan).padStart(2,'0')
-  return half==='I'
-    ? { tgl_awal:`${tahun}-${m}-01`, tgl_akhir:`${tahun}-${m}-15` }
-    : { tgl_awal:`${tahun}-${m}-16`, tgl_akhir:`${tahun}-${m}-${String(lastDay(bulan,tahun)).padStart(2,'0')}` }
+  const { tglAwal, tglAkhir } = getRentangTanggal(half, bulan, tahun)
+  return { tgl_awal: tglAwal, tgl_akhir: tglAkhir }
 }
 
 function formatRupiah(v) {
@@ -67,6 +62,7 @@ export default function MainLink() {
   const { profile, activeTpkId } = useAuth()
   const isMobile = useIsMobile()
   const tpkId = getEffectiveTpkId({ activeTpkId, profile })
+  const { refresh: refreshReminder } = useUangKerjaReminder()
   const [periodes, setPeriodes]         = useState([])
   const [selectedPeriode, setSelected]  = useState(null)
   const [rows, setRows]                 = useState([])
@@ -343,6 +339,7 @@ export default function MainLink() {
     setSelected(data)
     showToast(`Periode ${label} berhasil dibuat`)
     logActivity({ action: 'create', entityType: 'periode', entityId: data.id, entityLabel: label, tpkId: scopedTpkId, profile })
+    refreshReminder()
   }
 
   async function handleRefreshPejabat() {
@@ -439,7 +436,7 @@ export default function MainLink() {
       }))
     const { error } = await supabase.from('tabel_pekerjaan').insert(toInsert)
     if (error) showToast(error.message,'error')
-    else showToast('Data tersimpan & siap cetak')
+    else { showToast('Data tersimpan & siap cetak'); refreshReminder() }
     setSaving(false)
   }
 

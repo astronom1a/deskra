@@ -1,6 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/AuthProvider'
+import { UangKerjaReminderProvider } from './lib/UangKerjaReminderProvider'
 import Layout from './components/layout/Layout'
 import { PageLoader } from './components/ui/LoadingState'
 import Login from './pages/Login'
@@ -215,7 +216,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <UangKerjaReminderProvider>
+        <AppRoutes />
+      </UangKerjaReminderProvider>
     </AuthProvider>
   )
 }

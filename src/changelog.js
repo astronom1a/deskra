@@ -1,10 +1,13 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
-    version: '0.60.1',
+    version: '0.61.0',
     date: '2026-11-01',
     items: [
-      { type: 'feat', text: 'Dashboard: tambah badge peringatan saat periode aktif mendekati akhir atau belum ada input kapling hari ini' },
+      { type: 'feat', text: 'Dashboard: tambah panel "periode berjalan" di History Uang Kerja — menandai bila periode untuk rentang tanggal saat ini belum dibuat atau datanya masih kosong, lengkap tombol aksi cepat' },
+      { type: 'feat', text: 'Dashboard: banner reminder (bisa ditutup) saat periode berjalan mendekati H-3 atau periode sebelumnya terlambat diinput; badge titik senada muncul di sidebar pada menu Uang Kerja & Main Link' },
+      { type: 'feat', text: 'Dashboard: kolom STATUS pada tabel History Uang Kerja kini state turunan (berjalan/arsip/belum lengkap) menggantikan kolom tabel_periode.status yang selalu bernilai sama' },
+      { type: 'refactor', text: 'tambah src/lib/periodeBerjalan.js sebagai sumber tunggal logika tanggal periode (dipakai Dashboard & MainLink) dan UangKerjaReminderProvider agar perhitungan total UK tidak diulang di tiap halaman' },
       { type: 'refactor', text: 'Dashboard: jam real-time dipisah ke komponen sendiri agar tidak memicu re-render seluruh halaman tiap detik; skeleton loading statistik kini berbentuk kartu' },
     ]
   },
