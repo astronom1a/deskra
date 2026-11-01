@@ -3,13 +3,13 @@ import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { computeTotalUK } from '../lib/rekapPekerjaan'
 import {
-  Clock, TrendingUp, AlertCircle, Eye, EyeOff, ArrowRight, CalendarPlus,
+  Clock, TrendingUp, AlertCircle, Eye, EyeOff, ArrowRight, CalendarPlus, AlertTriangle,
 } from 'lucide-react'
 import { useAccount } from '../lib/hooks/useAccount'
 import { useAuth } from '../lib/AuthProvider'
 import { getEffectiveTpkId } from '../lib/effectiveTpk'
 import TpkRequiredState from '../components/layout/TpkRequiredState'
-import { TableSkeleton } from '../components/ui/LoadingState'
+import { TableSkeleton, CardGridSkeleton } from '../components/ui/LoadingState'
 import { useIsMobile } from '../lib/hooks/useIsMobile'
 import DataCard from '../components/ui/responsive/DataCard'
 
@@ -31,8 +31,55 @@ function useDateTime() {
   return now
 }
 
+// ponytail: terisolasi biar tick tiap detik nggak re-render seluruh Dashboard
+function DashboardClock() {
+  const now   = useDateTime()
+  const h     = now.getHours() % 12 || 12
+  const mm    = String(now.getMinutes()).padStart(2, '0')
+  const ss    = String(now.getSeconds()).padStart(2, '0')
+  const ampm  = now.getHours() >= 12 ? 'PM' : 'AM'
+
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 4,
+      padding: '14px 18px',
+    }} className="shrink-0 sm:text-right db-clock">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
+        <p className="font-bold font-mono tabular-nums" style={{ color: '#00ff88', lineHeight: 1, fontSize: 26 }}>
+          {h}:{mm}:{ss}
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center', lineHeight: 1 }}>
+          {['AM', 'PM'].map(label => {
+            const active = ampm === label
+            return (
+              <span key={label} style={{
+                minWidth: 22,
+                padding: '1px 2px',
+                borderRadius: 2,
+                textAlign: 'center',
+                fontFamily: 'monospace',
+                fontSize: 13,
+                fontWeight: active ? 800 : 600,
+                color: active ? '#00ff88' : 'rgba(255,255,255,0.22)',
+                background: 'transparent',
+              }}>
+                {label}
+              </span>
+            )
+          })}
+        </div>
+      </div>
+      <p className="font-mono db-clock-date" style={{ color: '#4a4a4a', marginTop: 7, fontSize: 12 }}>
+        {now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+      </p>
+    </div>
+  )
+}
+
 export default function Dashboard() {
-  const now       = useDateTime()
+  const [mountedAt] = useState(() => new Date())
   const isMobile  = useIsMobile()
   const { account } = useAccount()
   const { profile, tpk, activeTpkId } = useAuth()
@@ -109,7 +156,7 @@ export default function Dashboard() {
         for (let from = 0; ; from += PAGE) {
           const { data } = await supabase
             .from('tabel_register_kapling')
-            .select('no_kapling, sortimen, batang, volume, no_invois')
+            .select('no_kapling, sortimen, batang, volume, no_invois, created_at')
             .eq('tpk_id', tpkId)
             .order('no_kapling', { ascending: true })
             .range(from, from + PAGE - 1)
@@ -174,15 +221,19 @@ export default function Dashboard() {
 
   const totalAll = periodes.reduce((sum, p) => sum + (p.total_uk || 0), 0)
 
-  const h    = now.getHours() % 12 || 12
-  const mm   = String(now.getMinutes()).padStart(2, '0')
-  const ss   = String(now.getSeconds()).padStart(2, '0')
-  const ampm = now.getHours() >= 12 ? 'PM' : 'AM'
-  const hour = now.getHours()
+  const hour = mountedAt.getHours()
   const greeting = hour >= 4 && hour < 10 ? 'selamat pagi'
     : hour >= 10 && hour < 15 ? 'selamat siang'
     : hour >= 15 && hour < 18 ? 'selamat sore'
     : 'selamat malam'
+
+  const periodeAktif = periodes.find(p => p.status === 'aktif')
+  const hariMenujuAkhirPeriode = periodeAktif?.tgl_akhir
+    ? Math.ceil((new Date(periodeAktif.tgl_akhir) - mountedAt) / (1000 * 60 * 60 * 24))
+    : null
+  const todayStr = mountedAt.toISOString().slice(0, 10)
+  const belumAdaInputHariIni = !statsLoading && kaplingRows.length > 0
+    && !kaplingRows.some(r => r.created_at?.slice(0, 10) === todayStr)
 
   if (!tpkId) return <TpkRequiredState />
 
@@ -225,43 +276,33 @@ export default function Dashboard() {
             </p>
           </div>
 
-          {/* Clock */}
-          <div style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 4,
-            padding: '14px 18px',
-          }} className="shrink-0 sm:text-right db-clock">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
-              <p className="font-bold font-mono tabular-nums" style={{ color: '#00ff88', lineHeight: 1, fontSize: 26 }}>
-                {h}:{mm}:{ss}
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center', lineHeight: 1 }}>
-                {['AM', 'PM'].map(label => {
-                  const active = ampm === label
-                  return (
-                    <span key={label} style={{
-                      minWidth: 22,
-                      padding: '1px 2px',
-                      borderRadius: 2,
-                      textAlign: 'center',
-                      fontFamily: 'monospace',
-                      fontSize: 13,
-                      fontWeight: active ? 800 : 600,
-                      color: active ? '#00ff88' : 'rgba(255,255,255,0.22)',
-                      background: 'transparent',
-                    }}>
-                      {label}
-                    </span>
-                  )
-                })}
-              </div>
-            </div>
-            <p className="font-mono db-clock-date" style={{ color: '#4a4a4a', marginTop: 7, fontSize: 12 }}>
-              {now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </p>
-          </div>
+          <DashboardClock />
         </div>
+
+        {/* Peringatan */}
+        {(belumAdaInputHariIni || (hariMenujuAkhirPeriode !== null && hariMenujuAkhirPeriode <= 3)) && (
+          <div className="flex flex-col sm:flex-row gap-2 mb-8">
+            {hariMenujuAkhirPeriode !== null && hariMenujuAkhirPeriode <= 3 && (
+              <div className="flex items-center gap-2 px-3 py-2 font-mono text-xs" style={{
+                background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)',
+                borderRadius: 3, color: '#ffaa00',
+              }}>
+                <AlertTriangle size={13} />
+                periode aktif ({periodeAktif.periode}) berakhir
+                {hariMenujuAkhirPeriode <= 0 ? ' hari ini' : ` dalam ${hariMenujuAkhirPeriode} hari`}
+              </div>
+            )}
+            {belumAdaInputHariIni && (
+              <div className="flex items-center gap-2 px-3 py-2 font-mono text-xs" style={{
+                background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)',
+                borderRadius: 3, color: '#ffaa00',
+              }}>
+                <AlertTriangle size={13} />
+                belum ada input kapling hari ini
+              </div>
+            )}
+          </div>
+        )}
 
         {/* statistik */}
         <section className="mb-10">
@@ -280,7 +321,7 @@ export default function Dashboard() {
             </Link>
           </div>
           {statsLoading ? (
-            <TableSkeleton rows={3} columns={3} />
+            <CardGridSkeleton count={3} />
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12, alignItems: 'stretch' }}>
 

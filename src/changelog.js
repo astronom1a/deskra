@@ -1,6 +1,14 @@
 // Tambah entry baru di awal array setiap rilis
 export const changelog = [
   {
+    version: '0.60.1',
+    date: '2026-11-01',
+    items: [
+      { type: 'feat', text: 'Dashboard: tambah badge peringatan saat periode aktif mendekati akhir atau belum ada input kapling hari ini' },
+      { type: 'refactor', text: 'Dashboard: jam real-time dipisah ke komponen sendiri agar tidak memicu re-render seluruh halaman tiap detik; skeleton loading statistik kini berbentuk kartu' },
+    ]
+  },
+  {
     version: '0.60.0',
     date: '2026-09-15',
     items: [

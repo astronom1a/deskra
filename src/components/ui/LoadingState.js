@@ -100,6 +100,39 @@ export function InlineLoader({ label = 'memuat...' } = {}) {
   )
 }
 
+export function CardGridSkeleton({ count = 3, label = 'menyiapkan data' } = {}) {
+  const cardEls = Array.from({ length: count }, (_, i) =>
+    React.createElement(
+      'div',
+      {
+        key: i,
+        style: {
+          background: 'rgba(255,255,255,0.025)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 4,
+          padding: '16px 20px',
+          display: 'grid',
+          gap: 10,
+        },
+      },
+      React.createElement('span', { className: 'deskra-skeleton-cell', style: { width: '40%', height: 10 } }),
+      React.createElement('span', { className: 'deskra-skeleton-cell', style: { width: '65%', height: 22 } }),
+      React.createElement('span', { className: 'deskra-skeleton-cell', style: { width: '50%', height: 10 } })
+    )
+  )
+
+  return React.createElement(
+    'div',
+    { role: 'status', 'aria-live': 'polite', style: { display: 'grid', gap: 12 } },
+    React.createElement(InlineLoader, { label }),
+    React.createElement(
+      'div',
+      { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 } },
+      cardEls
+    )
+  )
+}
+
 export function TableSkeleton({ rows = 5, columns = 4, label = 'menyiapkan data' } = {}) {
   const rowEls = Array.from({ length: rows }, (_, rowIndex) =>
     React.createElement(
